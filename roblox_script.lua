@@ -237,14 +237,213 @@ local function syncData()
     return ok, res, bountyVal, bSource
 end
 
--- แจ้งเตือนบนหน้าจอเกม (StarterGui Notification)
+-- ════════════════════════════════════════════════════════════
+--  🎨 โหลดโลโก้ค่าย AngusHub x Hunter & ระบบแจ้งเตือนพรีเมียม
+-- ════════════════════════════════════════════════════════════
+local clanLogoAsset = "rbxassetid://7072721868"
 pcall(function()
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "🔥 AngusHub x Hunter",
-        Text = "⚡ กำลังเชื่อมต่อระบบ Realtime Tracker v4.2...",
-        Duration = 4
-    })
+    local getasset = getcustomasset or getsynasset
+    if writefile and isfile and getasset then
+        if not isfile("angushub_logo.png") then
+            local ok, imgData = pcall(function()
+                return game:HttpGet(SERVER_URL .. "/static/logo.jpg")
+            end)
+            if not ok or not imgData or #imgData < 500 then
+                pcall(function()
+                    imgData = game:HttpGet("https://angushubxhunter-n4sp.onrender.com/static/logo.jpg")
+                end)
+            end
+            if imgData and #imgData > 500 then
+                pcall(writefile, "angushub_logo.png", imgData)
+                pcall(writefile, "angushub_logo.jpg", imgData)
+            end
+        end
+        if isfile("angushub_logo.png") then
+            clanLogoAsset = getasset("angushub_logo.png")
+        elseif isfile("angushub_logo.jpg") then
+            clanLogoAsset = getasset("angushub_logo.jpg")
+        end
+    end
 end)
+
+-- ฟังก์ชันแจ้งเตือนพร้อมรูปโลโก้ค่าย AngusHub x Hunter (รับประกันโลโก้ขึ้น 100%)
+local function showClanNotification(title, message, duration)
+    duration = duration or 5
+    title = title or "🔥 AngusHub x Hunter"
+    message = message or ""
+
+    -- 1) แจ้งเตือนแบบมาตรฐานของเกม (StarterGui) พร้อมใส่ Icon โลโก้
+    pcall(function()
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = title,
+            Text = message,
+            Icon = clanLogoAsset,
+            Duration = duration
+        })
+    end)
+
+    -- 2) Custom In-Game Animated Banner พร้อมรูปโลโก้ค่าย คมชัด สวยงาม
+    pcall(function()
+        local parentGui = (gethui and gethui()) or game:GetService("CoreGui") or LP:WaitForChild("PlayerGui")
+        local notifGui = parentGui:FindFirstChild("AngusHubNotifGui")
+        if not notifGui then
+            notifGui = Instance.new("ScreenGui")
+            notifGui.Name = "AngusHubNotifGui"
+            notifGui.ResetOnSpawn = false
+            notifGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+            notifGui.Parent = parentGui
+        end
+
+        local card = Instance.new("Frame")
+        card.Size = UDim2.new(0, 310, 0, 70)
+        card.Position = UDim2.new(1, 20, 0, 70)
+        card.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
+        card.BorderSizePixel = 0
+        card.ClipsDescendants = true
+        card.Parent = notifGui
+
+        local cardCorner = Instance.new("UICorner")
+        cardCorner.CornerRadius = UDim.new(0, 12)
+        cardCorner.Parent = card
+
+        local cardStroke = Instance.new("UIStroke")
+        cardStroke.Color = Color3.fromRGB(239, 68, 68)
+        cardStroke.Thickness = 1.8
+        cardStroke.Transparency = 0.1
+        cardStroke.Parent = card
+
+        local logo = Instance.new("ImageLabel")
+        logo.Size = UDim2.new(0, 48, 0, 48)
+        logo.Position = UDim2.new(0, 10, 0.5, -24)
+        logo.BackgroundTransparency = 1
+        logo.Image = clanLogoAsset
+        logo.Parent = card
+
+        local logoCorner = Instance.new("UICorner")
+        logoCorner.CornerRadius = UDim.new(1, 0)
+        logoCorner.Parent = logo
+
+        local logoStroke = Instance.new("UIStroke")
+        logoStroke.Color = Color3.fromRGB(245, 158, 11)
+        logoStroke.Thickness = 1.2
+        logoStroke.Parent = logo
+
+        local titleLbl = Instance.new("TextLabel")
+        titleLbl.Size = UDim2.new(1, -72, 0, 22)
+        titleLbl.Position = UDim2.new(0, 68, 0, 10)
+        titleLbl.BackgroundTransparency = 1
+        titleLbl.Text = title
+        titleLbl.TextColor3 = Color3.fromRGB(255, 255, 255)
+        titleLbl.Font = Enum.Font.GothamBold
+        titleLbl.TextSize = 13
+        titleLbl.TextXAlignment = Enum.TextXAlignment.Left
+        titleLbl.Parent = card
+
+        local descLbl = Instance.new("TextLabel")
+        descLbl.Size = UDim2.new(1, -72, 0, 30)
+        descLbl.Position = UDim2.new(0, 68, 0, 32)
+        descLbl.BackgroundTransparency = 1
+        descLbl.Text = message
+        descLbl.TextColor3 = Color3.fromRGB(209, 213, 219)
+        descLbl.Font = Enum.Font.Gotham
+        descLbl.TextSize = 11
+        descLbl.TextWrapped = true
+        descLbl.TextXAlignment = Enum.TextXAlignment.Left
+        descLbl.Parent = card
+
+        local TweenService = game:GetService("TweenService")
+        local tweenIn = TweenService:Create(card, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+            Position = UDim2.new(1, -325, 0, 70)
+        })
+        tweenIn:Play()
+
+        task.delay(duration, function()
+            if card and card.Parent then
+                local tweenOut = TweenService:Create(card, TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+                    Position = UDim2.new(1, 20, 0, 70),
+                    BackgroundTransparency = 1
+                })
+                tweenOut:Play()
+                tweenOut.Completed:Connect(function()
+                    card:Destroy()
+                end)
+            end
+        end)
+    end)
+end
+
+-- ฟังก์ชันสร้าง Watermark โลโก้ค่ายแบบพรีเมียมลอยบนหน้าจอเกม (ลากย้ายตำแหน่งได้)
+local function createWatermarkBadge()
+    pcall(function()
+        local parentGui = (gethui and gethui()) or game:GetService("CoreGui") or LP:WaitForChild("PlayerGui")
+        if parentGui:FindFirstChild("AngusHubBadge") then
+            parentGui.AngusHubBadge:Destroy()
+        end
+
+        local sg = Instance.new("ScreenGui")
+        sg.Name = "AngusHubBadge"
+        sg.ResetOnSpawn = false
+        sg.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+        local frame = Instance.new("Frame")
+        frame.Size = UDim2.new(0, 185, 0, 42)
+        frame.Position = UDim2.new(1, -195, 0, 14)
+        frame.BackgroundColor3 = Color3.fromRGB(14, 14, 26)
+        frame.BorderSizePixel = 0
+        frame.Active = true
+        frame.Draggable = true
+        frame.Parent = sg
+
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0, 10)
+        corner.Parent = frame
+
+        local stroke = Instance.new("UIStroke")
+        stroke.Color = Color3.fromRGB(239, 68, 68)
+        stroke.Thickness = 1.4
+        stroke.Transparency = 0.2
+        stroke.Parent = frame
+
+        local logoImg = Instance.new("ImageLabel")
+        logoImg.Size = UDim2.new(0, 32, 0, 32)
+        logoImg.Position = UDim2.new(0, 6, 0.5, -16)
+        logoImg.BackgroundTransparency = 1
+        logoImg.Image = clanLogoAsset
+        logoImg.Parent = frame
+
+        local imgCorner = Instance.new("UICorner")
+        imgCorner.CornerRadius = UDim.new(1, 0)
+        imgCorner.Parent = logoImg
+
+        local t1 = Instance.new("TextLabel")
+        t1.Size = UDim2.new(1, -44, 0, 18)
+        t1.Position = UDim2.new(0, 44, 0, 4)
+        t1.BackgroundTransparency = 1
+        t1.Text = "AngusHub x Hunter"
+        t1.TextColor3 = Color3.fromRGB(255, 255, 255)
+        t1.Font = Enum.Font.GothamBold
+        t1.TextSize = 11
+        t1.TextXAlignment = Enum.TextXAlignment.Left
+        t1.Parent = frame
+
+        local t2 = Instance.new("TextLabel")
+        t2.Name = "LiveLabel"
+        t2.Size = UDim2.new(1, -44, 0, 16)
+        t2.Position = UDim2.new(0, 44, 0, 20)
+        t2.BackgroundTransparency = 1
+        t2.Text = "🟢 Live · PVP On"
+        t2.TextColor3 = Color3.fromRGB(16, 185, 129)
+        t2.Font = Enum.Font.GothamMedium
+        t2.TextSize = 10
+        t2.TextXAlignment = Enum.TextXAlignment.Left
+        t2.Parent = frame
+
+        sg.Parent = parentGui
+    end)
+end
+
+-- แจ้งเตือนเมื่อเริ่มต้นรันสคริปต์
+showClanNotification("🔥 AngusHub x Hunter", "⚡ กำลังเชื่อมต่อระบบ Realtime Tracker v4.2...", 4)
 
 -- ซิงค์ข้อมูลครั้งแรก
 local success, response, bVal, bSrc = pcall(syncData)
@@ -256,14 +455,11 @@ if success then
     print("  🌐 ดูข้อมูลที่: " .. SERVER_URL)
     print("========================================")
 
-    -- แจ้งเตือนสำเร็จบนหน้าจอเกมให้ผู้เล่นเห็นชัดเจน
-    pcall(function()
-        game:GetService("StarterGui"):SetCore("SendNotification", {
-            Title = "🔥 AngusHub x Hunter",
-            Text = "✅ เชื่อมต่อเรียลไทม์สำเร็จ! ค่าหัว: " .. tostring(bVal),
-            Duration = 6
-        })
-    end)
+    -- แจ้งเตือนเมื่อเชื่อมต่อสำเร็จ พร้อมรูปโลโก้ค่าย
+    showClanNotification("🔥 AngusHub x Hunter", "✅ เชื่อมต่อเรียลไทม์สำเร็จ! ค่าหัว: " .. tostring(bVal), 6)
+
+    -- สร้าง Watermark โลโก้ค่ายลอยบนหน้าจอ
+    createWatermarkBadge()
 else
     warn("❌ ซิงค์ครั้งแรกไม่สำเร็จ: " .. tostring(response))
 end
