@@ -444,7 +444,10 @@ def serve_script():
         code = re.sub(r'SERVER_URL\s*=\s*"[^"]*"', f'SERVER_URL = "{public_url}"', code)
 
         from flask import Response
-        return Response(code, mimetype="text/plain; charset=utf-8")
+        resp = Response(code, mimetype="text/plain; charset=utf-8")
+        resp.headers["Access-Control-Allow-Origin"] = "*"
+        resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        return resp
     return "print('Error: roblox_script.lua not found')", 404
 
 
