@@ -1,4 +1,4 @@
-﻿-- ╔════════════════════════════════════════════════════════════╗
+-- ╔════════════════════════════════════════════════════════════╗
 -- ║   🔥 AngusHub x Hunter — ค่ายโปรล่าค่าหัว Blox Fruits       ║
 -- ║   ⚡ Realtime Live Tracker v4.2                            ║
 -- ║   อัพเดต Beli (เงินเขียว), Fragments (เงินม่วง),             ║
@@ -222,17 +222,29 @@ local function syncData()
 
     local jsonData = HttpService:JSONEncode(payload)
 
+    local http_req = (syn and syn.request) or (http and http.request) or http_request or request or (fluxus and fluxus.request)
     local ok, res = pcall(function()
-        return request({
-            Url = SERVER_URL .. "/api/inventory",
-            Method = "POST",
-            Headers = {["Content-Type"] = "application/json"},
-            Body = jsonData
-        })
+        if http_req then
+            return http_req({
+                Url = SERVER_URL .. "/api/inventory",
+                Method = "POST",
+                Headers = {["Content-Type"] = "application/json"},
+                Body = jsonData
+            })
+        end
     end)
 
     return ok, res, bountyVal, bSource
 end
+
+-- แจ้งเตือนบนหน้าจอเกม (StarterGui Notification)
+pcall(function()
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "🔥 AngusHub x Hunter",
+        Text = "⚡ กำลังเชื่อมต่อระบบ Realtime Tracker v4.2...",
+        Duration = 4
+    })
+end)
 
 -- ซิงค์ข้อมูลครั้งแรก
 local success, response, bVal, bSrc = pcall(syncData)
@@ -243,6 +255,15 @@ if success then
     print("  🚀 ซิงค์ข้อมูลเรียลไทม์ทุก 3 วินาที")
     print("  🌐 ดูข้อมูลที่: " .. SERVER_URL)
     print("========================================")
+
+    -- แจ้งเตือนสำเร็จบนหน้าจอเกมให้ผู้เล่นเห็นชัดเจน
+    pcall(function()
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "🔥 AngusHub x Hunter",
+            Text = "✅ เชื่อมต่อเรียลไทม์สำเร็จ! ค่าหัว: " .. tostring(bVal),
+            Duration = 6
+        })
+    end)
 else
     warn("❌ ซิงค์ครั้งแรกไม่สำเร็จ: " .. tostring(response))
 end
