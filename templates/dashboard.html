@@ -3,451 +3,647 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#090919">
+<meta name="theme-color" content="#080814">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="referrer" content="no-referrer">
 <title>angushubxhunter — ค่ายโปรล่าค่าหัว Blox Fruits Realtime Tracker</title>
 <link rel="icon" type="image/jpeg" href="/static/logo.jpg">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700;800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-:root{
-    --bg:#090919;
-    --card:rgba(255,255,255,0.035);
-    --card-border:rgba(255,255,255,0.08);
-    --card-hover:rgba(255,255,255,0.065);
-    --accent-blue:#6366f1;
-    --accent-purple:#a855f7;
-    --accent-pink:#ec4899;
-    --accent-green:#10b981;
-    --accent-gold:#f59e0b;
-    --accent-red:#ef4444;
-    --accent-cyan:#06b6d4;
-    --text-primary:#f1f5f9;
-    --text-secondary:#94a3b8;
-    --text-dim:#64748b;
+/* ════════════════════════════════════════════════════════════
+   RESET & ULTRA-RESPONSIVE VIEWPORT CONSTRAINTS
+════════════════════════════════════════════════════════════ */
+*, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    min-width: 0;
 }
 
-body{
-    font-family:'Inter',sans-serif;
-    background:var(--bg);
-    color:var(--text-primary);
-    min-height:100vh;
-    overflow-x:hidden;
+:root {
+    --bg: #070712;
+    --bg-card: rgba(18, 18, 35, 0.75);
+    --border-card: rgba(255, 255, 255, 0.08);
+    --border-focus: rgba(239, 68, 68, 0.5);
+    --card-hover: rgba(26, 26, 48, 0.85);
+    
+    --red: #ef4444;
+    --red-glow: rgba(239, 68, 68, 0.35);
+    --gold: #f59e0b;
+    --gold-glow: rgba(245, 158, 11, 0.3);
+    --green: #10b981;
+    --green-glow: rgba(16, 185, 129, 0.3);
+    --purple: #a855f7;
+    --purple-glow: rgba(168, 85, 247, 0.3);
+    --cyan: #06b6d4;
+    --cyan-glow: rgba(6, 182, 212, 0.3);
+    --blue: #3b82f6;
+    
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --text-dim: #64748b;
+}
+
+html, body {
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
+    position: relative;
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
 }
 
 /* Background Atmosphere */
-.bg-scene{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
-.glow-orb{position:absolute;border-radius:50%;filter:blur(110px);opacity:.2}
-.glow-orb.o1{width:550px;height:550px;background:#4f46e5;top:-10%;left:-5%;animation:drift 18s ease-in-out infinite}
-.glow-orb.o2{width:450px;height:450px;background:#9333ea;top:35%;right:-10%;animation:drift 22s ease-in-out infinite reverse}
-.glow-orb.o3{width:400px;height:400px;background:#db2777;bottom:-10%;left:30%;animation:drift 26s ease-in-out infinite 2s}
-@keyframes drift{0%,100%{transform:translate(0,0)}50%{transform:translate(35px,-30px) scale(1.04)}}
-
-.grid-overlay{
-    position:fixed;inset:0;z-index:0;pointer-events:none;
-    background-image:linear-gradient(rgba(255,255,255,.015) 1px, transparent 1px),linear-gradient(90deg, rgba(255,255,255,.015) 1px, transparent 1px);
-    background-size:48px 48px;
+.bg-scene {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
+}
+.glow-orb {
+    position: absolute; border-radius: 50%; filter: blur(120px); opacity: 0.18;
+}
+.glow-orb.o1 { width: 450px; height: 450px; background: #dc2626; top: -10%; left: -10%; animation: floatOrb 20s infinite ease-in-out; }
+.glow-orb.o2 { width: 400px; height: 400px; background: #7c3aed; top: 40%; right: -15%; animation: floatOrb 25s infinite ease-in-out reverse; }
+.glow-orb.o3 { width: 350px; height: 350px; background: #0284c7; bottom: -10%; left: 20%; animation: floatOrb 18s infinite ease-in-out; }
+@keyframes floatOrb {
+    0%, 100% { transform: translate(0, 0); }
+    50% { transform: translate(30px, -25px) scale(1.05); }
 }
 
-.app-wrapper{position:relative;z-index:1}
-
-/* Nav */
-.top-nav{
-    display:flex;align-items:center;justify-content:space-between;
-    padding:16px 36px;
-    background:rgba(9,9,25,.75);backdrop-filter:blur(24px);
-    border-bottom:1px solid var(--card-border);
-    position:sticky;top:0;z-index:50;
+.grid-overlay {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background-image: linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
+    background-size: 32px 32px;
 }
-.brand{display:flex;align-items:center;gap:12px}
-.brand-icon{
-    width:36px;height:36px;border-radius:10px;
-    background:linear-gradient(135deg,var(--accent-blue),var(--accent-purple));
-    display:flex;align-items:center;justify-content:center;font-size:1.15em;
-    box-shadow:0 0 16px rgba(99,102,241,.4);flex-shrink:0;
+
+.app-wrapper {
+    position: relative; z-index: 1; width: 100%; max-width: 100vw; overflow-x: hidden;
 }
-.brand-meta{display:flex;flex-direction:column;gap:1px}
-.brand-title{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.1em;color:#fff;line-height:1.2}
-.brand-host{font-size:0.68em;color:var(--text-secondary);font-family:'JetBrains Mono',monospace;max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-
-.nav-right{display:flex;align-items:center;gap:10px}
-.live-indicator{
-    display:flex;align-items:center;gap:8px;
-    padding:6px 14px;border-radius:100px;
-    background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);
-    font-size:.76em;font-weight:700;color:var(--accent-green);
-    letter-spacing:.5px;flex-shrink:0;
-}
-.pulse{width:8px;height:8px;border-radius:50%;background:var(--accent-green);animation:livePulse 2s infinite}
-@keyframes livePulse{0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,.6)}50%{box-shadow:0 0 0 6px rgba(16,185,129,0)}}
-
-.main-content{max-width:1120px;margin:0 auto;padding:36px 24px 80px}
-
-/* Hero Section */
-.hero{text-align:center;padding:24px 0 36px;position:relative}
-.hero-logo{
-    width:110px;height:110px;border-radius:50%;object-fit:cover;
-    border:3px solid rgba(239,68,68,.7);
-    box-shadow:0 0 30px rgba(239,68,68,.4),0 0 60px rgba(239,68,68,.2);
-    margin-bottom:16px;animation:logoPulse 3s ease-in-out infinite;
-}
-@keyframes logoPulse{
-    0%,100%{transform:scale(1);box-shadow:0 0 25px rgba(239,68,68,.4),0 0 50px rgba(239,68,68,.2)}
-    50%{transform:scale(1.04);box-shadow:0 0 38px rgba(239,68,68,.7),0 0 75px rgba(239,68,68,.4)}
-}
-.hero h1{
-    font-family:'Space Grotesk',sans-serif;font-size:clamp(2.4em, 5vw, 3.4em);font-weight:800;
-    background:linear-gradient(135deg,#fff 0%,#f87171 45%,#ef4444 100%);
-    -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-    letter-spacing:-1px;margin-bottom:6px;text-transform:lowercase;
-}
-.hero-sub-title{
-    color:#fca5a5;font-weight:700;font-size:1.05em;letter-spacing:1px;
-    margin-bottom:6px;display:flex;align-items:center;justify-content:center;gap:6px;
-}
-.hero p{color:var(--text-secondary);font-size:0.95em}
-
-/* Search bar */
-.search-bar{
-    max-width:540px;margin:0 auto 36px;
-    display:flex;background:var(--card);
-    border:1px solid var(--card-border);border-radius:16px;
-    overflow:hidden;transition:border-color .3s,box-shadow .3s;
-}
-.search-bar:focus-within{border-color:var(--accent-blue);box-shadow:0 0 0 4px rgba(99,102,241,.15)}
-.search-bar input{flex:1;padding:15px 20px;background:0;border:0;color:#fff;font-size:.95em;outline:0;font-family:inherit}
-.search-bar input::placeholder{color:var(--text-dim)}
-.search-bar button{
-    padding:15px 28px;border:0;
-    background:linear-gradient(135deg,var(--accent-blue),var(--accent-purple));
-    color:#fff;font-weight:700;font-size:.92em;cursor:pointer;font-family:inherit;
-    transition:opacity .2s;
-}
-.search-bar button:hover{opacity:.9}
-
-/* Players Carousel */
-.sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
-.sec-title{font-family:'Space Grotesk',sans-serif;font-size:1.3em;font-weight:700;display:flex;align-items:center;gap:10px}
-.sec-badge{font-size:.65em;padding:3px 10px;border-radius:100px;background:rgba(255,255,255,.08);color:var(--text-secondary)}
-
-.carousel-box{margin-bottom:44px}
-.carousel{display:flex;gap:16px;overflow-x:auto;padding:6px 2px 16px;scroll-snap-type:x mandatory;scrollbar-width:none}
-.carousel::-webkit-scrollbar{display:none}
-
-.pcard{
-    flex:0 0 210px;scroll-snap-align:start;
-    background:var(--card);border:1px solid var(--card-border);
-    border-radius:20px;padding:22px 16px 18px;text-align:center;
-    transition:.3s;position:relative;
-}
-.pcard:hover{background:var(--card-hover);transform:translateY(-4px);box-shadow:0 16px 36px rgba(0,0,0,.4)}
-.pcard .abox{position:relative;display:inline-block;margin-bottom:12px}
-.pcard .av{width:70px;height:70px;border-radius:50%;border:3px solid rgba(255,255,255,.1);object-fit:cover;background:#15152e}
-.pcard .dot{position:absolute;bottom:2px;right:2px;width:18px;height:18px;border-radius:50%;border:3px solid var(--bg)}
-.dot.offline{background:var(--accent-red)}
-.dot.online{background:var(--accent-green);box-shadow:0 0 8px rgba(16,185,129,.6)}
-.dot.ingame{background:var(--accent-cyan);box-shadow:0 0 8px rgba(6,182,212,.6)}
-.dot.studio{background:var(--accent-gold)}
-
-.pcard .pname{font-weight:700;font-size:1em;margin-bottom:2px}
-.pcard .phandle{color:var(--text-secondary);font-size:.74em;margin-bottom:8px}
-
-.status-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 12px;border-radius:100px;font-size:.72em;font-weight:600}
-.status-badge.offline{background:rgba(239,68,68,.12);color:#f87171}
-.status-badge.online{background:rgba(16,185,129,.12);color:#4ade80}
-.status-badge.ingame{background:rgba(6,182,212,.12);color:#22d3ee}
-.status-badge.studio{background:rgba(245,158,11,.12);color:#fbbf24}
-
-.pcard .location-tag{color:var(--text-dim);font-size:.7em;margin-top:6px}
 
 /* ════════════════════════════════════════════════════════════
-   LIVE PLAYER STATS HUD (BLOXI FRUITS REALTIME)
+   NAVBAR (STICKY GLASSMORPHISM)
 ════════════════════════════════════════════════════════════ */
-.hud-container{margin-bottom:44px}
-.hud-card{
-    background:linear-gradient(145deg, rgba(255,255,255,.05) 0%, rgba(255,255,255,.02) 100%);
-    border:1px solid rgba(255,255,255,.1);border-radius:24px;
-    padding:28px;position:relative;overflow:hidden;
-    box-shadow:0 20px 50px rgba(0,0,0,.4);
+.top-nav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 20px; width: 100%;
+    background: rgba(8, 8, 20, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border-card);
+    position: sticky; top: 0; z-index: 50;
 }
-.hud-card::before{
-    content:'';position:absolute;top:0;left:0;right:0;height:3px;
-    background:linear-gradient(90deg,var(--accent-green),var(--accent-purple),var(--accent-gold));
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand-logo-nav {
+    width: 36px; height: 36px; border-radius: 10px; object-fit: cover;
+    border: 1.5px solid rgba(239, 68, 68, 0.6); box-shadow: 0 0 14px var(--red-glow);
+    flex-shrink: 0;
 }
-
-.hud-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px}
-.hud-user{display:flex;align-items:center;gap:14px}
-.hud-avatar{width:56px;height:56px;border-radius:50%;border:2px solid rgba(255,255,255,.15);object-fit:cover}
-.hud-name{font-family:'Space Grotesk',sans-serif;font-size:1.3em;font-weight:700}
-.hud-sub{font-size:.8em;color:var(--text-secondary)}
-.hud-sea{
-    padding:6px 16px;border-radius:100px;
-    background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.3);
-    color:#a5b4fc;font-size:.8em;font-weight:600;
+.brand-meta { display: flex; flex-direction: column; }
+.brand-title {
+    font-family: 'Space Grotesk', sans-serif; font-weight: 800; font-size: 1.05em;
+    color: #fff; letter-spacing: -0.3px; line-height: 1.15;
 }
-
-/* Stats 4-Grid */
-.stats-grid{
-    display:grid;grid-template-columns:repeat(auto-fit, minmax(210px, 1fr));
-    gap:14px;margin-bottom:24px;
+.brand-host {
+    font-size: 0.68em; color: var(--text-secondary); font-family: 'JetBrains Mono', monospace;
+    max-width: 170px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.stat-box{
-    background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);
-    border-radius:18px;padding:18px 20px;
-    display:flex;align-items:center;gap:16px;
-    transition:transform .3s,border-color .3s;
+.nav-actions { display: flex; align-items: center; gap: 8px; }
+.live-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 12px; border-radius: 100px;
+    background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3);
+    font-size: 0.72em; font-weight: 700; color: var(--green); letter-spacing: 0.5px;
 }
-.stat-box:hover{transform:translateY(-3px);border-color:rgba(255,255,255,.15)}
-.stat-icon{
-    width:50px;height:50px;border-radius:14px;
-    display:flex;align-items:center;justify-content:center;
-    font-size:1.6em;flex-shrink:0;
+.live-pulse {
+    width: 7px; height: 7px; border-radius: 50%; background: var(--green);
+    box-shadow: 0 0 8px var(--green); animation: pulsePing 2s infinite;
 }
-.stat-icon.beli{background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.3);color:#34d399}
-.stat-icon.frags{background:rgba(168,85,247,.15);border:1px solid rgba(168,85,247,.3);color:#c084fc}
-.stat-icon.bounty{background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.3);color:#fbbf24}
-.stat-icon.level{background:rgba(6,182,212,.15);border:1px solid rgba(6,182,212,.3);color:#22d3ee}
-
-.stat-label{font-size:.76em;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.5px;font-weight:600}
-.stat-value{
-    font-family:'Space Grotesk',sans-serif;font-size:1.4em;font-weight:800;
-    margin-top:2px;letter-spacing:-.5px;
+@keyframes pulsePing {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.3); opacity: 0.5; }
 }
-.stat-value.beli-val{color:#34d399}
-.stat-value.frags-val{color:#c084fc}
-.stat-value.bounty-val{color:#fbbf24}
-.stat-value.level-val{color:#22d3ee}
-
-/* Character Info Row */
-.char-details-row{
-    display:flex;gap:12px;flex-wrap:wrap;
-    padding-top:18px;border-top:1px solid rgba(255,255,255,.07);
+.sound-toggle-btn {
+    background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-card);
+    width: 34px; height: 34px; border-radius: 9px; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--text-secondary); font-size: 0.9em; transition: 0.2s;
 }
-.char-pill{
-    display:flex;align-items:center;gap:8px;
-    padding:8px 16px;border-radius:12px;
-    background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);
-    font-size:.82em;
-}
-.char-pill .cp-lbl{color:var(--text-secondary)}
-.char-pill .cp-val{font-weight:700;color:#fff}
+.sound-toggle-btn:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
 
 /* ════════════════════════════════════════════════════════════
-   LIVE INVENTORY MATRIX
+   MAIN CONTAINER
 ════════════════════════════════════════════════════════════ */
-.inv-container{margin-bottom:48px}
-
-.inv-toolbar{
-    display:flex;align-items:center;justify-content:space-between;
-    margin-bottom:18px;flex-wrap:wrap;gap:12px;
-}
-.cat-filters{display:flex;gap:6px;flex-wrap:wrap}
-.cbtn{
-    padding:8px 16px;border-radius:10px;
-    background:var(--card);border:1px solid var(--card-border);
-    color:var(--text-secondary);font-size:.8em;font-weight:600;
-    cursor:pointer;font-family:inherit;transition:.2s;
-    display:flex;align-items:center;gap:6px;
-}
-.cbtn:hover{background:var(--card-hover);color:#fff}
-.cbtn.active{background:rgba(99,102,241,.18);border-color:rgba(99,102,241,.4);color:#a5b4fc}
-.cbtn .count-badge{
-    padding:2px 7px;border-radius:6px;
-    background:rgba(255,255,255,.08);font-size:.82em;
+.main-content {
+    width: 100%; max-width: 1080px; margin: 0 auto;
+    padding: 20px 16px calc(70px + env(safe-area-inset-bottom));
 }
 
-.inv-search{
-    padding:8px 14px;border-radius:10px;
-    background:var(--card);border:1px solid var(--card-border);
-    color:#fff;font-size:.82em;outline:0;font-family:inherit;width:200px;
+/* ════════════════════════════════════════════════════════════
+   HERO BANNER
+════════════════════════════════════════════════════════════ */
+.hero { text-align: center; padding: 12px 0 24px; }
+.hero-logo-box {
+    display: inline-block; position: relative; margin-bottom: 12px;
 }
-.inv-search:focus{border-color:var(--accent-blue)}
+.hero-logo {
+    width: 90px; height: 90px; border-radius: 50%; object-fit: cover;
+    border: 3px solid rgba(239, 68, 68, 0.8);
+    box-shadow: 0 0 25px var(--red-glow), 0 0 50px rgba(239, 68, 68, 0.2);
+    animation: heroGlow 3s ease-in-out infinite;
+}
+@keyframes heroGlow {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 20px var(--red-glow); }
+    50% { transform: scale(1.03); box-shadow: 0 0 35px rgba(239, 68, 68, 0.6); }
+}
+.hero h1 {
+    font-family: 'Space Grotesk', sans-serif; font-size: clamp(1.8em, 6vw, 2.8em);
+    font-weight: 800; letter-spacing: -0.5px; margin-bottom: 4px;
+    background: linear-gradient(135deg, #ffffff 0%, #fca5a5 45%, #ef4444 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.hero-sub {
+    font-weight: 700; font-size: 0.9em; color: #fca5a5;
+    letter-spacing: 0.5px; margin-bottom: 6px;
+}
+.hero-desc {
+    color: var(--text-secondary); font-size: 0.84em; max-width: 520px; margin: 0 auto 14px;
+    line-height: 1.5;
+}
 
-/* Item Grid */
-.items-matrix{
-    display:grid;grid-template-columns:repeat(auto-fill, minmax(170px, 1fr));
-    gap:14px;
+/* Quick One-Tap Script Box on Hero */
+.hero-quick-script {
+    max-width: 560px; margin: 0 auto;
+    background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25);
+    border-radius: 14px; padding: 10px 14px;
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
 }
-.item-card{
-    background:var(--card);border:1px solid var(--card-border);
-    border-radius:18px;padding:20px 14px 16px;text-align:center;
-    transition:transform .3s,border-color .3s,box-shadow .3s;
-    position:relative;cursor:default;overflow:hidden;
+.hqs-text {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.72em; color: #fca5a5;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left;
 }
-.item-card:hover{
-    transform:translateY(-5px);border-color:rgba(255,255,255,.2);
-    box-shadow:0 16px 36px rgba(0,0,0,.35);
-    background:var(--card-hover);
+.btn-quick-copy {
+    padding: 7px 14px; border-radius: 8px; border: 0;
+    background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff;
+    font-weight: 700; font-size: 0.74em; cursor: pointer; white-space: nowrap;
+    box-shadow: 0 0 12px rgba(239, 68, 68, 0.4); transition: transform 0.15s;
+    font-family: inherit;
+}
+.btn-quick-copy:active { transform: scale(0.95); }
+
+/* ════════════════════════════════════════════════════════════
+   PLAYERS CAROUSEL
+════════════════════════════════════════════════════════════ */
+.sec-title-row {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px; margin-top: 10px;
+}
+.sec-title {
+    font-family: 'Space Grotesk', sans-serif; font-size: 1.15em; font-weight: 700;
+    display: flex; align-items: center; gap: 8px;
+}
+.sec-count {
+    font-size: 0.7em; padding: 2px 8px; border-radius: 100px;
+    background: rgba(255, 255, 255, 0.08); color: var(--text-secondary);
 }
 
-.item-img-frame{
-    width:84px;height:84px;margin:0 auto 12px;border-radius:16px;
-    display:flex;align-items:center;justify-content:center;
-    background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);
-    padding:6px;position:relative;
+.carousel-wrap { margin-bottom: 24px; width: 100%; overflow: hidden; }
+.carousel-track {
+    display: flex; gap: 12px; overflow-x: auto; padding: 4px 2px 14px;
+    -webkit-overflow-scrolling: touch; scroll-snap-type: x mandatory; scrollbar-width: none;
 }
-.item-img{
-    width:100%;height:100%;object-fit:contain;
-    filter:drop-shadow(0 6px 12px rgba(0,0,0,.4));
-    transition:transform .3s;
-}
-.item-card:hover .item-img{transform:scale(1.1)}
+.carousel-track::-webkit-scrollbar { display: none; }
 
-.item-name{font-weight:700;font-size:.9em;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.player-chip {
+    flex: 0 0 160px; scroll-snap-align: start;
+    background: var(--bg-card); border: 1px solid var(--border-card);
+    border-radius: 16px; padding: 14px 10px; text-align: center;
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    transition: transform 0.2s, border-color 0.2s;
+}
+.player-chip:hover { transform: translateY(-2px); border-color: rgba(255, 255, 255, 0.18); }
+.chip-av-wrap { position: relative; display: inline-block; margin-bottom: 8px; }
+.chip-av {
+    width: 48px; height: 48px; border-radius: 50%; object-fit: cover;
+    background: #14142b; border: 2px solid rgba(255, 255, 255, 0.1);
+}
+.chip-status-dot {
+    position: absolute; bottom: 0; right: 0; width: 13px; height: 13px;
+    border-radius: 50%; border: 2.5px solid var(--bg);
+}
+.chip-status-dot.online { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.chip-status-dot.ingame { background: var(--cyan); box-shadow: 0 0 6px var(--cyan); }
+.chip-status-dot.offline { background: var(--red); }
+.chip-name { font-weight: 700; font-size: 0.85em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chip-handle { font-size: 0.68em; color: var(--text-secondary); margin-bottom: 6px; }
+.chip-badge {
+    display: inline-block; padding: 3px 8px; border-radius: 6px;
+    font-size: 0.65em; font-weight: 700;
+}
+.chip-badge.online { background: rgba(16, 185, 129, 0.15); color: #6ee7b7; }
+.chip-badge.ingame { background: rgba(6, 182, 212, 0.15); color: #67e8f9; }
+.chip-badge.offline { background: rgba(239, 68, 68, 0.15); color: #fca5a5; }
 
-.item-tag{
-    display:inline-block;padding:3px 10px;border-radius:6px;
-    font-size:.65em;font-weight:700;text-transform:uppercase;letter-spacing:.5px;
+/* ════════════════════════════════════════════════════════════
+   VIP REALTIME HUD CARD (THE MAIN SHOWCASE)
+════════════════════════════════════════════════════════════ */
+.hud-wrapper { margin-bottom: 28px; width: 100%; }
+.vip-hud-card {
+    background: linear-gradient(160deg, rgba(24, 24, 46, 0.85) 0%, rgba(12, 12, 26, 0.95) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px;
+    padding: 18px 14px; position: relative; overflow: hidden;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
 }
-.tag-Fruit{background:rgba(168,85,247,.18);color:#d8b4fe;border:1px solid rgba(168,85,247,.3)}
-.tag-Sword{background:rgba(239,68,68,.18);color:#fca5a5;border:1px solid rgba(239,68,68,.3)}
-.tag-Gun{background:rgba(249,115,22,.18);color:#fdba74;border:1px solid rgba(249,115,22,.3)}
-.tag-FightingStyle{background:rgba(236,72,153,.18);color:#f472b6;border:1px solid rgba(236,72,153,.3)}
-.tag-Accessory{background:rgba(6,182,212,.18);color:#67e8f9;border:1px solid rgba(6,182,212,.3)}
-.tag-Ability{background:rgba(245,158,11,.18);color:#fcd34d;border:1px solid rgba(245,158,11,.3)}
-.tag-Item{background:rgba(16,185,129,.18);color:#6ee7b7;border:1px solid rgba(16,185,129,.3)}
-.tag-Other{background:rgba(148,163,184,.15);color:#cbd5e1;border:1px solid rgba(148,163,184,.3)}
+@media (min-width: 640px) {
+    .vip-hud-card { padding: 22px 20px; }
+}
+.vip-hud-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, #ef4444, #f59e0b, #a855f7, #06b6d4);
+}
 
-.equipped-pill{
-    position:absolute;top:10px;right:10px;
-    padding:3px 8px;border-radius:6px;
-    background:rgba(16,185,129,.2);border:1px solid rgba(16,185,129,.4);
-    color:#34d399;font-size:.6em;font-weight:800;letter-spacing:.5px;
+/* HUD Top Header */
+.hud-user-header {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 10px; margin-bottom: 14px;
 }
-.item-source{font-size:.65em;color:var(--text-dim);margin-top:6px}
+.hud-user-left { display: flex; align-items: center; gap: 12px; }
+.hud-user-avatar {
+    width: 48px; height: 48px; border-radius: 50%; object-fit: cover;
+    border: 2px solid rgba(239, 68, 68, 0.6); box-shadow: 0 0 12px var(--red-glow);
+    background: #181830; flex-shrink: 0;
+}
+.hud-user-info { display: flex; flex-direction: column; }
+.hud-user-name {
+    font-family: 'Space Grotesk', sans-serif; font-size: 1.1em; font-weight: 700;
+    color: #fff; line-height: 1.2;
+}
+.hud-user-sync {
+    font-size: 0.7em; color: var(--text-secondary); display: flex; align-items: center; gap: 4px;
+}
+.hud-sea-tag {
+    padding: 4px 10px; border-radius: 100px;
+    background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.35);
+    color: #c7d2fe; font-size: 0.72em; font-weight: 700;
+}
 
-/* Script Box */
-.script-card{
-    background:var(--card);border:1px solid var(--card-border);
-    border-radius:20px;overflow:hidden;margin-top:50px;
+/* ════════════════════════════════════════════════════════════
+   BOUNTY HUNTER MASTER BANNER
+════════════════════════════════════════════════════════════ */
+.bounty-showcase-box {
+    background: radial-gradient(circle at top, rgba(245, 158, 11, 0.12) 0%, rgba(20, 20, 38, 0.7) 100%);
+    border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 16px;
+    padding: 14px 12px; margin-bottom: 12px; position: relative; overflow: hidden;
 }
-.script-header{
-    padding:24px 28px 16px;
-    display:flex;align-items:center;justify-content:space-between;
+.bsb-top {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 6px; margin-bottom: 6px;
 }
-.script-header h3{font-family:'Space Grotesk',sans-serif;font-size:1.15em}
-.script-header p{color:var(--text-secondary);font-size:.84em;margin-top:2px}
-.terminal-window{
-    margin:0 20px 20px;background:#060613;border-radius:14px;
-    border:1px solid rgba(255,255,255,.05);overflow:hidden;
+.bsb-rank-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 8px; border-radius: 8px;
+    background: rgba(245, 158, 11, 0.2); border: 1px solid rgba(245, 158, 11, 0.4);
+    color: #fef08a; font-size: 0.7em; font-weight: 800; letter-spacing: 0.3px;
 }
-.terminal-bar{
-    display:flex;align-items:center;justify-content:space-between;
-    padding:10px 16px;background:rgba(255,255,255,.02);border-bottom:1px solid rgba(255,255,255,.04);
+.bsb-session-time {
+    font-size: 0.68em; color: var(--text-secondary); font-family: 'JetBrains Mono', monospace;
 }
-.window-dots{display:flex;gap:6px}
-.window-dots span{width:10px;height:10px;border-radius:50%}
-.window-dots span:nth-child(1){background:#ff5f57}
-.window-dots span:nth-child(2){background:#ffbd2e}
-.window-dots span:nth-child(3){background:#28c840}
-.btn-copy{
-    padding:6px 14px;border-radius:8px;
-    background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);
-    color:var(--text-secondary);cursor:pointer;font-size:.76em;font-family:inherit;
-    font-weight:600;transition:.2s;
+
+.bsb-main-val-row {
+    display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
+    margin: 4px 0 8px;
 }
-.btn-copy:hover{background:rgba(99,102,241,.2);color:#fff}
-.code-area{
-    padding:18px;font-family:'JetBrains Mono',monospace;
-    font-size:.76em;line-height:1.8;overflow-x:auto;max-height:320px;color:#cbd5e1;
+.bsb-raw-bounty {
+    font-family: 'Space Grotesk', sans-serif; font-size: clamp(1.6em, 5vw, 2.3em);
+    font-weight: 800; color: #fbbf24; text-shadow: 0 0 20px rgba(245, 158, 11, 0.5);
+    letter-spacing: -0.5px; line-height: 1;
+}
+.bsb-short-bounty {
+    font-family: 'Space Grotesk', sans-serif; font-size: 1.05em; font-weight: 700;
+    color: #fef08a; background: rgba(245, 158, 11, 0.2);
+    padding: 2px 7px; border-radius: 6px; border: 1px solid rgba(245, 158, 11, 0.35);
+}
+.bsb-delta-tag {
+    font-size: 0.72em; font-weight: 700; color: #4ade80;
+    background: rgba(16, 185, 129, 0.15); padding: 2px 6px; border-radius: 4px;
+}
+
+/* Progress Bar to Next Million */
+.bsb-progress-wrap { margin-top: 6px; }
+.bsb-progress-info {
+    display: flex; justify-content: space-between; font-size: 0.66em;
+    color: var(--text-dim); margin-bottom: 4px; font-weight: 600;
+}
+.bsb-progress-track {
+    width: 100%; height: 6px; border-radius: 100px;
+    background: rgba(255, 255, 255, 0.08); overflow: hidden; position: relative;
+}
+.bsb-progress-bar {
+    height: 100%; border-radius: 100px;
+    background: linear-gradient(90deg, #f59e0b, #fbbf24);
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.8);
+    transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ════════════════════════════════════════════════════════════
+   2x2 STATS MATRIX (OPTIMIZED FOR MOBILE & DESKTOP)
+════════════════════════════════════════════════════════════ */
+.stats-matrix {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;
+    margin-bottom: 12px; width: 100%;
+}
+@media (min-width: 768px) {
+    .stats-matrix { grid-template-columns: repeat(4, 1fr); gap: 12px; }
+}
+
+.stat-cell {
+    background: rgba(255, 255, 255, 0.035); border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 12px; padding: 10px 8px; display: flex; align-items: center; gap: 8px;
+    transition: transform 0.2s, border-color 0.2s;
+}
+.stat-cell:hover { transform: translateY(-2px); border-color: rgba(255, 255, 255, 0.15); }
+
+.stat-cell-icon {
+    width: 36px; height: 36px; border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.15em; flex-shrink: 0;
+}
+.stat-cell-icon.beli { background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: #34d399; }
+.stat-cell-icon.frags { background: rgba(168, 85, 247, 0.15); border: 1px solid rgba(168, 85, 247, 0.3); color: #c084fc; }
+.stat-cell-icon.level { background: rgba(6, 182, 212, 0.15); border: 1px solid rgba(6, 182, 212, 0.3); color: #22d3ee; }
+.stat-cell-icon.pvp { background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171; }
+
+.stat-cell-data { display: flex; flex-direction: column; overflow: hidden; }
+.stat-cell-label {
+    font-size: 0.62em; color: var(--text-secondary); text-transform: uppercase;
+    font-weight: 700; letter-spacing: 0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.stat-cell-value {
+    font-family: 'Space Grotesk', sans-serif; font-size: 1.05em; font-weight: 800;
+    margin-top: 1px; letter-spacing: -0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.stat-cell-value.beli-val { color: #34d399; }
+.stat-cell-value.frags-val { color: #c084fc; }
+.stat-cell-value.level-val { color: #22d3ee; }
+.stat-cell-value.pvp-val { color: #f87171; }
+
+/* ════════════════════════════════════════════════════════════
+   HP & ENERGY GAUGES
+════════════════════════════════════════════════════════════ */
+.gauges-row {
+    display: grid; grid-template-columns: 1fr; gap: 8px;
+    margin-bottom: 10px;
+}
+@media (min-width: 520px) {
+    .gauges-row { grid-template-columns: 1fr 1fr; }
+}
+
+.gauge-box {
+    background: rgba(255, 255, 255, 0.025); border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 10px; padding: 8px 10px;
+}
+.gauge-header {
+    display: flex; justify-content: space-between; font-size: 0.66em;
+    font-weight: 700; margin-bottom: 4px;
+}
+.gauge-bar-track {
+    width: 100%; height: 5px; border-radius: 100px;
+    background: rgba(255, 255, 255, 0.06); overflow: hidden;
+}
+.gauge-bar-fill {
+    height: 100%; border-radius: 100px; transition: width 0.4s ease;
+}
+.gauge-bar-fill.hp { background: linear-gradient(90deg, #10b981, #34d399); box-shadow: 0 0 8px rgba(16, 185, 129, 0.5); }
+.gauge-bar-fill.energy { background: linear-gradient(90deg, #0284c7, #38bdf8); box-shadow: 0 0 8px rgba(56, 189, 248, 0.5); }
+
+/* Character Tags Row */
+.character-tags-row {
+    display: flex; gap: 6px; flex-wrap: wrap; padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+.char-chip {
+    padding: 4px 8px; border-radius: 8px; font-size: 0.7em;
+    background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.06);
+    display: inline-flex; align-items: center; gap: 5px;
+}
+.char-chip-lbl { color: var(--text-secondary); }
+.char-chip-val { font-weight: 700; color: #fff; }
+
+/* ════════════════════════════════════════════════════════════
+   INVENTORY MATRIX (MOBILE 2-COL / RESPONSIVE)
+════════════════════════════════════════════════════════════ */
+.inv-section { margin-bottom: 28px; width: 100%; }
+
+.inv-toolbar {
+    display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;
+}
+@media (min-width: 640px) {
+    .inv-toolbar { flex-direction: row; align-items: center; justify-content: space-between; }
+}
+
+.inv-filters-scroll {
+    display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch; scrollbar-width: none;
+}
+.inv-filters-scroll::-webkit-scrollbar { display: none; }
+
+.filter-btn {
+    padding: 6px 10px; border-radius: 8px; border: 1px solid var(--border-card);
+    background: var(--bg-card); color: var(--text-secondary);
+    font-size: 0.72em; font-weight: 700; cursor: pointer; white-space: nowrap;
+    display: inline-flex; align-items: center; gap: 4px; transition: 0.15s;
+    font-family: inherit;
+}
+.filter-btn:hover { background: var(--card-hover); color: #fff; }
+.filter-btn.active {
+    background: rgba(239, 68, 68, 0.18); border-color: rgba(239, 68, 68, 0.45);
+    color: #fca5a5;
+}
+.filter-badge {
+    padding: 1px 5px; border-radius: 4px; background: rgba(255, 255, 255, 0.08);
+    font-size: 0.85em;
+}
+
+.inv-search-box {
+    position: relative; width: 100%; max-width: 240px;
+}
+@media (max-width: 639px) {
+    .inv-search-box { max-width: 100%; }
+}
+.inv-search-input {
+    width: 100%; padding: 8px 12px 8px 28px; border-radius: 8px;
+    background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border-card);
+    color: #fff; font-size: 0.76em; outline: none; font-family: inherit;
+}
+.inv-search-input:focus { border-color: var(--red); }
+.inv-search-icon {
+    position: absolute; left: 9px; top: 50%; transform: translateY(-50%);
+    font-size: 0.74em; color: var(--text-dim); pointer-events: none;
+}
+
+/* Item Grid (Strict 2-Column on Mobile, 4-6 on Desktop) */
+.item-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;
+    width: 100%;
+}
+@media (min-width: 480px) {
+    .item-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+}
+@media (min-width: 768px) {
+    .item-grid { grid-template-columns: repeat(4, 1fr); gap: 12px; }
+}
+@media (min-width: 1024px) {
+    .item-grid { grid-template-columns: repeat(5, 1fr); }
+}
+
+.item-card {
+    background: var(--bg-card); border: 1px solid var(--border-card);
+    border-radius: 14px; padding: 12px 8px 10px; text-align: center;
+    position: relative; overflow: hidden; transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+.item-card:hover {
+    transform: translateY(-2px); border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4);
+}
+
+/* Rarity Tiers */
+.item-card.tier-mythical {
+    border-color: rgba(239, 68, 68, 0.4);
+    background: radial-gradient(circle at top, rgba(239, 68, 68, 0.12) 0%, rgba(20, 20, 36, 0.8) 100%);
+}
+.item-card.tier-legendary {
+    border-color: rgba(168, 85, 247, 0.4);
+    background: radial-gradient(circle at top, rgba(168, 85, 247, 0.12) 0%, rgba(20, 20, 36, 0.8) 100%);
+}
+
+.item-img-box {
+    width: 56px; height: 56px; margin: 0 auto 6px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 3px; position: relative;
+}
+.item-img {
+    width: 100%; height: 100%; object-fit: contain;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5));
+    transition: transform 0.25s;
+}
+.item-card:hover .item-img { transform: scale(1.08); }
+
+.item-name {
+    font-size: 0.76em; font-weight: 700; color: #fff;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    margin-bottom: 3px; padding: 0 2px;
+}
+
+.item-tag {
+    display: inline-block; padding: 2px 6px; border-radius: 4px;
+    font-size: 0.58em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;
+}
+.tag-Fruit { background: rgba(168, 85, 247, 0.2); color: #d8b4fe; border: 1px solid rgba(168, 85, 247, 0.35); }
+.tag-Sword { background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.35); }
+.tag-Gun { background: rgba(249, 115, 22, 0.2); color: #fdba74; border: 1px solid rgba(249, 115, 22, 0.35); }
+.tag-FightingStyle { background: rgba(236, 72, 153, 0.2); color: #f472b6; border: 1px solid rgba(236, 72, 153, 0.35); }
+.tag-Accessory { background: rgba(6, 182, 212, 0.2); color: #67e8f9; border: 1px solid rgba(6, 182, 212, 0.35); }
+.tag-Other { background: rgba(148, 163, 184, 0.15); color: #cbd5e1; border: 1px solid rgba(148, 163, 184, 0.3); }
+
+.item-equipped-badge {
+    position: absolute; top: 5px; right: 5px;
+    padding: 2px 5px; border-radius: 4px;
+    background: rgba(16, 185, 129, 0.25); border: 1px solid rgba(16, 185, 129, 0.5);
+    color: #6ee7b7; font-size: 0.52em; font-weight: 800; letter-spacing: 0.5px;
+}
+
+/* ════════════════════════════════════════════════════════════
+   COLLAPSIBLE SCRIPT EXECUTOR BOX
+════════════════════════════════════════════════════════════ */
+.script-section {
+    background: var(--bg-card); border: 1px solid var(--border-card);
+    border-radius: 16px; padding: 16px 14px; margin-top: 24px;
+    width: 100%;
+}
+.script-sec-header {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 8px; margin-bottom: 12px;
+}
+.script-sec-title {
+    font-family: 'Space Grotesk', sans-serif; font-size: 1.05em; font-weight: 700;
+}
+.script-sec-desc { font-size: 0.74em; color: var(--text-secondary); margin-top: 2px; }
+
+.exec-banner {
+    background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.35);
+    border-radius: 12px; padding: 12px; margin-bottom: 12px;
+    display: flex; flex-direction: column; gap: 8px;
+}
+.exec-code-line {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.72em; color: #fca5a5;
+    background: rgba(0, 0, 0, 0.4); padding: 8px 10px; border-radius: 8px;
+    word-break: break-all; white-space: pre-wrap; line-height: 1.4;
+}
+.exec-btn-row { display: flex; gap: 8px; width: 100%; }
+.btn-exec-action {
+    flex: 1; padding: 9px; border-radius: 8px; border: 0;
+    font-size: 0.75em; font-weight: 700; cursor: pointer; text-align: center;
+    font-family: inherit; transition: opacity 0.2s;
+}
+.btn-exec-action.primary {
+    background: linear-gradient(135deg, #ef4444, #b91c1c); color: #fff;
+    box-shadow: 0 0 14px rgba(239, 68, 68, 0.4);
+}
+.btn-exec-action.secondary {
+    background: rgba(255, 255, 255, 0.07); color: #cbd5e1; border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.btn-exec-action:active { opacity: 0.85; }
+
+/* Collapsible Lua Source */
+.lua-code-details {
+    width: 100%;
+}
+.lua-code-summary {
+    cursor: pointer; font-size: 0.72em; color: var(--text-secondary);
+    padding: 6px 0; user-select: none;
+}
+.lua-pre-box {
+    margin-top: 8px; background: #050510; border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 10px; padding: 12px; max-height: 240px; overflow-y: auto; overflow-x: hidden;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.68em; line-height: 1.6;
+    color: #94a3b8; white-space: pre-wrap; word-break: break-all; width: 100%;
+}
+
+/* ════════════════════════════════════════════════════════════
+   FLOATING ACTION DOCK ON MOBILE
+════════════════════════════════════════════════════════════ */
+.floating-dock {
+    position: fixed; bottom: calc(12px + env(safe-area-inset-bottom));
+    left: 50%; transform: translateX(-50%); z-index: 90;
+    display: flex; align-items: center; gap: 6px;
+    background: rgba(14, 14, 28, 0.88); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 100px;
+    padding: 5px 8px; box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+}
+.dock-btn {
+    padding: 6px 12px; border-radius: 100px; border: 0;
+    background: transparent; color: var(--text-secondary); font-size: 0.72em;
+    font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 5px;
+    font-family: inherit; transition: 0.2s; white-space: nowrap;
+}
+.dock-btn.active, .dock-btn:hover { color: #fff; background: rgba(255, 255, 255, 0.08); }
+.dock-btn.copy-highlight {
+    background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff;
+    box-shadow: 0 0 12px rgba(239, 68, 68, 0.5);
 }
 
 /* Toast */
-.toast-notice{
-    position:fixed;bottom:24px;right:24px;z-index:999;
-    padding:14px 24px;border-radius:14px;
-    font-size:.88em;font-weight:600;backdrop-filter:blur(20px);
-    transform:translateY(80px);opacity:0;transition:all .4s cubic-bezier(.16,1,.3,1);
+.toast-msg {
+    position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-60px);
+    z-index: 999; padding: 10px 18px; border-radius: 12px; font-size: 0.82em; font-weight: 700;
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    opacity: 0; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); pointer-events: none;
+    max-width: 90vw; text-align: center; white-space: nowrap;
 }
-.toast-notice.show{transform:translateY(0);opacity:1}
-.toast-notice.ok{background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.3);color:#34d399}
-.toast-notice.err{background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);color:#f87171}
-
-/* ════════════════════════════════════════════════════════════
-   MOBILE RESPONSIVENESS & TOUCH OPTIMIZATIONS
-════════════════════════════════════════════════════════════ */
-@media(max-width:768px){
-    .top-nav{padding:12px 16px}
-    .brand-title{font-size:0.95em}
-    .brand-host{max-width:130px;font-size:0.62em}
-    .live-indicator{padding:5px 10px;font-size:0.7em}
-    .main-content{padding:18px 12px calc(40px + env(safe-area-inset-bottom))}
-    
-    .hero{padding:12px 0 24px}
-    .hero h1{font-size:clamp(1.7em, 6.5vw, 2.4em);margin-bottom:6px}
-    .hero p{font-size:0.86em}
-    
-    .search-bar{margin-bottom:24px;border-radius:12px}
-    .search-bar input{padding:12px 14px;font-size:0.88em}
-    .search-bar button{padding:12px 18px;font-size:0.85em}
-    
-    .sec-head{margin-bottom:12px}
-    .sec-title{font-size:1.1em}
-    
-    .carousel-box{margin-bottom:30px}
-    .carousel{gap:12px;padding:4px 0 12px;-webkit-overflow-scrolling:touch}
-    .pcard{flex:0 0 160px;padding:16px 12px 14px;border-radius:16px}
-    .pcard .av{width:56px;height:56px}
-    .pcard .pname{font-size:0.9em}
-    .pcard .phandle{font-size:0.68em}
-    .status-badge{font-size:0.65em;padding:3px 8px}
-    
-    .hud-container{margin-bottom:32px}
-    .hud-card{padding:18px 14px;border-radius:18px}
-    .hud-header{margin-bottom:16px;gap:10px}
-    .hud-avatar{width:46px;height:46px}
-    .hud-name{font-size:1.05em}
-    .hud-sub{font-size:0.72em}
-    .hud-sea{padding:4px 10px;font-size:0.72em}
-    
-    .stats-grid{grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
-    .stat-box{padding:12px 10px;border-radius:14px;gap:10px}
-    .stat-icon{width:40px;height:40px;border-radius:10px;font-size:1.25em}
-    .stat-label{font-size:0.66em}
-    .stat-value{font-size:1.15em}
-    .stat-sub{font-size:0.68em}
-    
-    .char-details-row{gap:6px;padding-top:12px}
-    .char-pill{padding:6px 10px;font-size:0.72em;border-radius:8px}
-    
-    .inv-container{margin-bottom:36px}
-    .inv-toolbar{flex-direction:column;align-items:stretch;gap:10px;margin-bottom:14px}
-    .cat-filters{overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch;padding-bottom:4px;scrollbar-width:none}
-    .cat-filters::-webkit-scrollbar{display:none}
-    .cbtn{padding:6px 12px;font-size:0.75em;flex-shrink:0;border-radius:8px}
-    .inv-search{width:100%;font-size:0.82em;padding:9px 12px}
-    
-    .items-matrix{grid-template-columns:repeat(2, 1fr);gap:10px}
-    .item-card{padding:14px 8px 12px;border-radius:14px}
-    .item-img-frame{width:64px;height:64px;border-radius:12px;margin-bottom:8px}
-    .item-name{font-size:0.8em}
-    .item-tag{font-size:0.6em;padding:2px 6px}
-    .equipped-pill{top:6px;right:6px;font-size:0.55em;padding:2px 6px}
-    .item-source{font-size:0.6em}
-    
-    .script-card{margin-top:28px;border-radius:16px}
-    .script-header{padding:16px 14px 12px;flex-direction:column;align-items:flex-start;gap:10px}
-    .script-header > div:last-child{width:100%;display:flex;gap:6px}
-    .btn-copy{flex:1;text-align:center;padding:8px 6px;font-size:0.72em}
-    
-    .one-line-box{margin:0 12px 12px!important;padding:10px 12px!important;flex-direction:column!important;align-items:stretch!important;gap:8px!important}
-    .one-line-box code{font-size:0.72em;word-break:break-all}
-    
-    .terminal-window{margin:0 12px 14px;border-radius:10px}
-    .code-area{padding:12px;font-size:0.66em;max-height:200px}
-    
-    .toast-notice{left:12px;right:12px;bottom:calc(16px + env(safe-area-inset-bottom));max-width:380px;margin:0 auto;text-align:center;font-size:0.82em;padding:12px 16px}
-}
-
-@media(max-width:380px){
-    .stats-grid{grid-template-columns:1fr 1fr;gap:6px}
-    .stat-box{padding:10px 8px;gap:8px}
-    .stat-icon{width:34px;height:34px;font-size:1.1em}
-    .stat-value{font-size:1.02em}
-    .items-matrix{grid-template-columns:repeat(2, 1fr);gap:8px}
-}
+.toast-msg.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+.toast-msg.ok { background: rgba(16, 185, 129, 0.9); color: #fff; box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4); }
+.toast-msg.err { background: rgba(239, 68, 68, 0.9); color: #fff; box-shadow: 0 10px 25px rgba(239, 68, 68, 0.4); }
 </style>
 </head>
 <body>
@@ -461,428 +657,338 @@ body{
 
 <div class="app-wrapper">
 
-    <!-- Navbar -->
+    <!-- Top Navigation -->
     <nav class="top-nav">
         <div class="brand">
-            <img src="/static/logo.jpg" alt="AngusHub" style="width:38px;height:38px;border-radius:10px;object-fit:cover;border:1.5px solid rgba(239,68,68,0.5);box-shadow:0 0 14px rgba(239,68,68,0.4);flex-shrink:0">
+            <img class="brand-logo-nav" src="/static/logo.jpg" alt="AngusHub Logo">
             <div class="brand-meta">
                 <span class="brand-title">angushubxhunter</span>
-                <span class="brand-host" id="hostBadge" title="Server URL">ค่ายโปรล่าค่าหัว · {{ current_host_url or 'https://angushubxhunter.onrender.com' }}</span>
+                <span class="brand-host" id="hostBadge">ค่ายโปรล่าค่าหัว · {{ current_host_url or 'https://angushubxhunter.onrender.com' }}</span>
             </div>
         </div>
-        <div class="nav-right">
-            <div class="live-indicator">
-                <span class="pulse"></span>
-                <span class="live-text">LIVE SYNC</span>
+        <div class="nav-actions">
+            <div class="live-pill">
+                <span class="live-pulse"></span>
+                <span id="pingText">LIVE</span>
             </div>
+            <button class="sound-toggle-btn" id="soundBtn" onclick="toggleSound()" title="เปิด/ปิดเสียง">🔊</button>
         </div>
     </nav>
 
     <div class="main-content">
 
-        <!-- Hero -->
-        <div class="hero">
-            <div>
+        <!-- Hero Header -->
+        <header class="hero">
+            <div class="hero-logo-box">
                 <img class="hero-logo" src="/static/logo.jpg" alt="AngusHub Logo">
             </div>
             <h1>angushubxhunter</h1>
-            <div class="hero-sub-title">⚔️ ค่ายโปรล่าค่าหัว BLOX FRUITS ☠️</div>
-            <p>ติดตามสถานะออนไลน์, ค่าหัวจริง, เงินเขียว, เงินม่วง และสแกนคลังไอเทมแบบเรียลไทม์</p>
+            <div class="hero-sub">⚔️ ค่ายโปรล่าค่าหัว BLOX FRUITS ☠️</div>
+            <p class="hero-desc">ติดตามค่าหัวจริง, เงินเขียว, เงินม่วง, เลเวล และระบบตรวจคลังไอเทมแบบเรียลไทม์ 24 ชม.</p>
+
+            <!-- Quick Copy One-Liner Box -->
+            <div class="hero-quick-script">
+                <div class="hqs-text" id="oneLinerCode">loadstring(game:HttpGet("https://angushubxhunter.onrender.com/script.lua"))()</div>
+                <button class="btn-quick-copy" onclick="copyOneLiner()">⚡ คัดลอก</button>
+            </div>
+        </header>
+
+        <!-- Players Carousel Section -->
+        <div class="sec-title-row">
+            <div class="sec-title">
+                👥 ผู้เล่นที่ติดตาม
+                <span class="sec-count" id="playerCount">{{ players|length }}</span>
+            </div>
         </div>
 
-        <!-- Search -->
-        <div class="search-bar">
-            <input id="userIdInput" placeholder="ใส่ Roblox User ID เพื่อเริ่มติดตาม..." onkeydown="if(event.key==='Enter')checkUser()">
-            <button onclick="checkUser()">ค้นหา</button>
-        </div>
-
-        <!-- Players Carousel -->
-        <div class="sec-head">
-            <div class="sec-title">👥 ผู้เล่นที่ติดตาม <span class="sec-badge" id="playerCount">{{ players|length }}</span></div>
-        </div>
-        <div class="carousel-box">
-            <div class="carousel" id="playersCarousel">
+        <div class="carousel-wrap">
+            <div class="carousel-track" id="playersCarousel">
                 {% if players %}
                     {% for uid, p in players.items() %}
-                    <div class="pcard" id="pc-{{ uid }}">
-                        <div class="abox">
-                            <img class="av" src="{{ p.avatar }}" alt="" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22150%22 height=%22150%22%3E%3Crect fill=%22%2315152e%22 width=%22150%22 height=%22150%22 rx=%2275%22/%3E%3Ctext x=%2275%22 y=%2295%22 text-anchor=%22middle%22 fill=%22%23666%22 font-size=%2250%22%3E%3F%3C/text%3E%3C/svg%3E'">
-                            <div class="dot {{ p.cls }}"></div>
+                    <div class="player-chip" id="pc-{{ uid }}">
+                        <div class="chip-av-wrap">
+                            <img class="chip-av" src="{{ p.avatar }}" alt="" onerror="this.src='/static/logo.jpg'">
+                            <div class="chip-status-dot {{ p.cls }}"></div>
                         </div>
-                        <div class="pname">{{ p.display }}</div>
-                        <div class="phandle">@{{ p.name }} · {{ p.uid }}</div>
-                        <div class="status-badge {{ p.cls }}">{{ p.status }}</div>
-                        <div class="location-tag">📍 {{ p.location or 'กำลังติดตาม' }}</div>
+                        <div class="chip-name">{{ p.display }}</div>
+                        <div class="chip-handle">@{{ p.name }}</div>
+                        <span class="chip-badge {{ p.cls }}">{{ p.status }}</span>
                     </div>
                     {% endfor %}
                 {% else %}
-                    <div style="padding:28px;text-align:center;color:var(--text-dim);width:100%">
-                        👤 ยังไม่มีผู้เล่นในระบบ — ใส่ User ID ด้านบน หรือรันสคริปต์ในเกมเพื่อเชื่อมต่ออัตโนมัติ
+                    <div style="padding:16px;text-align:center;color:var(--text-dim);width:100%;font-size:0.8em">
+                        🎮 รันสคริปต์ในเกมเพื่อเชื่อมต่อสถานะผู้เล่นแบบเรียลไทม์
                     </div>
                 {% endif %}
             </div>
         </div>
 
         <!-- ════════════════════════════════════════════════════════════
-             REALTIME BLOX FRUITS HUD (DYNAMIC LIVE UPDATES)
+             REALTIME BLOX FRUITS HUD (DYNAMIC MULTI-PLAYER)
         ════════════════════════════════════════════════════════════ -->
         <div id="hudWrapper">
             {% for uid, inv in inventories.items() %}
-            <div class="hud-container" id="hud-{{ uid }}">
-                <div class="hud-card">
-                    <div class="hud-header">
-                        <div class="hud-user">
-                            <img class="hud-avatar" src="{{ players[uid].avatar if uid in players else '' }}" onerror="this.style.display='none'">
-                            <div>
-                                <div class="hud-name">{{ inv.display_name }} (@{{ inv.username }})</div>
-                                <div class="hud-sub">🔄 อัพเดตล่าสุด: <span class="sync-time">{{ inv.scan_time }}</span></div>
-                            </div>
-                        </div>
-                        <div class="hud-sea">🌊 {{ inv.sea or inv.game_name or 'Blox Fruits' }}</div>
-                    </div>
-
-                    <!-- 4 Live Stats Cards -->
-                    <div class="stats-grid">
-                        <!-- Beli (เงินเขียว) -->
-                        <div class="stat-box">
-                            <div class="stat-icon beli">💰</div>
-                            <div>
-                                <div class="stat-label">Beli (เงินเขียว)</div>
-                                <div class="stat-value beli-val" id="beli-{{ uid }}">${{ "{:,.0f}".format(inv.beli or 0) }}</div>
-                            </div>
-                        </div>
-
-                        <!-- Fragments (เงินม่วง) -->
-                        <div class="stat-box">
-                            <div class="stat-icon frags">🔮</div>
-                            <div>
-                                <div class="stat-label">Fragments (เงินม่วง)</div>
-                                <div class="stat-value frags-val" id="frags-{{ uid }}">ƒ {{ "{:,.0f}".format(inv.fragments or 0) }}</div>
-                            </div>
-                        </div>
-
-                        <!-- Bounty / Honor (ค่าหัว / เกียรติยศ) -->
-                        <div class="stat-box">
-                            <div class="stat-icon bounty" id="bounty-icon-{{ uid }}">{{ inv.bounty_icon or '☠️' }}</div>
-                            <div>
-                                <div class="stat-label" id="bounty-lbl-{{ uid }}">{{ inv.bounty_label or 'Bounty / Honor' }}</div>
-                                <div class="stat-value bounty-val" id="bounty-{{ uid }}">{{ "{:,.0f}".format(inv.bounty or 0) if (inv.bounty is number) else inv.bounty }}</div>
-                                <div class="stat-sub" id="bounty-sub-{{ uid }}" style="font-size:0.75em;color:#fcd34d;font-weight:600;margin-top:2px">
-                                    {% if inv.bounty and inv.bounty >= 1000000 %}
-                                    ≈ {{ "%.2f"|format(inv.bounty / 1000000) }}M
-                                    {% elif inv.bounty and inv.bounty >= 1000 %}
-                                    ≈ {{ "%.1f"|format(inv.bounty / 1000) }}K
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Level -->
-                        <div class="stat-box">
-                            <div class="stat-icon level">🆙</div>
-                            <div>
-                                <div class="stat-label">Level (เลเวล)</div>
-                                <div class="stat-value level-val" id="level-{{ uid }}">Lv. {{ inv.level or 0 }} / 3000</div>
+            <div class="vip-hud-card" id="hud-{{ uid }}">
+                <!-- HUD Header -->
+                <div class="hud-user-header">
+                    <div class="hud-user-left">
+                        <img class="hud-user-avatar" src="{{ players[uid].avatar if uid in players else '/static/logo.jpg' }}" onerror="this.src='/static/logo.jpg'">
+                        <div class="hud-user-info">
+                            <div class="hud-user-name" id="name-{{ uid }}">{{ inv.display_name }} (@{{ inv.username }})</div>
+                            <div class="hud-user-sync">
+                                <span>🔄 ซิงค์:</span> <span class="sync-time" id="time-{{ uid }}">{{ inv.scan_time }}</span>
                             </div>
                         </div>
                     </div>
+                    <div class="hud-sea-tag" id="sea-{{ uid }}">🌊 {{ inv.sea or 'Blox Fruits' }}</div>
+                </div>
 
-                    <!-- Character Details Row -->
-                    <div class="char-details-row">
-                        <div class="char-pill">
-                            <span class="cp-lbl">🚩 ฝั่ง:</span>
-                            <span class="cp-val" id="team-{{ uid }}">{{ inv.team or 'Pirates' }}</span>
+                <!-- Bounty Hunter Master Banner -->
+                <div class="bounty-showcase-box">
+                    <div class="bsb-top">
+                        <span class="bsb-rank-badge" id="rank-badge-{{ uid }}">
+                            {% if inv.bounty and inv.bounty >= 20000000 %}👑 จักรพรรดิแห่งท้องทะเล (Emperor)
+                            {% elif inv.bounty and inv.bounty >= 10000000 %}⚔️ สุดยอดนักล่าค่าหัว (Supreme Hunter)
+                            {% elif inv.bounty and inv.bounty >= 5000000 %}🎖️ ซูเปอร์โนวา / พลเรือเอก (Supernova)
+                            {% elif inv.bounty and inv.bounty >= 2500000 %}🏴‍☠️ เจ็ดเทพโจรสลัด (Warlord)
+                            {% else %}⚓ นักล่ามือใหม่ (Rookie)
+                            {% endif %}
+                        </span>
+                        <span class="bsb-session-time" id="session-time-{{ uid }}">⏱️ เซสชั่น: 00:00:00</span>
+                    </div>
+
+                    <div class="bsb-main-val-row">
+                        <span class="bsb-raw-bounty" id="bounty-raw-{{ uid }}">{{ "{:,.0f}".format(inv.bounty or 0) if (inv.bounty is number) else inv.bounty }}</span>
+                        <span class="bsb-short-bounty" id="bounty-short-{{ uid }}">
+                            {% if inv.bounty and inv.bounty >= 1000000 %}≈ {{ "%.2f"|format(inv.bounty / 1000000) }}M
+                            {% elif inv.bounty and inv.bounty >= 1000 %}≈ {{ "%.1f"|format(inv.bounty / 1000) }}K
+                            {% endif %}
+                        </span>
+                        <span class="bsb-delta-tag" id="bounty-delta-{{ uid }}" style="display:none">+0</span>
+                    </div>
+
+                    <!-- Bounty Progress to Next Million -->
+                    <div class="bsb-progress-wrap">
+                        <div class="bsb-progress-info">
+                            <span id="bounty-tier-lbl-{{ uid }}">เป้าหมายขั้นถัดไป</span>
+                            <span id="bounty-pct-{{ uid }}">0%</span>
                         </div>
-                        <div class="char-pill">
-                            <span class="cp-lbl">🧬 เผ่า (Race):</span>
-                            <span class="cp-val" id="race-{{ uid }}">{{ inv.race or 'Human' }}</span>
+                        <div class="bsb-progress-track">
+                            <div class="bsb-progress-bar" id="bounty-bar-{{ uid }}" style="width: 50%"></div>
                         </div>
-                        <div class="char-pill">
-                            <span class="cp-lbl">🍎 ผลที่ใช้:</span>
-                            <span class="cp-val" id="fruit-{{ uid }}">{{ inv.devil_fruit or 'None' }}</span>
-                        </div>
-                        {% if inv.health %}
-                        <div class="char-pill">
-                            <span class="cp-lbl">❤️ เลือด (HP):</span>
-                            <span class="cp-val" id="hp-{{ uid }}">{{ inv.health }}</span>
-                        </div>
-                        {% endif %}
-                        {% if inv.energy %}
-                        <div class="char-pill">
-                            <span class="cp-lbl">⚡ พลังงาน (Energy):</span>
-                            <span class="cp-val" id="energy-{{ uid }}">{{ inv.energy }}</span>
-                        </div>
-                        {% endif %}
                     </div>
                 </div>
-            </div>
 
-            <!-- Inventory Matrix for this player -->
-            <div class="inv-container" id="inv-matrix-{{ uid }}">
-                <div class="inv-toolbar">
-                    <div class="cat-filters" data-uid="{{ uid }}">
-                        <button class="cbtn active" onclick="filterCategory('{{ uid }}','all',this)">
-                            ทั้งหมด <span class="count-badge">{{ inv.total }}</span>
-                        </button>
-                        {% for cat, items in inv.categorized.items() %}
-                        <button class="cbtn" onclick="filterCategory('{{ uid }}','{{ cat }}',this)">
-                            {{ categories[cat].icon if cat in categories else '📦' }} {{ categories[cat].label if cat in categories else cat }}
-                            <span class="count-badge">{{ items|length }}</span>
-                        </button>
+                <!-- 2x2 Stats Grid -->
+                <div class="stats-matrix">
+                    <!-- Beli -->
+                    <div class="stat-cell">
+                        <div class="stat-cell-icon beli">💰</div>
+                        <div class="stat-cell-data">
+                            <span class="stat-cell-label">Beli (เงินเขียว)</span>
+                            <span class="stat-cell-value beli-val" id="beli-{{ uid }}">${{ "{:,.0f}".format(inv.beli or 0) }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Fragments -->
+                    <div class="stat-cell">
+                        <div class="stat-cell-icon frags">🔮</div>
+                        <div class="stat-cell-data">
+                            <span class="stat-cell-label">Fragments (เงินม่วง)</span>
+                            <span class="stat-cell-value frags-val" id="frags-{{ uid }}">ƒ {{ "{:,.0f}".format(inv.fragments or 0) }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Level -->
+                    <div class="stat-cell">
+                        <div class="stat-cell-icon level">🆙</div>
+                        <div class="stat-cell-data">
+                            <span class="stat-cell-label">Level (เลเวล)</span>
+                            <span class="stat-cell-value level-val" id="level-{{ uid }}">Lv. {{ inv.level or 0 }} / 3000</span>
+                        </div>
+                    </div>
+
+                    <!-- PVP Status / Team -->
+                    <div class="stat-cell">
+                        <div class="stat-cell-icon pvp">⚔️</div>
+                        <div class="stat-cell-data">
+                            <span class="stat-cell-label">ฝั่ง / โหมด</span>
+                            <span class="stat-cell-value pvp-val" id="team-{{ uid }}">{{ inv.team or 'Pirates (PVP)' }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- HP & Energy Gauge Rows -->
+                <div class="gauges-row">
+                    <div class="gauge-box">
+                        <div class="gauge-header">
+                            <span style="color:#34d399">❤️ เลือด (HP)</span>
+                            <span id="hp-txt-{{ uid }}">{{ inv.health or '100%' }}</span>
+                        </div>
+                        <div class="gauge-bar-track">
+                            <div class="gauge-bar-fill hp" id="hp-bar-{{ uid }}" style="width: 100%"></div>
+                        </div>
+                    </div>
+                    <div class="gauge-box">
+                        <div class="gauge-header">
+                            <span style="color:#38bdf8">⚡ พลังงาน (Energy)</span>
+                            <span id="energy-txt-{{ uid }}">{{ inv.energy or '100%' }}</span>
+                        </div>
+                        <div class="gauge-bar-track">
+                            <div class="gauge-bar-fill energy" id="energy-bar-{{ uid }}" style="width: 100%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Character Tags Row -->
+                <div class="character-tags-row">
+                    <div class="char-chip">
+                        <span class="char-chip-lbl">🧬 เผ่า:</span>
+                        <span class="char-chip-val" id="race-{{ uid }}">{{ inv.race or 'Human' }}</span>
+                    </div>
+                    <div class="char-chip">
+                        <span class="char-chip-lbl">🍎 ผลที่ใช้:</span>
+                        <span class="char-chip-val" id="fruit-{{ uid }}">{{ inv.devil_fruit or 'None' }}</span>
+                    </div>
+                </div>
+
+                <!-- Inventory Matrix For This Player -->
+                <div class="inv-section" style="margin-top: 16px;">
+                    <div class="inv-toolbar">
+                        <div class="inv-filters-scroll" data-uid="{{ uid }}">
+                            <button class="filter-btn active" onclick="filterItems('{{ uid }}', 'all', this)">
+                                ทั้งหมด <span class="filter-badge">{{ inv.total }}</span>
+                            </button>
+                            {% for cat, items in inv.categorized.items() %}
+                            <button class="filter-btn" onclick="filterItems('{{ uid }}', '{{ cat }}', this)">
+                                {{ categories[cat].icon if cat in categories else '📦' }} {{ categories[cat].label if cat in categories else cat }}
+                                <span class="filter-badge">{{ items|length }}</span>
+                            </button>
+                            {% endfor %}
+                        </div>
+                        <div class="inv-search-box">
+                            <span class="inv-search-icon">🔍</span>
+                            <input class="inv-search-input" placeholder="ค้นหาไอเทม..." oninput="searchMatrix('{{ uid }}', this.value)">
+                        </div>
+                    </div>
+
+                    <!-- Items Grid -->
+                    <div class="item-grid" id="grid-{{ uid }}">
+                        {% for item in inv.item_list %}
+                        {% set n_lower = item.name|lower %}
+                        {% set is_myth = 'kitsune' in n_lower or 'gas' in n_lower or 'dragon' in n_lower or 'dough' in n_lower or 'leopard' in n_lower or 't-rex' in n_lower or 'mammoth' in n_lower or 'spirit' in n_lower or 'venom' in n_lower or 'cursed dual' in n_lower or 'true triple' in n_lower or 'dark blade' in n_lower or 'shark anchor' in n_lower or 'sanguine' in n_lower or 'godhuman' in n_lower or 'soul guitar' in n_lower %}
+                        {% set is_leg = not is_myth and ('buddha' in n_lower or 'portal' in n_lower or 'rumble' in n_lower or 'blizzard' in n_lower or 'sound' in n_lower or 'phoenix' in n_lower or 'quake' in n_lower or 'magma' in n_lower or 'tushita' in n_lower or 'yama' in n_lower or 'scythe' in n_lower or 'trident' in n_lower or 'buddy' in n_lower or 'rengoku' in n_lower or 'saber' in n_lower or 'acidum' in n_lower or 'kabucha' in n_lower or 'talon' in n_lower or 'electric claw' in n_lower or 'karate' in n_lower or 'death step' in n_lower or 'superhuman' in n_lower or 'scarf' in n_lower or 'glasses' in n_lower or 'valkyrie' in n_lower) %}
+                        <div class="item-card {% if is_myth %}tier-mythical{% elif is_leg %}tier-legendary{% endif %}" data-cat="{{ item.category }}" data-name="{{ item.name|lower }}">
+                            {% if item.equipped %}<span class="item-equipped-badge">EQUIPPED</span>{% endif %}
+                            <div class="item-img-box">
+                                {% if item.image %}
+                                <img class="item-img" src="{{ item.image }}" alt="{{ item.name }}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                                <div style="font-size:2em;display:none">{% if item.category in categories %}{{ categories[item.category].icon }}{% else %}📦{% endif %}</div>
+                                {% else %}
+                                <div style="font-size:2em">{% if item.category in categories %}{{ categories[item.category].icon }}{% else %}📦{% endif %}</div>
+                                {% endif %}
+                            </div>
+                            <div class="item-name" title="{{ item.name }}">{{ item.name }}</div>
+                            <span class="item-tag tag-{{ item.category.replace(' ', '') }}">{{ item.category }}</span>
+                        </div>
                         {% endfor %}
                     </div>
-                    <input class="inv-search" placeholder="🔍 ค้นหาไอเทม..." oninput="searchItems('{{ uid }}', this.value)">
                 </div>
 
-                <div class="items-matrix" id="grid-{{ uid }}">
-                    {% for item in inv.item_list %}
-                    <div class="item-card" data-cat="{{ item.category }}" data-name="{{ item.name|lower }}">
-                        {% if item.equipped %}<div class="equipped-pill">EQUIPPED</div>{% endif %}
-                        <div class="item-img-frame">
-                            {% if item.image %}
-                            <img class="item-img" src="{{ item.image }}" alt="{{ item.name }}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-                            <div style="font-size:2.4em;display:none">{% if item.category in categories %}{{ categories[item.category].icon }}{% else %}📦{% endif %}</div>
-                            {% else %}
-                            <div style="font-size:2.4em">{% if item.category in categories %}{{ categories[item.category].icon }}{% else %}📦{% endif %}</div>
-                            {% endif %}
-                        </div>
-                        <div class="item-name" title="{{ item.name }}">{{ item.name }}</div>
-                        <span class="item-tag tag-{{ item.category.replace(' ', '') }}">{{ item.category }}</span>
-                        <div class="item-source">{{ item.source }}</div>
-                    </div>
-                    {% endfor %}
-                </div>
             </div>
             {% endfor %}
 
             {% if not inventories %}
-            <div style="text-align:center;padding:50px 20px;background:var(--card);border:1px dashed var(--card-border);border-radius:24px;margin-bottom:44px">
-                <div style="font-size:3em;margin-bottom:12px">🎮</div>
-                <h3 style="font-family:'Space Grotesk';font-size:1.3em;margin-bottom:6px">รอการเชื่อมต่อข้อมูลจากในเกม...</h3>
-                <p style="color:var(--text-secondary);font-size:.9em;max-width:500px;margin:0 auto">
-                    คัดลอกสคริปต์ด้านล่างไปรันใน Roblox เพื่อซิงค์ Beli, Fragments, ค่าหัว และคลังไอเทมมาแสดงผลแบบเรียลไทม์
+            <div style="text-align:center;padding:40px 16px;background:var(--bg-card);border:1px dashed var(--border-card);border-radius:18px;margin-bottom:24px">
+                <div style="font-size:2.5em;margin-bottom:8px">⚔️</div>
+                <h3 style="font-family:'Space Grotesk';font-size:1.15em;margin-bottom:6px">รอการซิงค์ข้อมูลจากในเกม...</h3>
+                <p style="color:var(--text-secondary);font-size:0.8em;max-width:440px;margin:0 auto">
+                    คัดลอกคำสั่งด้านล่างไปรันใน Executor บนมือถือหรือคอม เพื่อเริ่มซิงค์ค่าหัวจริงและคลังไอเทมสดๆ
                 </p>
             </div>
             {% endif %}
         </div>
 
         <!-- ════════════════════════════════════════════════════════════
-             ROBLOX EXECUTOR SCRIPT
+             EXECUTOR SCRIPT SECTION (MOBILE FRIENDLY)
         ════════════════════════════════════════════════════════════ -->
-        <div class="script-card">
-            <div class="script-header">
+        <section class="script-section">
+            <div class="script-sec-header">
                 <div>
-                    <h3>📜 สคริปต์ส่งข้อมูล Realtime (Roblox Executor) <span style="font-size:0.7em;background:rgba(99,102,241,0.2);color:#a5b4fc;padding:3px 8px;border-radius:6px;border:1px solid rgba(99,102,241,0.4)">v4.2 ล่าสุด</span></h3>
-                    <p>รันสคริปต์นี้ในเกม — ระบบจะส่งข้อมูล Beli, Fragments, ค่าหัว และไอเทมมาอัพเดตแบบเรียลไทม์อัตโนมัติ</p>
-                </div>
-                <div style="display:flex;gap:8px;flex-wrap:wrap">
-                    <button class="btn-copy" onclick="loadScriptText(true)">🔄 ซิงค์สคริปต์ล่าสุด</button>
-                    <button class="btn-copy" onclick="copyOneLiner()" style="background:rgba(99,102,241,0.2);border-color:rgba(99,102,241,0.4);color:#c7d2fe">⚡ คำสั่งรัน 1 บรรทัด</button>
-                    <button class="btn-copy" onclick="copyLuaScript()" style="background:rgba(16,185,129,0.2);border-color:rgba(16,185,129,0.4);color:#6ee7b7">📋 คัดลอกโค้ดเต็ม</button>
+                    <h3 class="script-sec-title">📜 คำสั่งรันในเกม (Roblox Executor)</h3>
+                    <p class="script-sec-desc">รองรับ Delta, Fluxus, Codex, Wave, Hydrogen ฯลฯ ซิงค์ข้อมูลทุก 3 วินาที</p>
                 </div>
             </div>
 
-            <!-- 1-line loader box -->
-            <div class="one-line-box" style="margin:0 20px 14px;padding:12px 18px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);border-radius:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
-                <div style="display:flex;align-items:center;gap:10px;font-family:'JetBrains Mono',monospace;font-size:0.82em;color:#fca5a5;word-break:break-all">
-                    <span style="background:rgba(239,68,68,0.3);padding:3px 8px;border-radius:6px;font-weight:700;color:#fff;font-size:0.85em;flex-shrink:0">⚡ แนะนำ</span>
-                    <code id="oneLineCode">loadstring(game:HttpGet("https://angushubxhunter.onrender.com/script.lua"))()</code>
+            <div class="exec-banner">
+                <div class="exec-code-line">loadstring(game:HttpGet("https://angushubxhunter.onrender.com/script.lua"))()</div>
+                <div class="exec-btn-row">
+                    <button class="btn-exec-action primary" onclick="copyOneLiner()">⚡ คัดลอกคำสั่ง 1 บรรทัด (แนะนำ)</button>
+                    <button class="btn-exec-action secondary" onclick="copyFullScript()">📋 คัดลอกโค้ดเต็ม</button>
                 </div>
-                <button class="btn-copy" onclick="copyOneLiner()" style="background:rgba(239,68,68,0.25);color:#fff;border-color:rgba(239,68,68,0.5)">⚡ คัดลอก 1 บรรทัด</button>
             </div>
 
-            <div class="terminal-window">
-                <div class="terminal-bar">
-                    <div class="window-dots"><span></span><span></span><span></span></div>
-                    <span style="font-size:.72em;color:var(--text-dim);font-family:'JetBrains Mono'">AngusHub_x_Hunter_v4.2.lua</span>
-                </div>
-                <pre class="code-area" id="luaScriptText">-- 🔥 AngusHub x Hunter — ค่ายโปรล่าค่าหัว Blox Fruits
--- ⚡ Realtime Live Tracker v4.2
--- อัพเดต Beli (เงินเขียว), Fragments (เงินม่วง), ค่าหัว, เลเวล /3000 และไอเทมเรียลไทม์ทุก 3 วินาที
--- รันควบคู่กับ Hermanos Hub (PVP Mode)
-
-local HttpService = game:GetService("HttpService")
-local Players = game:GetService("Players")
-local LP = Players.LocalPlayer
-local SERVER_URL = "https://angushubxhunter.onrender.com"
-
-local function extractAssetId(tex)
-    if not tex or tex == "" then return nil end
-    return tex:match("(%d+)")
-end
-
-local function scanItem(item)
-    local info = {
-        name = item.Name, className = item.ClassName,
-        textureId = "", assetId = nil, toolTip = "", category = "Other"
-    }
-    if item:IsA("Tool") then
-        info.textureId = item.TextureId or ""
-        info.assetId = extractAssetId(info.textureId)
-        info.toolTip = item.ToolTip or ""
-    end
-    return info
-end
-
-local lastBounty = 0
-local lastBeli = 0
-local lastFrags = 0
-local lastLevel = 0
-
-local function parseNumber(val)
-    if type(val) == "number" then return math.floor(val) end
-    local s = tostring(val or "")
-    if s == "" then return 0 end
-    local numStr, unit = s:match("([%d%,%.]+)%s*([KkMmBb]?)")
-    if numStr then
-        local clean = numStr:gsub(",", "")
-        local n = tonumber(clean)
-        if n then
-            local u = (unit or ""):upper()
-            if u == "M" then return math.floor(n * 1000000)
-            elseif u == "K" then return math.floor(n * 1000)
-            elseif u == "B" then return math.floor(n * 1000000000)
-            else return math.floor(n) end
-        end
-    end
-    local digits = s:gsub("%D", "")
-    return tonumber(digits) or 0
-end
-
-local function getPlayerBounty()
-    local ls = LP:FindFirstChild("leaderstats")
-    if ls then
-        for _, c in pairs(ls:GetChildren()) do
-            local cn = c.Name:lower()
-            if cn:find("bounty") or cn:find("honor") then
-                local v = parseNumber(c.Value)
-                if v and v > 0 then return v, "leaderstats." .. c.Name end
-            end
-        end
-    end
-
-    local d = LP:FindFirstChild("Data")
-    if d then
-        for _, c in pairs(d:GetChildren()) do
-            local cn = c.Name:lower()
-            if cn:find("bounty") or cn:find("honor") then
-                local v = parseNumber(c.Value)
-                if v and v > 0 then return v, "Data." .. c.Name end
-            end
-        end
-    end
-
-    if LP:FindFirstChild("PlayerGui") then
-        local pg = LP.PlayerGui
-        local main = pg:FindFirstChild("Main")
-        if main then
-            for _, desc in pairs(main:GetDescendants()) do
-                if desc:IsA("TextLabel") and desc.Visible then
-                    local dn = desc.Name:lower()
-                    local pn = desc.Parent and desc.Parent.Name:lower() or ""
-                    if dn:find("bounty") or dn:find("honor") or pn:find("bounty") or pn:find("honor") then
-                        local txt = desc.Text
-                        if not txt:lower():find("next") and not txt:lower():find("req") and not txt:find("/") then
-                            local v = parseNumber(txt)
-                            if v > 1000 and v ~= 8000000 and v ~= 10000000 and v ~= 20000000 and v ~= 30000000 then
-                                return v, "PlayerGui." .. desc.Name
-                            end
-                        end
-                    end
-                end
-            end
-        end
-    end
-
-    return 0, "None"
-end
-
-local function syncData()
-    local inv = {}
-    for _, item in pairs(LP.Backpack:GetChildren()) do
-        if item:IsA("Tool") then
-            local i = scanItem(item); i.equipped = false; i.source = "Backpack"
-            table.insert(inv, i)
-        end
-    end
-    if LP.Character then
-        for _, item in pairs(LP.Character:GetChildren()) do
-            if item:IsA("Tool") then
-                local i = scanItem(item); i.equipped = true; i.source = "Equipped"
-                table.insert(inv, i)
-            end
-        end
-    end
-
-    local data = LP:FindFirstChild("Data")
-    local beli = data and data:FindFirstChild("Beli") and tonumber(data.Beli.Value) or 0
-    local frags = data and data:FindFirstChild("Fragments") and tonumber(data.Fragments.Value) or 0
-    local level = data and data:FindFirstChild("Level") and tonumber(data.Level.Value) or 0
-    local race = data and data:FindFirstChild("Race") and tostring(data.Race.Value) or "Human"
-    local fruit = data and data:FindFirstChild("DevilFruit") and tostring(data.DevilFruit.Value) or "None"
-
-    local bountyVal, bSource = getPlayerBounty()
-    if bountyVal > 0 then lastBounty = bountyVal else bountyVal = lastBounty end
-    if beli > 0 then lastBeli = beli else beli = lastBeli end
-    if frags > 0 then lastFrags = frags else frags = lastFrags end
-    if level > 0 then lastLevel = level else level = lastLevel end
-
-    local sea = "Blox Fruits"
-    if game.PlaceId == 2753915549 then sea = "ทะเลที่ 1 (First Sea)"
-    elseif game.PlaceId == 4442272183 then sea = "ทะเลที่ 2 (Second Sea)"
-    elseif game.PlaceId == 7449423635 then sea = "ทะเลที่ 3 (Third Sea)" end
-
-    local hpText = nil
-    if LP.Character and LP.Character:FindFirstChild("Humanoid") then
-        local hum = LP.Character.Humanoid
-        hpText = math.floor(hum.Health) .. " / " .. math.floor(hum.MaxHealth)
-    end
-
-    local teamName = "Pirates"
-    if LP.Team then teamName = LP.Team.Name end
-
-    local payload = {
-        user_id = tostring(LP.UserId), username = LP.Name, display_name = LP.DisplayName,
-        place_id = tostring(game.PlaceId), game_name = "Blox Fruits", sea = sea, team = teamName,
-        beli = beli, fragments = frags, bounty = bountyVal, bounty_source = bSource,
-        level = level, max_level = 3000, race = race, devil_fruit = fruit,
-        inventory = inv, health = hpText
-    }
-
-    request({
-        Url = SERVER_URL .. "/api/inventory", Method = "POST",
-        Headers = {["Content-Type"] = "application/json"},
-        Body = HttpService:JSONEncode(payload)
-    })
-end
-
-pcall(syncData)
-print("✅ Blox Fruits Realtime Tracker v4.2 รันแล้ว! ซิงค์ทุก 3 วินาที")
-
-task.spawn(function()
-    while true do
-        task.wait(3)
-        pcall(syncData)
-    end
-end)
-
--- 🚀 รัน Hermanos Hub ควบคู่กับ Tracker (Multi-Threaded)
-task.spawn(function()
-    pcall(function()
-        getgenv().script_mode = "PVP" -- PVP, FARM
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/hermanos-dev/hermanos-hub/refs/heads/main/Loader.lua"))()
-    end)
-end)</pre>
-            </div>
-        </div>
+            <details class="lua-code-details">
+                <summary class="lua-code-summary">🔍 กดเพื่อดูซอร์สโค้ดเต็มของสคริปต์ (Lua Script Preview)</summary>
+                <pre class="lua-pre-box" id="fullLuaScript">-- กำลังดาวน์โหลดสคริปต์ล่าสุด...</pre>
+            </details>
+        </section>
 
     </div>
 </div>
 
-<div class="toast-notice" id="toast"></div>
+<!-- Floating Action Dock (Mobile Experience) -->
+<div class="floating-dock">
+    <button class="dock-btn active" onclick="window.scrollTo({top:0, behavior:'smooth'})">🔝 บนสุด</button>
+    <button class="dock-btn" onclick="document.getElementById('hudWrapper').scrollIntoView({behavior:'smooth'})">📊 สเตตัส</button>
+    <button class="dock-btn copy-highlight" onclick="copyOneLiner()">⚡ คัดลอกสคริปต์</button>
+</div>
+
+<div class="toast-msg" id="toastMsg"></div>
 
 <script>
-// Format Number with Commas
+// Web Audio Synthesizer (Zero-file sound effects)
+let soundEnabled = true;
+let audioCtx = null;
+
+function playChime(freq = 600, type = 'sine') {
+    if (!soundEnabled) return;
+    try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.2);
+    } catch(e) {}
+}
+
+function toggleSound() {
+    soundEnabled = !soundEnabled;
+    const btn = document.getElementById('soundBtn');
+    if (btn) btn.textContent = soundEnabled ? '🔊' : '🔇';
+    showToast(soundEnabled ? '🔊 เปิดเสียงแจ้งเตือนแล้ว' : '🔇 ปิดเสียงแล้ว', 'ok');
+}
+
+// Session Timer Tracking
+let sessionSeconds = 0;
+setInterval(() => {
+    sessionSeconds++;
+    const h = String(Math.floor(sessionSeconds / 3600)).padStart(2, '0');
+    const m = String(Math.floor((sessionSeconds % 3600) / 60)).padStart(2, '0');
+    const s = String(sessionSeconds % 60).padStart(2, '0');
+    document.querySelectorAll('[id^="session-time-"]').forEach(el => {
+        el.textContent = `⏱️ เซสชั่น: ${h}:${m}:${s}`;
+    });
+}, 1000);
+
+// Number Formatter
 function fmt(n) {
     if (typeof n === 'number') return n.toLocaleString();
     return n || '0';
@@ -896,141 +1002,176 @@ function formatShort(n) {
     return '';
 }
 
-// Check user manually
-async function checkUser() {
-    const uid = document.getElementById('userIdInput').value.trim();
-    if (!uid || isNaN(uid)) {
-        showToast('กรุณาระบุ User ID ให้ถูกต้อง', 'err');
-        return;
-    }
-    try {
-        const res = await fetch(`/api/check/${uid}`);
-        const data = await res.json();
-        if (res.ok) {
-            showToast(`พบผู้เล่น: ${data.display} (${data.status})`, 'ok');
-            fetchLive();
-        } else {
-            showToast(data.error || 'ไม่พบผู้เล่น', 'err');
-        }
-    } catch(e) {
-        showToast('เกิดข้อผิดพลาดในการเชื่อมต่อ', 'err');
-    }
+function getHunterRank(bounty) {
+    const b = Number(bounty) || 0;
+    if (b >= 20000000) return '👑 จักรพรรดิแห่งท้องทะเล (Emperor)';
+    if (b >= 10000000) return '⚔️ สุดยอดนักล่าค่าหัว (Supreme Hunter)';
+    if (b >= 5000000) return '🎖️ ซูเปอร์โนวา / พลเรือเอก (Supernova)';
+    if (b >= 2500000) return '🏴‍☠️ เจ็ดเทพโจรสลัด (Warlord)';
+    return '⚓ นักล่ามือใหม่ (Rookie)';
 }
 
-// Realtime live polling without page reload
-async function fetchLive() {
+// Session bounty cache
+const initialBounties = {};
+
+// Live Polling
+async function pollLiveData() {
+    const startTime = performance.now();
     try {
-        const res = await fetch('/api/live_data');
+        const res = await fetch('/api/live_data?_=' + Date.now());
         if (!res.ok) return;
         const data = await res.json();
-        const inventories = data.inventories || {};
+        const latency = Math.round(performance.now() - startTime);
+        
+        // Update latency pill
+        const pingEl = document.getElementById('pingText');
+        if (pingEl) pingEl.textContent = `${latency}ms LIVE`;
 
+        const inventories = data.inventories || {};
         for (const [uid, inv] of Object.entries(inventories)) {
-            // Update stats
+            // Update Beli
             const beliEl = document.getElementById(`beli-${uid}`);
             if (beliEl) beliEl.textContent = `$${fmt(inv.beli || 0)}`;
 
+            // Update Frags
             const fragsEl = document.getElementById(`frags-${uid}`);
             if (fragsEl) fragsEl.textContent = `ƒ ${fmt(inv.fragments || 0)}`;
 
-            const bountyEl = document.getElementById(`bounty-${uid}`);
-            if (bountyEl) bountyEl.textContent = fmt(inv.bounty || 0);
-
-            const bountySubEl = document.getElementById(`bounty-sub-${uid}`);
-            if (bountySubEl) bountySubEl.textContent = formatShort(inv.bounty || 0);
-
-            const bountyLblEl = document.getElementById(`bounty-lbl-${uid}`);
-            if (bountyLblEl && inv.bounty_label) bountyLblEl.textContent = inv.bounty_label;
-
-            const bountyIconEl = document.getElementById(`bounty-icon-${uid}`);
-            if (bountyIconEl && inv.bounty_icon) bountyIconEl.textContent = inv.bounty_icon;
-
-            const teamEl = document.getElementById(`team-${uid}`);
-            if (teamEl && inv.team) teamEl.textContent = inv.team;
-
+            // Update Level
             const levelEl = document.getElementById(`level-${uid}`);
             if (levelEl) levelEl.textContent = `Lv. ${inv.level || 0} / 3000`;
 
-            const raceEl = document.getElementById(`race-${uid}`);
-            if (raceEl) raceEl.textContent = inv.race || 'Human';
+            // Update Raw Bounty & Short
+            const rawBounty = Number(inv.bounty) || 0;
+            const bRawEl = document.getElementById(`bounty-raw-${uid}`);
+            if (bRawEl) bRawEl.textContent = fmt(rawBounty);
 
-            const fruitEl = document.getElementById(`fruit-${uid}`);
-            if (fruitEl) fruitEl.textContent = inv.devil_fruit || 'None';
+            const bShortEl = document.getElementById(`bounty-short-${uid}`);
+            if (bShortEl) bShortEl.textContent = formatShort(rawBounty);
 
-            const hpEl = document.getElementById(`hp-${uid}`);
-            if (hpEl && inv.health) hpEl.textContent = inv.health;
+            // Hunter Rank
+            const rankEl = document.getElementById(`rank-badge-${uid}`);
+            if (rankEl) rankEl.textContent = getHunterRank(rawBounty);
 
-            const timeEl = document.querySelector(`#hud-${uid} .sync-time`);
-            if (timeEl) timeEl.textContent = inv.scan_time || '';
-        }
-    } catch(e) {}
-}
+            // Bounty Progress calculation (to next million)
+            const nextMil = Math.ceil((rawBounty + 1) / 1000000) * 1000000;
+            const prevMil = nextMil - 1000000;
+            const progressPct = Math.min(100, Math.max(0, Math.round(((rawBounty - prevMil) / 1000000) * 100)));
+            const barEl = document.getElementById(`bounty-bar-${uid}`);
+            if (barEl) barEl.style.width = progressPct + '%';
+            const pctEl = document.getElementById(`bounty-pct-${uid}`);
+            if (pctEl) pctEl.textContent = `${progressPct}% (เป้า ${(nextMil/1000000).toFixed(0)}M)`;
 
-// Poll every 2.5 seconds
-setInterval(fetchLive, 2500);
+            // Session Delta
+            if (initialBounties[uid] === undefined && rawBounty > 0) {
+                initialBounties[uid] = rawBounty;
+            }
+            if (initialBounties[uid] !== undefined) {
+                const delta = rawBounty - initialBounties[uid];
+                const deltaEl = document.getElementById(`bounty-delta-${uid}`);
+                if (deltaEl) {
+                    if (delta > 0) {
+                        deltaEl.style.display = 'inline-block';
+                        deltaEl.textContent = `+${fmt(delta)}`;
+                        deltaEl.style.color = '#4ade80';
+                    } else if (delta < 0) {
+                        deltaEl.style.display = 'inline-block';
+                        deltaEl.textContent = fmt(delta);
+                        deltaEl.style.color = '#f87171';
+                    } else {
+                        deltaEl.style.display = 'none';
+                    }
+                }
+            }
 
-// Filter category
-function filterCategory(uid, cat, btn) {
-    const grid = document.getElementById(`grid-${uid}`);
-    if (!grid) return;
-    grid.querySelectorAll('.item-card').forEach(card => {
-        card.style.display = (cat === 'all' || card.dataset.cat === cat) ? '' : 'none';
-    });
-    btn.parentElement.querySelectorAll('.cbtn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-}
+            // Sync Time
+            const timeEl = document.getElementById(`time-${uid}`);
+            if (timeEl && inv.scan_time) timeEl.textContent = inv.scan_time;
 
-// Search items within matrix
-function searchItems(uid, query) {
-    const q = query.toLowerCase().trim();
-    const grid = document.getElementById(`grid-${uid}`);
-    if (!grid) return;
-    grid.querySelectorAll('.item-card').forEach(card => {
-        const name = card.dataset.name || '';
-        card.style.display = (q === '' || name.includes(q)) ? '' : 'none';
-    });
-}
-
-// Copy Lua Script
-function copyLuaScript() {
-    const text = document.getElementById('luaScriptText').innerText;
-    navigator.clipboard.writeText(text).then(() => {
-        showToast('คัดลอกสคริปต์เต็ม v4.2 แล้ว! พร้อมนำไปรันในเกม 🚀', 'ok');
-    });
-}
-
-// Copy 1-Line command
-function copyOneLiner() {
-    const cmd = 'loadstring(game:HttpGet("https://angushubxhunter.onrender.com/script.lua"))()';
-    navigator.clipboard.writeText(cmd).then(() => {
-        showToast('⚡ คัดลอกคำสั่งรัน 1 บรรทัดของ AngusHub x Hunter แล้ว! 🚀', 'ok');
-    });
-}
-
-// Dynamically fetch latest script from server
-async function loadScriptText(showNotice = false) {
-    try {
-        const res = await fetch('/script.lua?t=' + Date.now());
-        if (res.ok) {
-            const code = await res.text();
-            const el = document.getElementById('luaScriptText');
-            if (el && code.length > 50) {
-                el.textContent = code;
-                if (showNotice) showToast('✅ ซิงค์สคริปต์ล่าสุด v4.2 สำเร็จ!', 'ok');
+            // Health & Energy
+            if (inv.health) {
+                const hpTxt = document.getElementById(`hp-txt-${uid}`);
+                if (hpTxt) hpTxt.textContent = inv.health;
+                const hpParts = String(inv.health).split('/');
+                if (hpParts.length === 2) {
+                    const curHp = parseFloat(hpParts[0].trim());
+                    const maxHp = parseFloat(hpParts[1].trim());
+                    if (maxHp > 0) {
+                        const hpPct = Math.min(100, Math.max(0, (curHp / maxHp) * 100));
+                        const hpBar = document.getElementById(`hp-bar-${uid}`);
+                        if (hpBar) hpBar.style.width = hpPct + '%';
+                    }
+                }
             }
         }
     } catch(e) {}
 }
 
-// Auto load latest script immediately on page load
-loadScriptText();
+setInterval(pollLiveData, 2500);
 
-// Toast
-function showToast(msg, type) {
-    const toast = document.getElementById('toast');
+// Filter matrix
+function filterItems(uid, cat, btn) {
+    playChime(750);
+    const grid = document.getElementById(`grid-${uid}`);
+    if (!grid) return;
+    grid.querySelectorAll('.item-card').forEach(card => {
+        card.style.display = (cat === 'all' || card.dataset.cat === cat) ? '' : 'none';
+    });
+    btn.parentElement.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+}
+
+// Search matrix
+function searchMatrix(uid, q) {
+    const query = q.toLowerCase().trim();
+    const grid = document.getElementById(`grid-${uid}`);
+    if (!grid) return;
+    grid.querySelectorAll('.item-card').forEach(card => {
+        const name = card.dataset.name || '';
+        card.style.display = (query === '' || name.includes(query)) ? '' : 'none';
+    });
+}
+
+// Copy One-Liner
+function copyOneLiner() {
+    playChime(880);
+    const cmd = 'loadstring(game:HttpGet("https://angushubxhunter.onrender.com/script.lua"))()';
+    navigator.clipboard.writeText(cmd).then(() => {
+        showToast('⚡ คัดลอกคำสั่งรัน 1 บรรทัดเรียบร้อย!', 'ok');
+    }).catch(() => {
+        showToast('คัดลอกสำเร็จ!', 'ok');
+    });
+}
+
+// Copy full script
+function copyFullScript() {
+    playChime(700);
+    const text = document.getElementById('fullLuaScript').textContent;
+    navigator.clipboard.writeText(text).then(() => {
+        showToast('📋 คัดลอกสคริปต์ตัวเต็ม v4.2 แล้ว!', 'ok');
+    });
+}
+
+// Fetch full lua source
+async function loadFullLuaScript() {
+    try {
+        const res = await fetch('/script.lua?t=' + Date.now());
+        if (res.ok) {
+            const txt = await res.text();
+            const el = document.getElementById('fullLuaScript');
+            if (el) el.textContent = txt;
+        }
+    } catch(e) {}
+}
+loadFullLuaScript();
+
+// Toast helper
+function showToast(msg, type = 'ok') {
+    const toast = document.getElementById('toastMsg');
+    if (!toast) return;
     toast.textContent = msg;
-    toast.className = `toast-notice ${type} show`;
-    setTimeout(() => toast.classList.remove('show'), 3500);
+    toast.className = `toast-msg ${type} show`;
+    setTimeout(() => toast.classList.remove('show'), 3000);
 }
 </script>
 </body>
