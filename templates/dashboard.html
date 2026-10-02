@@ -170,25 +170,34 @@ html, body {
     line-height: 1.5;
 }
 
-/* Quick One-Tap Script Box on Hero */
+/* Quick One-Tap Script Box on Hero (Mobile Perfect) */
 .hero-quick-script {
-    max-width: 560px; margin: 0 auto;
-    background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25);
-    border-radius: 14px; padding: 10px 14px;
-    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    max-width: 540px; margin: 0 auto;
+    background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 14px; padding: 12px 14px;
+    display: flex; flex-direction: column; gap: 8px; text-align: left;
 }
-.hqs-text {
-    font-family: 'JetBrains Mono', monospace; font-size: 0.72em; color: #fca5a5;
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left;
+.hqs-top {
+    display: flex; align-items: center; justify-content: space-between;
+}
+.hqs-title {
+    font-size: 0.72em; font-weight: 700; color: #fca5a5; letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+.hqs-code-box {
+    background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px; padding: 8px 10px;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.72em; color: #fecaca;
+    word-break: break-all; white-space: pre-wrap; line-height: 1.4;
 }
 .btn-quick-copy {
-    padding: 7px 14px; border-radius: 8px; border: 0;
+    width: 100%; padding: 10px; border-radius: 8px; border: 0;
     background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff;
-    font-weight: 700; font-size: 0.74em; cursor: pointer; white-space: nowrap;
-    box-shadow: 0 0 12px rgba(239, 68, 68, 0.4); transition: transform 0.15s;
+    font-weight: 800; font-size: 0.8em; cursor: pointer; text-align: center;
+    box-shadow: 0 0 14px rgba(239, 68, 68, 0.4); transition: transform 0.15s;
     font-family: inherit;
 }
-.btn-quick-copy:active { transform: scale(0.95); }
+.btn-quick-copy:active { transform: scale(0.98); }
 
 /* ════════════════════════════════════════════════════════════
    PLAYERS CAROUSEL
@@ -442,26 +451,30 @@ html, body {
 }
 
 .inv-filters-scroll {
-    display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px;
+    display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px 8px;
     -webkit-overflow-scrolling: touch; scrollbar-width: none;
+    width: 100%;
 }
 .inv-filters-scroll::-webkit-scrollbar { display: none; }
 
 .filter-btn {
-    padding: 6px 10px; border-radius: 8px; border: 1px solid var(--border-card);
+    flex-shrink: 0 !important;
+    min-width: max-content !important;
+    white-space: nowrap !important;
+    padding: 7px 14px; border-radius: 10px; border: 1px solid var(--border-card);
     background: var(--bg-card); color: var(--text-secondary);
-    font-size: 0.72em; font-weight: 700; cursor: pointer; white-space: nowrap;
-    display: inline-flex; align-items: center; gap: 4px; transition: 0.15s;
+    font-size: 0.75em; font-weight: 700; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 6px; transition: 0.15s;
     font-family: inherit;
 }
 .filter-btn:hover { background: var(--card-hover); color: #fff; }
 .filter-btn.active {
-    background: rgba(239, 68, 68, 0.18); border-color: rgba(239, 68, 68, 0.45);
+    background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.5);
     color: #fca5a5;
 }
 .filter-badge {
-    padding: 1px 5px; border-radius: 4px; background: rgba(255, 255, 255, 0.08);
-    font-size: 0.85em;
+    padding: 2px 7px; border-radius: 6px; background: rgba(255, 255, 255, 0.08);
+    font-size: 0.85em; font-weight: 800;
 }
 
 .inv-search-box {
@@ -686,10 +699,15 @@ html, body {
             <div class="hero-sub">⚔️ ค่ายโปรล่าค่าหัว BLOX FRUITS ☠️</div>
             <p class="hero-desc">ติดตามค่าหัวจริง, เงินเขียว, เงินม่วง, เลเวล และระบบตรวจคลังไอเทมแบบเรียลไทม์ 24 ชม.</p>
 
-            <!-- Quick Copy One-Liner Box -->
+            <!-- Quick Copy One-Liner Box (Mobile Perfect) -->
             <div class="hero-quick-script">
-                <div class="hqs-text" id="oneLinerCode">loadstring(game:HttpGet("https://angushubxhunter.onrender.com/script.lua"))()</div>
-                <button class="btn-quick-copy" onclick="copyOneLiner()">⚡ คัดลอก</button>
+                <div class="hqs-top">
+                    <span class="hqs-title">⚡ คำสั่งรันในเกม (One-Liner)</span>
+                </div>
+                <div class="hqs-code-box">
+                    <code id="oneLinerCode">loadstring(game:HttpGet("https://angushubxhunter-n4sp.onrender.com/script.lua"))()</code>
+                </div>
+                <button class="btn-quick-copy" onclick="copyOneLiner()">⚡ คัดลอกคำสั่งรัน</button>
             </div>
         </header>
 
