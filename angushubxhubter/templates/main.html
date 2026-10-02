@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Roblox Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0c0b1e;color:#e0e0f0;min-height:100vh;overflow-x:hidden}
+
+/* BG */
+.bg{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.orb{position:absolute;border-radius:50%;filter:blur(100px);opacity:.18}
+.orb:nth-child(1){width:500px;height:500px;background:#6366f1;top:-8%;left:-5%;animation:drift 20s ease-in-out infinite}
+.orb:nth-child(2){width:400px;height:400px;background:#a855f7;top:30%;right:-8%;animation:drift 25s ease-in-out infinite reverse}
+.orb:nth-child(3){width:350px;height:350px;background:#ec4899;bottom:-5%;left:25%;animation:drift 22s ease-in-out infinite 3s}
+@keyframes drift{0%,100%{transform:translate(0,0)}33%{transform:translate(40px,-30px)}66%{transform:translate(-30px,40px)}}
+
+.page{position:relative;z-index:1}
+
+/* Nav */
+.nav{display:flex;align-items:center;justify-content:space-between;padding:14px 28px;background:rgba(12,11,30,.7);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.05);position:sticky;top:0;z-index:50}
+.nav-brand{display:flex;align-items:center;gap:8px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.95em}
+.nav-logo{width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#6366f1,#a855f7);display:flex;align-items:center;justify-content:center;font-size:.75em}
+.nav-r{display:flex;gap:8px;align-items:center}
+.nav-icon{width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:.8em;transition:.2s}
+.nav-icon:hover{background:rgba(255,255,255,.1)}
+
+.main{max-width:960px;margin:0 auto;padding:28px 20px 60px}
+
+/* Hero */
+.hero{text-align:center;padding:30px 0 24px}
+.hero h1{font-family:'Space Grotesk',sans-serif;font-size:2.6em;font-weight:700;background:linear-gradient(135deg,#818cf8,#a855f7,#f472b6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px}
+.hero p{color:#7a7a9a;font-size:.9em}
+
+/* Search */
+.search{max-width:500px;margin:0 auto 32px;display:flex;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:14px;overflow:hidden;transition:.3s}
+.search:focus-within{border-color:rgba(99,102,241,.5);box-shadow:0 0 0 3px rgba(99,102,241,.1)}
+.search input{flex:1;padding:13px 16px;background:0;border:0;color:#fff;font-size:.9em;outline:0;font-family:inherit}
+.search input::placeholder{color:#4a4a6a}
+.search button{padding:13px 24px;border:0;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;font-weight:600;cursor:pointer;font-family:inherit;font-size:.88em;transition:.2s}
+.search button:hover{opacity:.85}
+
+/* Section */
+.stitle{font-family:'Space Grotesk',sans-serif;font-size:1.2em;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.stitle .count{font-size:.65em;padding:2px 8px;border-radius:6px;background:rgba(255,255,255,.06);color:#7a7a9a;font-weight:500}
+
+/* Player Carousel */
+.carousel-wrap{margin-bottom:40px}
+.carousel{display:flex;gap:14px;overflow-x:auto;padding:6px 2px 14px;scroll-snap-type:x mandatory;scrollbar-width:none}
+.carousel::-webkit-scrollbar{display:none}
+.pcard{flex:0 0 190px;scroll-snap-align:start;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:20px 14px 16px;text-align:center;transition:.3s;position:relative}
+.pcard:hover{background:rgba(255,255,255,.07);transform:translateY(-3px);box-shadow:0 12px 32px rgba(0,0,0,.3)}
+.pcard .abox{position:relative;display:inline-block;margin-bottom:10px}
+.pcard .av{width:64px;height:64px;border-radius:50%;border:3px solid rgba(255,255,255,.08);object-fit:cover;background:#1a1a2e}
+.pcard .dot{position:absolute;bottom:1px;right:1px;width:15px;height:15px;border-radius:50%;border:3px solid #0c0b1e}
+.dot.offline{background:#ef4444}.dot.online{background:#22c55e;box-shadow:0 0 6px rgba(34,197,94,.5)}.dot.ingame{background:#06b6d4;box-shadow:0 0 6px rgba(6,182,212,.5)}.dot.studio{background:#f97316}
+.pcard .pn{font-weight:700;font-size:.88em;margin-bottom:1px}
+.pcard .ph{color:#7a7a9a;font-size:.68em;margin-bottom:7px}
+.schip{display:inline-flex;align-items:center;gap:3px;padding:3px 10px;border-radius:100px;font-size:.66em;font-weight:600}
+.schip.offline{background:rgba(239,68,68,.12);color:#f87171}.schip.online{background:rgba(34,197,94,.15);color:#4ade80}.schip.ingame{background:rgba(6,182,212,.15);color:#22d3ee}.schip.studio{background:rgba(249,115,22,.15);color:#fb923c}
+.pcard .ploc{color:#5a5a7a;font-size:.64em;margin-top:5px}
+.pbtn-row{display:flex;gap:4px;margin-top:10px;justify-content:center}
+.pbtn{display:flex;align-items:center;gap:3px;padding:5px 10px;border-radius:7px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);color:#8a8aa0;font-size:.64em;cursor:pointer;transition:.2s;text-decoration:none}
+.pbtn:hover{background:rgba(255,255,255,.08);color:#fff}
+.rx{position:absolute;top:6px;right:6px;width:20px;height:20px;border-radius:5px;background:0;border:0;color:#5a5a7a;cursor:pointer;font-size:.65em;display:flex;align-items:center;justify-content:center;opacity:0;transition:.2s}
+.pcard:hover .rx{opacity:1}.rx:hover{background:rgba(239,68,68,.15);color:#f87171}
+.no-p{text-align:center;padding:32px 20px;color:#5a5a7a;font-size:.9em}
+
+/* ══ Inventory Section ══ */
+.inv-section{margin-bottom:40px}
+.inv-player-bar{display:flex;align-items:center;gap:12px;padding:14px 18px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:14px;margin-bottom:16px}
+.inv-player-bar img{width:40px;height:40px;border-radius:50%;border:2px solid rgba(255,255,255,.1)}
+.inv-player-bar .inv-pname{font-weight:600;font-size:.9em}
+.inv-player-bar .inv-pmeta{font-size:.72em;color:#7a7a9a}
+.inv-player-bar .inv-game{margin-left:auto;padding:4px 12px;border-radius:8px;background:rgba(99,102,241,.12);color:#818cf8;font-size:.72em;font-weight:600}
+
+.cat-tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+.ctab{padding:6px 14px;border-radius:8px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);color:#7a7a9a;font-size:.75em;font-weight:500;cursor:pointer;font-family:inherit;transition:.2s;display:flex;align-items:center;gap:5px}
+.ctab:hover{background:rgba(255,255,255,.08);color:#ccc}
+.ctab.on{background:rgba(99,102,241,.15);color:#818cf8;border-color:rgba(99,102,241,.3)}
+.ctab .badge{padding:1px 6px;border-radius:4px;background:rgba(255,255,255,.08);font-size:.85em}
+
+.inv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
+.icard{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:14px 10px 12px;text-align:center;transition:.3s;position:relative}
+.icard:hover{background:rgba(255,255,255,.06);transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.25)}
+.icard .iimg{width:80px;height:80px;border-radius:12px;object-fit:contain;margin:0 auto 8px;display:block;background:rgba(255,255,255,.02);padding:4px}
+.icard .iimg-placeholder{width:80px;height:80px;border-radius:12px;margin:0 auto 8px;background:rgba(255,255,255,.04);display:flex;align-items:center;justify-content:center;font-size:2.2em}
+.icard .iname{font-weight:600;font-size:.82em;margin-bottom:3px}
+.icard .icat{font-size:.65em;padding:2px 8px;border-radius:5px;display:inline-block}
+.icard .icat-Fruit{background:rgba(168,85,247,.12);color:#c084fc}
+.icard .icat-Sword{background:rgba(239,68,68,.12);color:#f87171}
+.icard .icat-Gun{background:rgba(249,115,22,.12);color:#fb923c}
+.icard .icat-Fighting{background:rgba(234,179,8,.12);color:#fbbf24}
+.icard .icat-Accessory{background:rgba(6,182,212,.12);color:#22d3ee}
+.icard .icat-Item{background:rgba(34,197,94,.12);color:#4ade80}
+.icard .icat-Other{background:rgba(107,114,128,.12);color:#9ca3af}
+.icard .equipped-tag{position:absolute;top:6px;right:6px;padding:2px 6px;border-radius:4px;background:rgba(34,197,94,.15);color:#4ade80;font-size:.55em;font-weight:600}
+.icard .isrc{font-size:.6em;color:#5a5a7a;margin-top:4px}
+
+/* ══ Blox Fruits Section ══ */
+.bf-section{margin-bottom:40px}
+.bf-header{display:flex;align-items:flex-start;gap:14px;margin-bottom:18px}
+.bf-icon{font-size:1.8em}
+.bf-info h2{font-family:'Space Grotesk',sans-serif;font-size:1.3em;font-weight:700;margin-bottom:3px}
+.bf-info p{color:#7a7a9a;font-size:.82em;line-height:1.4}
+.filters{display:flex;gap:5px;margin-bottom:16px;flex-wrap:wrap}
+.fil{padding:6px 14px;border-radius:8px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);color:#7a7a9a;font-size:.75em;font-weight:500;cursor:pointer;font-family:inherit;transition:.2s}
+.fil:hover{background:rgba(255,255,255,.08);color:#ccc}
+.fil.on{background:rgba(99,102,241,.15);color:#818cf8;border-color:rgba(99,102,241,.3)}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:12px}
+.fc{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:18px 12px 14px;text-align:center;transition:.3s;position:relative;cursor:default}
+.fc:hover{background:rgba(255,255,255,.06);transform:translateY(-3px);box-shadow:0 10px 26px rgba(0,0,0,.3);border-color:rgba(255,255,255,.1)}
+.fc .fc-emoji{font-size:3em;display:block;margin-bottom:8px;filter:drop-shadow(0 4px 10px rgba(0,0,0,.4));transition:transform .3s}
+.fc:hover .fc-emoji{transform:scale(1.08)}
+.fc .fc-name{font-weight:700;font-size:.92em;margin-bottom:1px}
+.fc .fc-th{font-size:.7em;color:#7a7a9a;margin-bottom:6px}
+.fc .fc-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.rarity{display:inline-block;padding:2px 8px;border-radius:5px;font-size:.62em;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.rarity.mythical{background:linear-gradient(135deg,rgba(168,85,247,.25),rgba(236,72,153,.2));color:#d8b4fe}
+.rarity.legendary{background:linear-gradient(135deg,rgba(234,179,8,.25),rgba(249,115,22,.2));color:#fde68a}
+.rarity.rare{background:rgba(99,102,241,.15);color:#a5b4fc}
+.rarity.uncommon{background:rgba(34,197,94,.12);color:#86efac}
+.rarity.common{background:rgba(148,163,184,.1);color:#cbd5e1}
+.tier{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:.9em}
+.tier-S\+,.tier-S{color:#fbbf24}.tier-A\+,.tier-A{color:#c084fc}.tier-B{color:#60a5fa}.tier-C{color:#34d399}.tier-D{color:#94a3b8}
+.fc-price{background:rgba(255,255,255,.03);border-radius:7px;padding:5px 8px;font-size:.72em;color:#8a8aa0;margin-top:6px}
+
+/* Script */
+.script-box{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:16px;overflow:hidden;margin-top:44px}
+.script-head{padding:20px 22px 0}
+.script-head h3{font-family:'Space Grotesk',sans-serif;font-size:1.05em;margin-bottom:3px}
+.script-head p{color:#7a7a9a;font-size:.8em;margin-bottom:14px}
+.code-win{margin:0 14px 14px;background:#08081a;border-radius:10px;border:1px solid rgba(255,255,255,.04);overflow:hidden}
+.code-bar{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(255,255,255,.02);border-bottom:1px solid rgba(255,255,255,.03)}
+.dots{display:flex;gap:5px}
+.dots span{width:9px;height:9px;border-radius:50%}
+.dots span:nth-child(1){background:#ff5f57}.dots span:nth-child(2){background:#ffbd2e}.dots span:nth-child(3){background:#28c840}
+.cpbtn{padding:4px 10px;border-radius:5px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.06);color:#7a7a9a;cursor:pointer;font-size:.7em;font-family:inherit;transition:.2s}
+.cpbtn:hover{background:rgba(99,102,241,.15);color:#818cf8}
+.code-body{padding:14px;font-family:'Consolas','Fira Code',monospace;font-size:.74em;line-height:1.8;overflow-x:auto;color:#b0b0c0;max-height:300px;overflow-y:auto}
+.code-body .kw{color:#c084fc}.code-body .st{color:#86efac}.code-body .cm{color:#4a4a6a;font-style:italic}.code-body .fn{color:#93c5fd}
+
+/* Toast / Loading */
+.toast{position:fixed;bottom:20px;right:20px;z-index:999;padding:12px 20px;border-radius:10px;font-size:.85em;font-weight:500;transform:translateY(70px);opacity:0;transition:all .4s cubic-bezier(.16,1,.3,1)}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.ok{background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.2);color:#4ade80}
+.toast.err{background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.2);color:#f87171}
+.ld{display:none;text-align:center;padding:20px}.ld.on{display:block}
+.ld-spin{width:32px;height:32px;margin:0 auto 8px;border:3px solid rgba(255,255,255,.06);border-top-color:#6366f1;border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+@media(max-width:600px){
+    .hero h1{font-size:2em}.fgrid,.inv-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}.pcard{flex:0 0 165px}.main{padding:16px 12px 40px}
+}
+</style>
+</head>
+<body>
+
+<div class="bg"><div class="orb"></div><div class="orb"></div><div class="orb"></div></div>
+
+<div class="page">
+
+<nav class="nav">
+    <div class="nav-brand"><div class="nav-logo">🎮</div><span>Roblox Tracker</span></div>
+    <div class="nav-r">
+        <div class="nav-icon" onclick="document.querySelector('.search input').focus()">🔍</div>
+        <div class="nav-icon" onclick="location.reload()">🔄</div>
+    </div>
+</nav>
+
+<div class="main">
+
+<div class="hero">
+    <h1>Roblox Tracker</h1>
+    <p>ติดตามสถานะผู้เล่น + สแกนคลังไอเทม + ดูไอเทม Blox Fruits</p>
+</div>
+
+<div class="search">
+    <input id="inp" placeholder="ใส่ Roblox User ID..." onkeydown="if(event.key==='Enter')go()">
+    <button onclick="go()">Search</button>
+</div>
+
+<div class="ld" id="ld"><div class="ld-spin"></div><p style="color:#7a7a9a;font-size:.82em">กำลังค้นหา...</p></div>
+
+<!-- ══ Players ══ -->
+<div class="stitle">👥 Players <span class="count">{{ stats.total }}</span></div>
+<div class="carousel-wrap">
+{% if players %}
+<div class="carousel">
+    {% for uid, p in players.items() %}
+    <div class="pcard" id="pc-{{ uid }}">
+        <button class="rx" onclick="rm('{{ uid }}')" title="Remove">✕</button>
+        <div class="abox">
+            <img class="av" src="{{ p.avatar }}" alt="" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22150%22 height=%22150%22%3E%3Crect fill=%22%231a1a2e%22 width=%22150%22 height=%22150%22 rx=%2275%22/%3E%3Ctext x=%2275%22 y=%2295%22 text-anchor=%22middle%22 fill=%22%23555%22 font-size=%2250%22%3E%3F%3C/text%3E%3C/svg%3E'">
+            <div class="dot {{ p.cls }}"></div>
+        </div>
+        <div class="pn">{{ p.display }}</div>
+        <div class="ph">@{{ p.name }} · {{ p.uid }}</div>
+        <div class="schip {{ p.cls }}">{{ p.status }}</div>
+        {% if p.location %}<div class="ploc">📍 {{ p.location }}</div>{% endif %}
+        <div class="pbtn-row">
+            <a class="pbtn" href="https://www.roblox.com/users/{{ p.uid }}/profile" target="_blank">👤 Profile</a>
+            {% if uid in inventories %}<div class="pbtn" onclick="scrollToInv('{{ uid }}')">📦 Inventory</div>{% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="no-p">👤 ใส่ User ID ด้านบนเพื่อเริ่มติดตาม หรือรันสคริปใน Roblox</div>
+{% endif %}
+</div>
+
+<!-- ══ Inventory Section ══ -->
+{% for uid, inv in inventories.items() %}
+<div class="inv-section" id="inv-{{ uid }}">
+    <div class="stitle">📦 Inventory — {{ inv.display_name }} <span class="count">{{ inv.total }} items</span></div>
+
+    <div class="inv-player-bar">
+        {% if uid in players and players[uid].avatar %}
+        <img src="{{ players[uid].avatar }}" alt="" onerror="this.style.display='none'">
+        {% endif %}
+        <div>
+            <div class="inv-pname">{{ inv.display_name }}</div>
+            <div class="inv-pmeta">@{{ inv.username }} · Scanned: {{ inv.scan_time }}</div>
+        </div>
+        <div class="inv-game">🎮 {{ inv.game_name }}</div>
+    </div>
+
+    <!-- Category Tabs -->
+    <div class="cat-tabs" data-inv="{{ uid }}">
+        <button class="ctab on" onclick="filInv('{{ uid }}','all',this)">ทั้งหมด <span class="badge">{{ inv.total }}</span></button>
+        {% for cat, cat_items in inv.categorized.items() %}
+        <button class="ctab" onclick="filInv('{{ uid }}','{{ cat }}',this)">
+            {% if cat in categories %}{{ categories[cat].icon }}{% else %}❓{% endif %}
+            {% if cat in categories %}{{ categories[cat].label }}{% else %}{{ cat }}{% endif %}
+            <span class="badge">{{ cat_items|length }}</span>
+        </button>
+        {% endfor %}
+    </div>
+
+    <!-- Item Grid -->
+    <div class="inv-grid" id="igrid-{{ uid }}">
+        {% for item in inv.item_list %}
+        <div class="icard" data-cat="{{ item.category }}">
+            {% if item.equipped %}<div class="equipped-tag">EQUIPPED</div>{% endif %}
+            {% if item.image %}
+            <img class="iimg" src="{{ item.image }}" alt="{{ item.name }}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <div class="iimg-placeholder" style="display:none">
+                {% if item.fruit_meta %}{{ item.fruit_meta.emoji }}
+                {% elif item.category == 'Fruit' %}🍎
+                {% elif item.category == 'Sword' %}⚔️
+                {% elif item.category == 'Gun' %}🔫
+                {% elif item.category == 'Fighting Style' %}🥊
+                {% elif item.category == 'Accessory' %}👕
+                {% else %}📦{% endif %}
+            </div>
+            {% elif item.fruit_meta %}
+            <div class="iimg-placeholder" style="font-size:2.8em">{{ item.fruit_meta.emoji }}</div>
+            {% else %}
+            <div class="iimg-placeholder">
+                {% if item.category == 'Fruit' %}🍎
+                {% elif item.category == 'Sword' %}⚔️
+                {% elif item.category == 'Gun' %}🔫
+                {% elif item.category == 'Fighting Style' %}🥊
+                {% elif item.category == 'Accessory' %}👕
+                {% else %}📦{% endif %}
+            </div>
+            {% endif %}
+            <div class="iname">{{ item.name }}</div>
+            <div style="margin-top:4px">
+                <span class="icat icat-{{ item.category.split(' ')[0] }}">{{ item.category }}</span>
+                {% if item.fruit_meta %}
+                <span class="rarity {{ item.fruit_meta.rarity|lower }}" style="font-size:.58em">{{ item.fruit_meta.rarity }}</span>
+                {% endif %}
+            </div>
+            <div class="isrc">{{ item.source }}</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endfor %}
+
+{% if not inventories %}
+<div class="inv-section">
+    <div class="stitle">📦 Inventory</div>
+    <div style="text-align:center;padding:32px;color:#5a5a7a;background:rgba(255,255,255,.02);border:1px dashed rgba(255,255,255,.08);border-radius:14px;">
+        <div style="font-size:2.5em;margin-bottom:10px">📦</div>
+        <p style="font-size:.9em;margin-bottom:6px">ยังไม่มีข้อมูล Inventory</p>
+        <p style="font-size:.78em">รันสคริปใน Roblox executor เพื่อสแกนคลังไอเทมแล้วส่งมาแสดงที่นี่</p>
+    </div>
+</div>
+{% endif %}
+
+<!-- ══ Blox Fruits ══ -->
+<div class="bf-section">
+    <div class="bf-header">
+        <div class="bf-icon">🍎</div>
+        <div class="bf-info">
+            <h2>Blox Fruits</h2>
+            <p>ผลไม้ทั้งหมดในเกม Blox Fruits — ราคา, Rarity, Tier (อัพเดต 2026)</p>
+        </div>
+    </div>
+    <div class="filters">
+        <button class="fil on" onclick="fil('all',this)">ทั้งหมด ({{ fruits|length }})</button>
+        <button class="fil" onclick="fil('Mythical',this)">🟣 Mythical</button>
+        <button class="fil" onclick="fil('Legendary',this)">🟡 Legendary</button>
+        <button class="fil" onclick="fil('Rare',this)">🔵 Rare</button>
+        <button class="fil" onclick="fil('Uncommon',this)">🟢 Uncommon</button>
+        <button class="fil" onclick="fil('Common',this)">⚪ Common</button>
+    </div>
+    <div class="fgrid" id="fgrid">
+        {% for f in fruits %}
+        <div class="fc" data-r="{{ f.rarity }}">
+            <span class="fc-emoji">{{ f.emoji }}</span>
+            <div class="fc-name">{{ f.name }}</div>
+            <div class="fc-th">{{ f.th }}</div>
+            <div class="fc-row">
+                <span class="rarity {{ f.rarity|lower }}">{{ f.rarity }}</span>
+                <span class="tier tier-{{ f.tier }}">{{ f.tier }}</span>
+            </div>
+            <div class="fc-price">💎 {{ "{:,.0f}".format(f.robux) }} Robux</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- ══ Script ══ -->
+<div class="script-box">
+    <div class="script-head">
+        <h3>📜 Roblox Executor Script</h3>
+        <p>คัดลอกสคริปนี้ไปรันใน executor — จะสแกนคลังไอเทมทั้งหมดพร้อมดึงรูปภาพจากเกม แล้วส่งมาแสดงบนเว็บ</p>
+    </div>
+    <div class="code-win">
+        <div class="code-bar">
+            <div class="dots"><span></span><span></span><span></span></div>
+            <button class="cpbtn" onclick="cp()">📋 Copy</button>
+        </div>
+        <div class="code-body"><pre id="lua"><span class="cm">-- Roblox Inventory Scanner v3.0</span>
+<span class="cm">-- รองรับ Blox Fruits (Backpack + Storage + Weapons)</span>
+<span class="cm">-- ดึง TextureId และจัดหมวดหมู่อัตโนมัติ</span>
+
+<span class="kw">local</span> HttpService = game:<span class="fn">GetService</span>(<span class="st">"HttpService"</span>)
+<span class="kw">local</span> Players = game:<span class="fn">GetService</span>(<span class="st">"Players"</span>)
+<span class="kw">local</span> MarketplaceService = game:<span class="fn">GetService</span>(<span class="st">"MarketplaceService"</span>)
+<span class="kw">local</span> LP = Players.LocalPlayer
+<span class="kw">local</span> SERVER_URL = <span class="st">"http://localhost:5000"</span>
+
+<span class="kw">local function</span> <span class="fn">extractAssetId</span>(tex)
+    <span class="kw">if not</span> tex <span class="kw">or</span> tex == <span class="st">""</span> <span class="kw">then return nil end</span>
+    <span class="kw">return</span> tex:<span class="fn">match</span>(<span class="st">"(%d+)"</span>)
+<span class="kw">end</span>
+
+<span class="kw">local function</span> <span class="fn">scanItem</span>(item)
+    <span class="kw">local</span> info = {
+        name=item.Name, className=item.ClassName,
+        textureId=<span class="st">""</span>, assetId=<span class="kw">nil</span>, toolTip=<span class="st">""</span>, category=<span class="st">"Other"</span>
+    }
+    <span class="kw">if</span> item:<span class="fn">IsA</span>(<span class="st">"Tool"</span>) <span class="kw">then</span>
+        info.textureId = item.TextureId <span class="kw">or</span> <span class="st">""</span>
+        info.assetId = <span class="fn">extractAssetId</span>(info.textureId)
+        info.toolTip = item.ToolTip <span class="kw">or</span> <span class="st">""</span>
+    <span class="kw">end</span>
+    <span class="kw">if not</span> info.assetId <span class="kw">then</span>
+        <span class="kw">for</span> _, child <span class="kw">in</span> <span class="fn">pairs</span>(item:<span class="fn">GetDescendants</span>()) <span class="kw">do</span>
+            <span class="kw">if</span> child:<span class="fn">IsA</span>(<span class="st">"Decal"</span>) <span class="kw">and</span> child.Texture ~= <span class="st">""</span> <span class="kw">then</span>
+                info.assetId = <span class="fn">extractAssetId</span>(child.Texture); info.textureId = child.Texture; <span class="kw">break</span>
+            <span class="kw">elseif</span> child:<span class="fn">IsA</span>(<span class="st">"ImageLabel"</span>) <span class="kw">and</span> child.Image ~= <span class="st">""</span> <span class="kw">then</span>
+                info.assetId = <span class="fn">extractAssetId</span>(child.Image); info.textureId = child.Image; <span class="kw">break</span>
+            <span class="kw">end</span>
+        <span class="kw">end</span>
+    <span class="kw">end</span>
+    <span class="kw">return</span> info
+<span class="kw">end</span>
+
+<span class="kw">local function</span> <span class="fn">categorize</span>(item)
+    <span class="kw">local</span> n = item.name:<span class="fn">lower</span>()
+    <span class="kw">local</span> t = (item.toolTip <span class="kw">or</span> <span class="st">""</span>):<span class="fn">lower</span>()
+    <span class="kw">local</span> fk = {<span class="st">"fruit"</span>,<span class="st">"rubber"</span>,<span class="st">"flame"</span>,<span class="st">"ice"</span>,<span class="st">"light"</span>,<span class="st">"dark"</span>,<span class="st">"magma"</span>,<span class="st">"quake"</span>,<span class="st">"buddha"</span>,<span class="st">"phoenix"</span>,<span class="st">"dragon"</span>,<span class="st">"dough"</span>,<span class="st">"venom"</span>,<span class="st">"control"</span>,<span class="st">"spirit"</span>,<span class="st">"leopard"</span>,<span class="st">"kitsune"</span>,<span class="st">"mammoth"</span>,<span class="st">"t-rex"</span>,<span class="st">"rumble"</span>,<span class="st">"blizzard"</span>,<span class="st">"shadow"</span>,<span class="st">"portal"</span>,<span class="st">"sound"</span>,<span class="st">"pain"</span>,<span class="st">"gas"</span>}
+    <span class="kw">local</span> sk = {<span class="st">"sword"</span>,<span class="st">"blade"</span>,<span class="st">"katana"</span>,<span class="st">"cutlass"</span>,<span class="st">"saber"</span>,<span class="st">"trident"</span>,<span class="st">"pole"</span>,<span class="st">"bisento"</span>,<span class="st">"yoru"</span>,<span class="st">"shisui"</span>,<span class="st">"wando"</span>,<span class="st">"tushita"</span>,<span class="st">"yama"</span>,<span class="st">"scythe"</span>}
+    <span class="kw">local</span> gk = {<span class="st">"gun"</span>,<span class="st">"pistol"</span>,<span class="st">"rifle"</span>,<span class="st">"musket"</span>,<span class="st">"cannon"</span>,<span class="st">"flintlock"</span>,<span class="st">"kabucha"</span>,<span class="st">"guitar"</span>,<span class="st">"bow"</span>}
+    <span class="kw">local</span> fstyle = {<span class="st">"combat"</span>,<span class="st">"fighting style"</span>,<span class="st">"superhuman"</span>,<span class="st">"death step"</span>,<span class="st">"sharkman"</span>,<span class="st">"electric claw"</span>,<span class="st">"godhuman"</span>,<span class="st">"sanguine"</span>}
+    <span class="kw">local</span> acc = {<span class="st">"cape"</span>,<span class="st">"coat"</span>,<span class="st">"hat"</span>,<span class="st">"mask"</span>,<span class="st">"bandana"</span>,<span class="st">"accessory"</span>}
+    <span class="kw">for</span> _, k <span class="kw">in</span> <span class="fn">ipairs</span>(fk) <span class="kw">do</span> <span class="kw">if</span> n:<span class="fn">find</span>(k) <span class="kw">or</span> t:<span class="fn">find</span>(k) <span class="kw">then return</span> <span class="st">"Fruit"</span> <span class="kw">end end</span>
+    <span class="kw">for</span> _, k <span class="kw">in</span> <span class="fn">ipairs</span>(sk) <span class="kw">do</span> <span class="kw">if</span> n:<span class="fn">find</span>(k) <span class="kw">or</span> t:<span class="fn">find</span>(k) <span class="kw">then return</span> <span class="st">"Sword"</span> <span class="kw">end end</span>
+    <span class="kw">for</span> _, k <span class="kw">in</span> <span class="fn">ipairs</span>(gk) <span class="kw">do</span> <span class="kw">if</span> n:<span class="fn">find</span>(k) <span class="kw">or</span> t:<span class="fn">find</span>(k) <span class="kw">then return</span> <span class="st">"Gun"</span> <span class="kw">end end</span>
+    <span class="kw">for</span> _, k <span class="kw">in</span> <span class="fn">ipairs</span>(fstyle) <span class="kw">do</span> <span class="kw">if</span> n:<span class="fn">find</span>(k) <span class="kw">or</span> t:<span class="fn">find</span>(k) <span class="kw">then return</span> <span class="st">"Fighting Style"</span> <span class="kw">end end</span>
+    <span class="kw">for</span> _, k <span class="kw">in</span> <span class="fn">ipairs</span>(acc) <span class="kw">do</span> <span class="kw">if</span> n:<span class="fn">find</span>(k) <span class="kw">or</span> t:<span class="fn">find</span>(k) <span class="kw">then return</span> <span class="st">"Accessory"</span> <span class="kw">end end</span>
+    <span class="kw">if</span> item.className == <span class="st">"Tool"</span> <span class="kw">then return</span> <span class="st">"Item"</span> <span class="kw">end</span>
+    <span class="kw">return</span> <span class="st">"Other"</span>
+<span class="kw">end</span>
+
+<span class="kw">local</span> inv = {}
+<span class="kw">for</span> _,item <span class="kw">in</span> <span class="fn">pairs</span>(LP.Backpack:<span class="fn">GetChildren</span>()) <span class="kw">do</span>
+    <span class="kw">if</span> item:<span class="fn">IsA</span>(<span class="st">"Tool"</span>) <span class="kw">then</span>
+        <span class="kw">local</span> i = <span class="fn">scanItem</span>(item); i.category = <span class="fn">categorize</span>(i); i.equipped = <span class="kw">false</span>; i.source = <span class="st">"Backpack"</span>
+        <span class="fn">table.insert</span>(inv, i)
+    <span class="kw">end</span>
+<span class="kw">end</span>
+<span class="kw">if</span> LP.Character <span class="kw">then</span>
+    <span class="kw">for</span> _,item <span class="kw">in</span> <span class="fn">pairs</span>(LP.Character:<span class="fn">GetChildren</span>()) <span class="kw">do</span>
+        <span class="kw">if</span> item:<span class="fn">IsA</span>(<span class="st">"Tool"</span>) <span class="kw">then</span>
+            <span class="kw">local</span> i = <span class="fn">scanItem</span>(item); i.category = <span class="fn">categorize</span>(i); i.equipped = <span class="kw">true</span>; i.source = <span class="st">"Equipped"</span>
+            <span class="fn">table.insert</span>(inv, i)
+        <span class="kw">end</span>
+    <span class="kw">end</span>
+<span class="kw">end</span>
+
+<span class="cm">-- Blox Fruits Fruit/Weapon Storage</span>
+<span class="fn">pcall</span>(<span class="kw">function</span>()
+    <span class="kw">local</span> comm = game:<span class="fn">GetService</span>(<span class="st">"ReplicatedStorage"</span>):<span class="fn">FindFirstChild</span>(<span class="st">"Remotes"</span>) <span class="kw">and</span> game:<span class="fn">GetService</span>(<span class="st">"ReplicatedStorage"</span>).Remotes:<span class="fn">FindFirstChild</span>(<span class="st">"CommF_"</span>)
+    <span class="kw">if</span> comm <span class="kw">then</span>
+        <span class="kw">local</span> f = comm:<span class="fn">InvokeServer</span>(<span class="st">"getInventoryFruits"</span>)
+        <span class="kw">if type</span>(f) == <span class="st">"table"</span> <span class="kw">then</span>
+            <span class="kw">for</span> _, item <span class="kw">in</span> <span class="fn">pairs</span>(f) <span class="kw">do</span>
+                <span class="kw">local</span> fn = <span class="kw">type</span>(item) == <span class="st">"table"</span> <span class="kw">and</span> (item.Name <span class="kw">or</span> item.name) <span class="kw">or</span> <span class="fn">tostring</span>(item)
+                <span class="fn">table.insert</span>(inv, {name=fn, className=<span class="st">"StoredFruit"</span>, category=<span class="st">"Fruit"</span>, equipped=<span class="kw">false</span>, source=<span class="st">"Fruit Storage"</span>})
+            <span class="kw">end</span>
+        <span class="kw">end</span>
+    <span class="kw">end</span>
+<span class="kw">end</span>)
+
+<span class="kw">local</span> gName = <span class="st">"Unknown"</span>
+<span class="fn">pcall</span>(<span class="kw">function</span>() gName = MarketplaceService:<span class="fn">GetProductInfo</span>(game.PlaceId).Name <span class="kw">end</span>)
+
+<span class="kw">local</span> payload = {
+    user_id = <span class="fn">tostring</span>(LP.UserId), username = LP.Name, display_name = LP.DisplayName,
+    place_id = <span class="fn">tostring</span>(game.PlaceId), game_name = gName,
+    inventory = inv, game_items = {}, scan_time = <span class="fn">os.date</span>(<span class="st">"%Y-%m-%d %H:%M:%S"</span>)
+}
+
+<span class="kw">local</span> ok, res = <span class="fn">pcall</span>(<span class="kw">function</span>()
+    <span class="kw">return</span> <span class="fn">request</span>({
+        Url = SERVER_URL .. <span class="st">"/api/inventory"</span>, Method = <span class="st">"POST"</span>,
+        Headers = {[<span class="st">"Content-Type"</span>] = <span class="st">"application/json"</span>},
+        Body = HttpService:<span class="fn">JSONEncode</span>(payload)
+    })
+<span class="kw">end</span>)
+
+<span class="kw">if</span> ok <span class="kw">then</span>
+    <span class="fn">print</span>(<span class="st">"✅ ส่งข้อมูลแล้ว! พบ "</span> .. #inv .. <span class="st">" ชิ้น"</span>)
+<span class="kw">else</span>
+    <span class="fn">warn</span>(<span class="st">"❌ Error: "</span> .. <span class="fn">tostring</span>(res))
+<span class="kw">end</span></pre></div>
+    </div>
+</div>
+
+</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let arTimer=setInterval(()=>location.reload(),30000);
+
+async function go(){
+    const id=document.getElementById('inp').value.trim();
+    if(!id||isNaN(id)){toast('ใส่ User ID ที่ถูกต้อง','err');return}
+    document.getElementById('ld').classList.add('on');
+    try{
+        const r=await fetch(`/api/check/${id}`);const d=await r.json();
+        if(r.ok){toast(`${d.display} — ${d.status}`,'ok');setTimeout(()=>location.reload(),500)}
+        else toast(d.error||'ไม่พบ','err');
+    }catch(e){toast('Error','err')}
+    document.getElementById('ld').classList.remove('on');
+}
+
+async function rm(id){
+    await fetch(`/api/remove/${id}`,{method:'DELETE'});
+    document.getElementById(`pc-${id}`)?.remove();toast('ลบแล้ว','ok');
+}
+
+function fil(r,btn){
+    document.querySelectorAll('.fc').forEach(c=>{c.style.display=(r==='all'||c.dataset.r===r)?'':'none'});
+    document.querySelectorAll('.fil').forEach(b=>b.classList.remove('on'));btn.classList.add('on');
+}
+
+function filInv(uid,cat,btn){
+    document.querySelectorAll(`#igrid-${uid} .icard`).forEach(c=>{
+        c.style.display=(cat==='all'||c.dataset.cat===cat)?'':'none';
+    });
+    btn.closest('.cat-tabs').querySelectorAll('.ctab').forEach(b=>b.classList.remove('on'));
+    btn.classList.add('on');
+}
+
+function scrollToInv(uid){
+    document.getElementById(`inv-${uid}`)?.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function cp(){
+    navigator.clipboard.writeText(document.getElementById('lua').innerText).then(()=>toast('คัดลอกแล้ว!','ok'));
+}
+
+function toast(m,t){
+    const el=document.getElementById('toast');el.textContent=m;el.className=`toast ${t} show`;
+    setTimeout(()=>el.classList.remove('show'),3000);
+}
+</script>
+</body>
+</html>

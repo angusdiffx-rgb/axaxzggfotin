@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roblox Player Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            min-height: 100vh;
+            color: #fff;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            background: linear-gradient(90deg, #00d2ff, #3a7bd5);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            color: #aaa;
+            font-size: 1.1em;
+        }
+
+        /* Search Box */
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .search-box input {
+            flex: 1;
+            padding: 14px 20px;
+            border: 2px solid #444;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            font-size: 1em;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .search-box input:focus {
+            border-color: #3a7bd5;
+        }
+
+        .search-box input::placeholder {
+            color: #666;
+        }
+
+        .search-box button {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #00d2ff, #3a7bd5);
+            color: #fff;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .search-box button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(58, 123, 213, 0.4);
+        }
+
+        /* Player Cards */
+        .players-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: 20px;
+        }
+
+        .player-card {
+            background: rgba(255, 255, 255, 0.07);
+            border-radius: 16px;
+            padding: 24px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            transition: transform 0.3s, box-shadow 0.3s;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+        }
+
+        .player-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .player-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 3px solid #444;
+            flex-shrink: 0;
+            object-fit: cover;
+        }
+
+        .player-info {
+            flex: 1;
+        }
+
+        .player-info h3 {
+            font-size: 1.3em;
+            margin-bottom: 4px;
+        }
+
+        .player-info .username {
+            color: #888;
+            font-size: 0.9em;
+            margin-bottom: 8px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .status-badge.offline {
+            background: rgba(255, 75, 75, 0.2);
+            color: #ff4b4b;
+            border: 1px solid rgba(255, 75, 75, 0.3);
+        }
+
+        .status-badge.online {
+            background: rgba(0, 200, 83, 0.2);
+            color: #00c853;
+            border: 1px solid rgba(0, 200, 83, 0.3);
+        }
+
+        .status-badge.in-game {
+            background: rgba(0, 210, 255, 0.2);
+            color: #00d2ff;
+            border: 1px solid rgba(0, 210, 255, 0.3);
+        }
+
+        .status-badge.studio {
+            background: rgba(255, 165, 0, 0.2);
+            color: #ffa500;
+            border: 1px solid rgba(255, 165, 0, 0.3);
+        }
+
+        .player-info .location {
+            margin-top: 6px;
+            color: #aaa;
+            font-size: 0.85em;
+        }
+
+        .player-info .last-checked {
+            margin-top: 4px;
+            color: #666;
+            font-size: 0.75em;
+        }
+
+        .btn-remove {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(255, 75, 75, 0.2);
+            border: none;
+            color: #ff4b4b;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .player-card:hover .btn-remove {
+            opacity: 1;
+        }
+
+        .btn-remove:hover {
+            background: rgba(255, 75, 75, 0.5);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .empty-state .icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+
+        .empty-state h2 {
+            color: #888;
+            margin-bottom: 10px;
+        }
+
+        /* Loading */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top-color: #3a7bd5;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            padding: 14px 24px;
+            border-radius: 12px;
+            font-size: 0.95em;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.4s ease;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success {
+            background: rgba(0, 200, 83, 0.9);
+            color: #fff;
+        }
+
+        .toast.error {
+            background: rgba(255, 75, 75, 0.9);
+            color: #fff;
+        }
+
+        /* Auto-refresh indicator */
+        .refresh-bar {
+            max-width: 600px;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            color: #666;
+            font-size: 0.85em;
+        }
+
+        .refresh-bar label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+        }
+
+        .refresh-bar input[type="checkbox"] {
+            accent-color: #3a7bd5;
+        }
+
+        /* Lua Script Section */
+        .script-section {
+            margin-top: 50px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .script-section h2 {
+            margin-bottom: 15px;
+            color: #3a7bd5;
+        }
+
+        .script-section pre {
+            background: #1a1a2e;
+            padding: 16px;
+            border-radius: 10px;
+            overflow-x: auto;
+            font-size: 0.85em;
+            line-height: 1.6;
+            color: #e0e0e0;
+        }
+
+        .btn-copy {
+            padding: 8px 16px;
+            background: linear-gradient(135deg, #00d2ff, #3a7bd5);
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            cursor: pointer;
+            font-size: 0.85em;
+            margin-top: 10px;
+        }
+
+        .btn-copy:hover {
+            opacity: 0.9;
+        }
+
+        @media (max-width: 600px) {
+            .players-grid {
+                grid-template-columns: 1fr;
+            }
+            header h1 {
+                font-size: 1.8em;
+            }
+            .search-box {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎮 Roblox Player Tracker</h1>
+            <p>ตรวจสอบสถานะออนไลน์ของผู้เล่น Roblox แบบเรียลไทม์</p>
+        </header>
+
+        <!-- Search Box -->
+        <div class="search-box">
+            <input type="text" id="userIdInput" placeholder="ใส่ User ID ของ Roblox (เช่น 1234567)" 
+                   onkeypress="if(event.key==='Enter') checkPlayer()">
+            <button onclick="checkPlayer()">🔍 ตรวจสอบ</button>
+        </div>
+
+        <!-- Auto Refresh -->
+        <div class="refresh-bar">
+            <label>
+                <input type="checkbox" id="autoRefresh" checked onchange="toggleAutoRefresh()">
+                รีเฟรชอัตโนมัติทุก 30 วินาที
+            </label>
+            <span id="countdown"></span>
+        </div>
+
+        <!-- Loading -->
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>กำลังตรวจสอบ...</p>
+        </div>
+
+        <!-- Player Cards -->
+        <div class="players-grid" id="playersGrid">
+            {% if players %}
+                {% for uid, p in players.items() %}
+                <div class="player-card" id="card-{{ uid }}">
+                    <button class="btn-remove" onclick="removePlayer('{{ uid }}')" title="ลบ">✕</button>
+                    <img src="{{ p.avatar_url }}" alt="avatar" class="player-avatar"
+                         onerror="this.src='https://tr.rbxcdn.com/30DAY-AvatarHeadshot-placeholder/150/150/AvatarHeadshot/Png/noFilter'">
+                    <div class="player-info">
+                        <h3>{{ p.display_name }}</h3>
+                        <div class="username">@{{ p.username }} · ID: {{ p.user_id }}</div>
+                        <span class="status-badge {{ p.status_class }}">{{ p.status_text }}</span>
+                        {% if p.last_location %}
+                        <div class="location">📍 {{ p.last_location }}</div>
+                        {% endif %}
+                        <div class="last-checked">อัพเดตล่าสุด: {{ p.last_checked }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state" id="emptyState">
+                    <div class="icon">👤</div>
+                    <h2>ยังไม่มีผู้เล่นที่ติดตาม</h2>
+                    <p>ใส่ User ID ด้านบน หรือรันสคริปใน Roblox เพื่อเริ่มติดตาม</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Lua Script Section -->
+        <div class="script-section">
+            <h2>📜 Roblox Executor Script</h2>
+            <p style="color:#aaa; margin-bottom:15px;">คัดลอกสคริปนี้ไปรันใน Roblox executor เพื่อส่งข้อมูลผู้เล่นมาที่เว็บ</p>
+            <pre id="luaScript">-- Roblox Player Tracker Script
+-- รันสคริปนี้ใน executor (Synapse X, Fluxus, etc.)
+
+local HttpService = game:GetService("HttpService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- ⚠️ เปลี่ยน URL นี้เป็น IP ของคุณ (หรือใช้ localhost ถ้ารันบนเครื่องเดียวกัน)
+local SERVER_URL = "http://localhost:5000/api/track"
+
+local data = {
+    user_id = tostring(LocalPlayer.UserId),
+    username = LocalPlayer.Name,
+    display_name = LocalPlayer.DisplayName
+}
+
+local jsonData = HttpService:JSONEncode(data)
+
+local success, response = pcall(function()
+    return request({
+        Url = SERVER_URL,
+        Method = "POST",
+        Headers = {
+            ["Content-Type"] = "application/json"
+        },
+        Body = jsonData
+    })
+end)
+
+if success then
+    print("✅ ส่งข้อมูลสำเร็จ!")
+    print("📊 Response: " .. tostring(response.Body))
+else
+    print("❌ ส่งข้อมูลไม่สำเร็จ: " .. tostring(response))
+end</pre>
+            <button class="btn-copy" onclick="copyScript()">📋 คัดลอกสคริป</button>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        let refreshInterval = null;
+        let countdownValue = 30;
+        let countdownInterval = null;
+
+        // Check player by User ID
+        async function checkPlayer() {
+            const userId = document.getElementById('userIdInput').value.trim();
+            if (!userId || isNaN(userId)) {
+                showToast('กรุณาใส่ User ID ที่ถูกต้อง', 'error');
+                return;
+            }
+
+            document.getElementById('loading').classList.add('active');
+
+            try {
+                const resp = await fetch(`/api/check/${userId}`);
+                const data = await resp.json();
+
+                if (resp.ok) {
+                    showToast(`พบผู้เล่น: ${data.display_name} — ${data.status_text}`, 'success');
+                    // Reload page to show updated cards
+                    setTimeout(() => location.reload(), 800);
+                } else {
+                    showToast(data.error || 'ไม่พบผู้เล่น', 'error');
+                }
+            } catch (err) {
+                showToast('เกิดข้อผิดพลาด: ' + err.message, 'error');
+            } finally {
+                document.getElementById('loading').classList.remove('active');
+            }
+        }
+
+        // Remove player from tracking
+        async function removePlayer(userId) {
+            try {
+                const resp = await fetch(`/api/remove/${userId}`, { method: 'DELETE' });
+                if (resp.ok) {
+                    const card = document.getElementById(`card-${userId}`);
+                    if (card) card.remove();
+                    showToast('ลบผู้เล่นออกแล้ว', 'success');
+
+                    // Check if grid is empty
+                    const grid = document.getElementById('playersGrid');
+                    if (grid.querySelectorAll('.player-card').length === 0) {
+                        grid.innerHTML = `
+                            <div class="empty-state" id="emptyState">
+                                <div class="icon">👤</div>
+                                <h2>ยังไม่มีผู้เล่นที่ติดตาม</h2>
+                                <p>ใส่ User ID ด้านบน หรือรันสคริปใน Roblox เพื่อเริ่มติดตาม</p>
+                            </div>`;
+                    }
+                }
+            } catch (err) {
+                showToast('เกิดข้อผิดพลาด', 'error');
+            }
+        }
+
+        // Auto refresh
+        function toggleAutoRefresh() {
+            const checked = document.getElementById('autoRefresh').checked;
+            if (checked) {
+                startAutoRefresh();
+            } else {
+                stopAutoRefresh();
+            }
+        }
+
+        function startAutoRefresh() {
+            stopAutoRefresh();
+            countdownValue = 30;
+            updateCountdown();
+            countdownInterval = setInterval(() => {
+                countdownValue--;
+                updateCountdown();
+                if (countdownValue <= 0) {
+                    location.reload();
+                }
+            }, 1000);
+        }
+
+        function stopAutoRefresh() {
+            if (countdownInterval) clearInterval(countdownInterval);
+            document.getElementById('countdown').textContent = '';
+        }
+
+        function updateCountdown() {
+            document.getElementById('countdown').textContent = `(${countdownValue}s)`;
+        }
+
+        // Copy Lua script
+        function copyScript() {
+            const script = document.getElementById('luaScript').textContent;
+            navigator.clipboard.writeText(script).then(() => {
+                showToast('คัดลอกสคริปแล้ว! 📋', 'success');
+            });
+        }
+
+        // Toast notification
+        function showToast(message, type) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast ${type} show`;
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Start auto refresh on page load
+        if (document.getElementById('autoRefresh').checked) {
+            startAutoRefresh();
+        }
+    </script>
+</body>
+</html>

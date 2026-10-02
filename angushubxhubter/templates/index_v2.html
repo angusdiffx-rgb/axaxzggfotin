@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roblox Tracker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #050510;
+            --surface: rgba(255,255,255,0.03);
+            --surface-hover: rgba(255,255,255,0.06);
+            --border: rgba(255,255,255,0.06);
+            --border-hover: rgba(255,255,255,0.12);
+            --text: #e8e8f0;
+            --text-secondary: #7a7a9a;
+            --text-dim: #4a4a6a;
+            --blue: #5b8af5;
+            --purple: #a855f7;
+            --pink: #f472b6;
+            --cyan: #22d3ee;
+            --green: #34d399;
+            --orange: #fb923c;
+            --red: #f87171;
+            --yellow: #fbbf24;
+        }
+        *{margin:0;padding:0;box-sizing:border-box;}
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ═══ Canvas Particles ═══ */
+        #particles { position: fixed; inset:0; z-index:0; pointer-events:none; }
+
+        /* ═══ Animated Gradient Mesh ═══ */
+        .mesh-bg {
+            position: fixed; inset:0; z-index:0; pointer-events:none; opacity: 0.4;
+            background:
+                radial-gradient(ellipse 600px 600px at 20% 20%, rgba(91,138,245,0.15), transparent),
+                radial-gradient(ellipse 500px 500px at 80% 30%, rgba(168,85,247,0.12), transparent),
+                radial-gradient(ellipse 400px 400px at 50% 80%, rgba(244,114,182,0.1), transparent),
+                radial-gradient(ellipse 300px 300px at 10% 70%, rgba(34,211,238,0.08), transparent);
+            animation: meshMove 25s ease-in-out infinite alternate;
+        }
+        @keyframes meshMove {
+            0%   { background-position: 0% 0%, 100% 0%, 50% 100%, 0% 50%; }
+            100% { background-position: 30% 30%, 70% 60%, 20% 70%, 80% 20%; }
+        }
+
+        /* ═══ Noise Overlay ═══ */
+        .noise {
+            position: fixed; inset:0; z-index:0; pointer-events:none; opacity: 0.03;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+        }
+
+        .wrapper { position: relative; z-index: 1; }
+
+        /* ═══ Top Nav Bar ═══ */
+        .topbar {
+            position: sticky; top: 0; z-index: 100;
+            backdrop-filter: blur(24px) saturate(1.8);
+            -webkit-backdrop-filter: blur(24px) saturate(1.8);
+            background: rgba(5,5,16,0.7);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 32px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .topbar-brand {
+            display: flex; align-items: center; gap: 10px;
+            font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 1.1em;
+        }
+        .topbar-brand .logo {
+            width: 32px; height: 32px; border-radius: 10px;
+            background: linear-gradient(135deg, var(--blue), var(--purple));
+            display: flex; align-items: center; justify-content: center; font-size: 0.9em;
+        }
+        .topbar-live {
+            display: flex; align-items: center; gap: 6px;
+            font-size: 0.75em; color: var(--green); font-weight: 600;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+        .topbar-live .pulse-dot {
+            width: 8px; height: 8px; border-radius: 50%; background: var(--green);
+            animation: livePulse 2s infinite;
+        }
+        @keyframes livePulse {
+            0%,100% { box-shadow: 0 0 0 0 rgba(52,211,153,0.5); }
+            50% { box-shadow: 0 0 0 6px rgba(52,211,153,0); }
+        }
+
+        .container { max-width: 1000px; margin: 0 auto; padding: 40px 24px 80px; }
+
+        /* ═══ Hero ═══ */
+        .hero { text-align: center; margin-bottom: 48px; }
+        .hero h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(2.2em, 5vw, 3.5em); font-weight: 800;
+            line-height: 1.1; margin-bottom: 14px;
+        }
+        .hero h1 .grad {
+            background: linear-gradient(135deg, #5b8af5 0%, #a855f7 40%, #f472b6 70%, #fb923c 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-size: 200% 200%; animation: gradShift 4s ease infinite;
+        }
+        @keyframes gradShift {
+            0%,100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        .hero p { color: var(--text-secondary); font-size: 1.05em; max-width: 500px; margin: 0 auto; }
+
+        /* ═══ Search ═══ */
+        .search-area { max-width: 560px; margin: 0 auto 36px; }
+        .search-box {
+            display: flex; gap: 0;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px; overflow: hidden;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        .search-box:focus-within {
+            border-color: var(--blue);
+            box-shadow: 0 0 0 4px rgba(91,138,245,0.1), 0 8px 32px rgba(91,138,245,0.08);
+        }
+        .search-box input {
+            flex:1; padding: 16px 20px; background: transparent; border: none;
+            color: var(--text); font-size: 0.95em; outline: none; font-family: inherit;
+        }
+        .search-box input::placeholder { color: var(--text-dim); }
+        .search-box button {
+            padding: 16px 32px; border: none;
+            background: linear-gradient(135deg, var(--blue), var(--purple));
+            color: #fff; font-weight: 700; cursor: pointer;
+            font-family: inherit; font-size: 0.95em;
+            transition: opacity 0.2s;
+        }
+        .search-box button:hover { opacity: 0.9; }
+
+        /* ═══ Stats ═══ */
+        .stats {
+            display: flex; justify-content: center; gap: 12px; margin-bottom: 32px; flex-wrap: wrap;
+        }
+        .stat {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 12px; padding: 10px 20px;
+            display: flex; align-items: center; gap: 8px; font-size: 0.85em;
+        }
+        .stat .num { font-weight: 800; font-family: 'Space Grotesk', sans-serif; }
+        .stat .lbl { color: var(--text-secondary); }
+
+        /* ═══ Refresh Toggle ═══ */
+        .refresh-row {
+            display: flex; align-items: center; justify-content: center;
+            gap: 10px; margin-bottom: 36px; font-size: 0.82em; color: var(--text-dim);
+        }
+        .switch { position: relative; width: 40px; height: 22px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .switch .track {
+            position: absolute; inset: 0; border-radius: 100px;
+            background: rgba(255,255,255,0.08); cursor: pointer; transition: 0.3s;
+        }
+        .switch .track::after {
+            content:''; position: absolute; left: 3px; top: 3px;
+            width: 16px; height: 16px; border-radius: 50%;
+            background: var(--text-dim); transition: 0.3s;
+        }
+        .switch input:checked + .track { background: rgba(91,138,245,0.25); }
+        .switch input:checked + .track::after { transform: translateX(18px); background: var(--blue); }
+        #cdLabel { color: var(--blue); font-weight: 600; font-family: 'Space Grotesk', sans-serif; }
+
+        /* ═══ Player Card ═══ */
+        .card-list { display: flex; flex-direction: column; gap: 24px; }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            overflow: hidden;
+            transition: transform 0.4s cubic-bezier(.16,1,.3,1), box-shadow 0.4s, border-color 0.3s;
+            position: relative;
+        }
+        .card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 24px 60px rgba(0,0,0,0.4), 0 0 40px rgba(91,138,245,0.06);
+            border-color: var(--border-hover);
+        }
+
+        /* gradient top accent */
+        .card-accent {
+            height: 3px;
+            background: linear-gradient(90deg, var(--blue), var(--purple), var(--pink), var(--orange));
+            background-size: 300% 100%; animation: accentMove 6s linear infinite;
+        }
+        @keyframes accentMove { 0%{background-position:0% 0%} 100%{background-position:300% 0%} }
+
+        .card-body { padding: 28px; }
+
+        .player-row { display: flex; align-items: center; gap: 20px; }
+
+        .avatar-wrap { position: relative; flex-shrink: 0; }
+        .avatar {
+            width: 76px; height: 76px; border-radius: 50%;
+            background: rgba(255,255,255,0.05);
+            border: 2px solid rgba(255,255,255,0.08);
+            object-fit: cover;
+        }
+        .avatar-status {
+            position: absolute; bottom: 1px; right: 1px;
+            width: 20px; height: 20px; border-radius: 50%;
+            border: 3px solid var(--bg);
+        }
+        .avatar-status.offline { background: var(--red); }
+        .avatar-status.online { background: var(--green); }
+        .avatar-status.in-game { background: var(--cyan); box-shadow: 0 0 8px rgba(34,211,238,0.5); }
+        .avatar-status.studio { background: var(--orange); }
+
+        .player-info { flex: 1; min-width: 0; }
+        .player-info h2 { font-size: 1.4em; font-weight: 700; margin-bottom: 2px; font-family: 'Space Grotesk', sans-serif; }
+        .player-info .handle { color: var(--text-secondary); font-size: 0.85em; margin-bottom: 10px; }
+
+        .badge {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 5px 14px; border-radius: 100px; font-size: 0.78em; font-weight: 600;
+        }
+        .badge.offline { background: rgba(248,113,113,0.1); color: var(--red); border: 1px solid rgba(248,113,113,0.15); }
+        .badge.online { background: rgba(52,211,153,0.1); color: var(--green); border: 1px solid rgba(52,211,153,0.15); }
+        .badge.in-game { background: rgba(34,211,238,0.1); color: var(--cyan); border: 1px solid rgba(34,211,238,0.15); }
+        .badge.studio { background: rgba(251,146,60,0.1); color: var(--orange); border: 1px solid rgba(251,146,60,0.15); }
+
+        .metas { display: flex; gap: 14px; margin-top: 10px; flex-wrap: wrap; }
+        .metas span { font-size: 0.78em; color: var(--text-dim); display: flex; align-items: center; gap: 4px; }
+
+        .btn-x {
+            position: absolute; top: 20px; right: 20px;
+            width: 30px; height: 30px; border-radius: 8px;
+            background: transparent; border: 1px solid transparent;
+            color: var(--text-dim); cursor: pointer; font-size: 0.85em;
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; transition: all 0.2s;
+        }
+        .card:hover .btn-x { opacity: 1; }
+        .btn-x:hover { background: rgba(248,113,113,0.12); border-color: rgba(248,113,113,0.2); color: var(--red); }
+
+        /* ═══ Game Section ═══ */
+        .game-zone {
+            margin-top: 24px; padding-top: 24px;
+            border-top: 1px solid var(--border);
+        }
+        .game-head { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+        .game-icon-box {
+            width: 52px; height: 52px; border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.6em; position: relative;
+        }
+        .game-icon-box::after {
+            content:''; position: absolute; inset: -2px; border-radius: 16px;
+            background: inherit; opacity: 0.3; filter: blur(12px); z-index: -1;
+        }
+        .game-head .game-name { font-weight: 700; font-size: 1.15em; font-family: 'Space Grotesk', sans-serif; }
+        .game-head .game-sub { font-size: 0.8em; color: var(--text-secondary); }
+
+        /* ═══ Fruit Filters ═══ */
+        .filters { display: flex; gap: 6px; margin-bottom: 18px; flex-wrap: wrap; }
+        .fbtn {
+            padding: 6px 14px; border-radius: 10px;
+            border: 1px solid var(--border); background: transparent;
+            color: var(--text-secondary); cursor: pointer;
+            font-size: 0.75em; font-weight: 500; font-family: inherit;
+            transition: all 0.2s;
+        }
+        .fbtn:hover { background: var(--surface-hover); color: var(--text); border-color: var(--border-hover); }
+        .fbtn.on {
+            background: rgba(91,138,245,0.12); color: var(--blue);
+            border-color: rgba(91,138,245,0.25);
+        }
+
+        /* ═══ Fruits Grid ═══ */
+        .fgrid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+            gap: 10px; max-height: 520px; overflow-y: auto;
+            scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.08) transparent;
+        }
+        .fgrid::-webkit-scrollbar { width: 5px; }
+        .fgrid::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 10px; }
+
+        .fcard {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid var(--border);
+            border-radius: 14px; padding: 16px 10px 12px;
+            text-align: center; position: relative;
+            transition: all 0.3s cubic-bezier(.16,1,.3,1); cursor: default;
+        }
+        .fcard:hover {
+            transform: translateY(-4px) scale(1.02);
+            background: var(--surface-hover);
+            border-color: var(--border-hover);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.3);
+        }
+
+        .fcard .tier-tag {
+            position: absolute; top: 8px; right: 8px;
+            width: 22px; height: 22px; border-radius: 6px;
+            font-size: 0.6em; font-weight: 800; font-family: 'Space Grotesk', sans-serif;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .tier-tag.S { background: rgba(251,191,36,0.2); color: var(--yellow); }
+        .tier-tag.A { background: rgba(168,85,247,0.2); color: var(--purple); }
+        .tier-tag.B { background: rgba(91,138,245,0.2); color: var(--blue); }
+        .tier-tag.C { background: rgba(52,211,153,0.2); color: var(--green); }
+        .tier-tag.D { background: rgba(148,163,184,0.2); color: #94a3b8; }
+
+        .fcard .emoji { font-size: 2.2em; display: block; margin-bottom: 8px; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3)); }
+        .fcard .fname { font-weight: 700; font-size: 0.85em; }
+        .fcard .fname-th { font-size: 0.68em; color: var(--text-secondary); margin-top: 1px; }
+
+        .rarity-pill {
+            display: inline-block; padding: 2px 8px; border-radius: 6px;
+            font-size: 0.6em; font-weight: 700; margin-top: 6px;
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .rarity-pill.mythical { background: linear-gradient(135deg, rgba(168,85,247,0.25), rgba(244,114,182,0.2)); color: #d8b4fe; }
+        .rarity-pill.legendary { background: linear-gradient(135deg, rgba(251,191,36,0.25), rgba(251,146,60,0.2)); color: #fde68a; }
+        .rarity-pill.rare { background: rgba(91,138,245,0.15); color: #93c5fd; }
+        .rarity-pill.uncommon { background: rgba(52,211,153,0.15); color: #86efac; }
+        .rarity-pill.common { background: rgba(148,163,184,0.12); color: #cbd5e1; }
+
+        .ftype-row {
+            display: flex; align-items: center; justify-content: center;
+            gap: 4px; margin-top: 5px; font-size: 0.62em; color: var(--text-dim);
+        }
+        .ftype-dot { width: 6px; height: 6px; border-radius: 50%; }
+        .ftype-dot.Natural { background: var(--green); }
+        .ftype-dot.Elemental { background: var(--orange); }
+        .ftype-dot.Beast { background: var(--red); }
+
+        .fprice { font-size: 0.65em; color: var(--text-dim); margin-top: 6px; }
+
+        /* ═══ Empty ═══ */
+        .empty { text-align: center; padding: 80px 20px; }
+        .empty .big-icon {
+            font-size: 5em; margin-bottom: 20px;
+            animation: emptyFloat 3s ease-in-out infinite;
+        }
+        @keyframes emptyFloat {
+            0%,100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        .empty h2 { color: var(--text-secondary); font-size: 1.3em; margin-bottom: 8px; }
+        .empty p { color: var(--text-dim); font-size: 0.9em; }
+
+        /* ═══ Script Block ═══ */
+        .script-block {
+            margin-top: 64px;
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 20px; overflow: hidden;
+        }
+        .script-head {
+            padding: 24px 28px 0;
+        }
+        .script-head h2 { font-family: 'Space Grotesk', sans-serif; font-size: 1.2em; margin-bottom: 4px; }
+        .script-head p { color: var(--text-secondary); font-size: 0.85em; margin-bottom: 20px; }
+        .code-area {
+            position: relative; margin: 0 20px 20px;
+            background: #08081a; border: 1px solid rgba(255,255,255,0.04);
+            border-radius: 14px; overflow: hidden;
+        }
+        .code-toolbar {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 10px 16px;
+            background: rgba(255,255,255,0.02); border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+        .code-dots { display: flex; gap: 6px; }
+        .code-dots span {
+            width: 10px; height: 10px; border-radius: 50%;
+        }
+        .code-dots span:nth-child(1) { background: #ff5f57; }
+        .code-dots span:nth-child(2) { background: #ffbd2e; }
+        .code-dots span:nth-child(3) { background: #28c840; }
+        .copy-btn {
+            padding: 5px 12px; border-radius: 6px;
+            background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08);
+            color: var(--text-secondary); cursor: pointer; font-size: 0.75em;
+            font-family: inherit; transition: all 0.2s;
+        }
+        .copy-btn:hover { background: rgba(91,138,245,0.15); color: var(--blue); }
+
+        .code-content {
+            padding: 18px 20px; overflow-x: auto;
+            font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 0.78em; line-height: 1.8; color: #c0c0d0;
+        }
+        .code-content .kw { color: #c084fc; }
+        .code-content .st { color: #86efac; }
+        .code-content .cm { color: #4a4a6a; font-style: italic; }
+        .code-content .fn { color: #93c5fd; }
+        .code-content .op { color: #fb923c; }
+
+        /* ═══ Loading ═══ */
+        .loading { display:none; text-align:center; padding:30px; }
+        .loading.on { display:block; }
+        .ld-ring {
+            width:44px; height:44px; margin:0 auto 14px;
+            border:3px solid rgba(255,255,255,0.06);
+            border-top-color: var(--blue);
+            border-radius:50%; animation: spin 0.7s linear infinite;
+        }
+        @keyframes spin { to{transform:rotate(360deg)} }
+        .loading p { color: var(--text-secondary); font-size: 0.9em; }
+
+        /* ═══ Toast ═══ */
+        .toast {
+            position:fixed; bottom:24px; right:24px; z-index:999;
+            padding: 14px 22px; border-radius: 14px;
+            backdrop-filter: blur(20px);
+            font-size: 0.88em; font-weight: 500;
+            transform: translateY(80px) scale(0.95); opacity:0;
+            transition: all 0.5s cubic-bezier(.16,1,.3,1);
+        }
+        .toast.show { transform: translateY(0) scale(1); opacity:1; }
+        .toast.ok { background: rgba(52,211,153,0.12); border: 1px solid rgba(52,211,153,0.2); color: var(--green); }
+        .toast.err { background: rgba(248,113,113,0.12); border: 1px solid rgba(248,113,113,0.2); color: var(--red); }
+
+        /* ═══ Footer ═══ */
+        .footer {
+            text-align: center; padding: 40px 20px 30px;
+            color: var(--text-dim); font-size: 0.75em;
+            border-top: 1px solid var(--border); margin-top: 60px;
+        }
+
+        @media (max-width: 600px) {
+            .hero h1 { font-size: 2em; }
+            .player-row { flex-direction: column; text-align: center; }
+            .fgrid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+            .topbar { padding: 10px 16px; }
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="particles"></canvas>
+<div class="mesh-bg"></div>
+<div class="noise"></div>
+
+<div class="wrapper">
+
+    <!-- Top Bar -->
+    <nav class="topbar">
+        <div class="topbar-brand">
+            <div class="logo">🎮</div>
+            <span>Roblox Tracker</span>
+        </div>
+        <div class="topbar-live">
+            <span class="pulse-dot"></span>
+            Live
+        </div>
+    </nav>
+
+    <div class="container">
+
+        <!-- Hero -->
+        <div class="hero">
+            <h1><span class="grad">Roblox Tracker</span></h1>
+            <p>ติดตามสถานะผู้เล่น Roblox แบบเรียลไทม์ พร้อมดูไอเทมในเกมทั้งหมด</p>
+        </div>
+
+        <!-- Search -->
+        <div class="search-area">
+            <div class="search-box">
+                <input type="text" id="uid" placeholder="ใส่ Roblox User ID..." onkeydown="if(event.key==='Enter')go()">
+                <button onclick="go()">ค้นหา</button>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats">
+            <div class="stat">
+                <span class="num">{{ players|length }}</span>
+                <span class="lbl">ติดตาม</span>
+            </div>
+            <div class="stat">
+                <span style="color:var(--green)">●</span>
+                <span class="num">{{ players.values()|selectattr('presence_type','gt',0)|list|length }}</span>
+                <span class="lbl">ออนไลน์</span>
+            </div>
+            <div class="stat">
+                <span style="color:var(--cyan)">●</span>
+                <span class="num">{{ players.values()|selectattr('presence_type','equalto',2)|list|length }}</span>
+                <span class="lbl">ในเกม</span>
+            </div>
+        </div>
+
+        <!-- Refresh -->
+        <div class="refresh-row">
+            <label class="switch">
+                <input type="checkbox" id="arCheck" checked onchange="toggleAR()">
+                <span class="track"></span>
+            </label>
+            <span>รีเฟรชอัตโนมัติ</span>
+            <span id="cdLabel"></span>
+        </div>
+
+        <!-- Loading -->
+        <div class="loading" id="ld">
+            <div class="ld-ring"></div>
+            <p>กำลังค้นหา...</p>
+        </div>
+
+        <!-- Cards -->
+        <div class="card-list" id="cardList">
+        {% if players %}
+            {% for uid, p in players.items() %}
+            <div class="card" id="c-{{ uid }}" style="animation: fadeUp 0.5s ease {{ loop.index * 0.1 }}s both;">
+                <div class="card-accent"></div>
+                <div class="card-body">
+                    <button class="btn-x" onclick="rm('{{ uid }}')" title="ลบ">✕</button>
+
+                    <div class="player-row">
+                        <div class="avatar-wrap">
+                            <img class="avatar" alt=""
+                                 src="{{ p.avatar_url }}"
+                                 onerror="this.onerror=null;this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22150%22 height=%22150%22%3E%3Crect fill=%22%23222%22 width=%22150%22 height=%22150%22 rx=%2275%22/%3E%3Ctext x=%2275%22 y=%2290%22 text-anchor=%22middle%22 fill=%22%23666%22 font-size=%2260%22%3E%3F%3C/text%3E%3C/svg%3E';">
+                            <div class="avatar-status {{ p.status_class }}"></div>
+                        </div>
+                        <div class="player-info">
+                            <h2>{{ p.display_name }}</h2>
+                            <div class="handle">@{{ p.username }} · ID: {{ p.user_id }}</div>
+                            <span class="badge {{ p.status_class }}">{{ p.status_icon }} {{ p.status_text }}</span>
+                            <div class="metas">
+                                {% if p.last_location %}<span>📍 {{ p.last_location }}</span>{% endif %}
+                                <span>🕐 {{ p.last_checked }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if p.game_info %}
+                    <div class="game-zone">
+                        <div class="game-head">
+                            <div class="game-icon-box" style="background:{{ p.game_info.color }}18;">
+                                {{ p.game_info.icon }}
+                            </div>
+                            <div>
+                                <div class="game-name">{{ p.game_info.name }}</div>
+                                <div class="game-sub">{{ p.game_info.description }}</div>
+                            </div>
+                        </div>
+
+                        {% if p.game_items %}
+                        <div class="filters" data-uid="{{ uid }}">
+                            <button class="fbtn on" onclick="fil('{{ uid }}','all',this)">ทั้งหมด ({{ p.game_items.fruits|length }})</button>
+                            <button class="fbtn" onclick="fil('{{ uid }}','Mythical',this)">🟣 Mythical</button>
+                            <button class="fbtn" onclick="fil('{{ uid }}','Legendary',this)">🟡 Legendary</button>
+                            <button class="fbtn" onclick="fil('{{ uid }}','Rare',this)">🔵 Rare</button>
+                            <button class="fbtn" onclick="fil('{{ uid }}','Uncommon',this)">🟢 Uncommon</button>
+                            <button class="fbtn" onclick="fil('{{ uid }}','Common',this)">⚪ Common</button>
+                        </div>
+
+                        <div class="fgrid" id="fg-{{ uid }}">
+                            {% for f in p.game_items.fruits %}
+                            <div class="fcard" data-r="{{ f.rarity }}" style="animation: fadeUp 0.3s ease {{ loop.index * 0.02 }}s both;">
+                                <div class="tier-tag {{ f.tier }}">{{ f.tier }}</div>
+                                <span class="emoji">{{ f.emoji }}</span>
+                                <div class="fname">{{ f.name }}</div>
+                                <div class="fname-th">{{ f.name_th }}</div>
+                                <div class="rarity-pill {{ f.rarity|lower }}">{{ f.rarity }}</div>
+                                <div class="ftype-row"><span class="ftype-dot {{ f.type }}"></span>{{ f.type }}</div>
+                                <div class="fprice">💰 {{ "{:,.0f}".format(f.price_beli) }} · 💎 {{ "{:,.0f}".format(f.price_robux) }}</div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty" id="emp">
+                <div class="big-icon">🎯</div>
+                <h2>ยังไม่มีผู้เล่นที่ติดตาม</h2>
+                <p>ใส่ Roblox User ID ด้านบนเพื่อเริ่มต้น</p>
+            </div>
+        {% endif %}
+        </div>
+
+        <!-- Script -->
+        <div class="script-block">
+            <div class="script-head">
+                <h2>📜 Roblox Executor Script</h2>
+                <p>คัดลอกสคริปนี้ไปรันใน executor เพื่อส่งข้อมูลผู้เล่นมาแสดงบนเว็บอัตโนมัติ</p>
+            </div>
+            <div class="code-area">
+                <div class="code-toolbar">
+                    <div class="code-dots"><span></span><span></span><span></span></div>
+                    <button class="copy-btn" onclick="cpScript()">📋 Copy</button>
+                </div>
+                <div class="code-content"><pre id="luaCode"><span class="cm">-- Roblox Player Tracker Script</span>
+<span class="cm">-- Paste in your executor</span>
+
+<span class="kw">local</span> HttpService <span class="op">=</span> game:<span class="fn">GetService</span>(<span class="st">"HttpService"</span>)
+<span class="kw">local</span> Players <span class="op">=</span> game:<span class="fn">GetService</span>(<span class="st">"Players"</span>)
+<span class="kw">local</span> LP <span class="op">=</span> Players.LocalPlayer
+
+<span class="kw">local</span> URL <span class="op">=</span> <span class="st">"http://localhost:5000/api/track"</span>
+
+<span class="kw">local</span> data <span class="op">=</span> {
+    user_id <span class="op">=</span> <span class="fn">tostring</span>(LP.UserId),
+    username <span class="op">=</span> LP.Name,
+    display_name <span class="op">=</span> LP.DisplayName
+}
+
+<span class="kw">local</span> ok, res <span class="op">=</span> <span class="fn">pcall</span>(<span class="kw">function</span>()
+    <span class="kw">return</span> <span class="fn">request</span>({
+        Url <span class="op">=</span> URL, Method <span class="op">=</span> <span class="st">"POST"</span>,
+        Headers <span class="op">=</span> {[<span class="st">"Content-Type"</span>] <span class="op">=</span> <span class="st">"application/json"</span>},
+        Body <span class="op">=</span> HttpService:<span class="fn">JSONEncode</span>(data)
+    })
+<span class="kw">end</span>)
+
+<span class="kw">if</span> ok <span class="kw">then</span>
+    <span class="fn">print</span>(<span class="st">"Done! Open http://localhost:5000"</span>)
+<span class="kw">else</span>
+    <span class="fn">warn</span>(<span class="st">"Error: "</span> .. <span class="fn">tostring</span>(res))
+<span class="kw">end</span></pre></div>
+            </div>
+        </div>
+
+        <div class="footer">
+            Roblox Player Tracker v2.0 — Built with Flask + Roblox API
+        </div>
+
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Animations -->
+<style>
+@keyframes fadeUp {
+    from { opacity:0; transform:translateY(20px); }
+    to { opacity:1; transform:translateY(0); }
+}
+</style>
+
+<script>
+// ── Particles ──
+(function(){
+    const c = document.getElementById('particles');
+    const ctx = c.getContext('2d');
+    let w, h, pts = [];
+    function resize(){ w=c.width=innerWidth; h=c.height=innerHeight; }
+    resize(); addEventListener('resize', resize);
+
+    for(let i=0; i<60; i++){
+        pts.push({
+            x: Math.random()*w, y: Math.random()*h,
+            r: Math.random()*1.5+0.5,
+            dx: (Math.random()-0.5)*0.3,
+            dy: (Math.random()-0.5)*0.3,
+            a: Math.random()*0.3+0.1
+        });
+    }
+    function draw(){
+        ctx.clearRect(0,0,w,h);
+        pts.forEach(p=>{
+            p.x += p.dx; p.y += p.dy;
+            if(p.x<0) p.x=w; if(p.x>w) p.x=0;
+            if(p.y<0) p.y=h; if(p.y>h) p.y=0;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+            ctx.fillStyle = `rgba(140,160,255,${p.a})`;
+            ctx.fill();
+        });
+        // draw lines between close particles
+        for(let i=0;i<pts.length;i++){
+            for(let j=i+1;j<pts.length;j++){
+                const dx=pts[i].x-pts[j].x, dy=pts[i].y-pts[j].y;
+                const d=Math.sqrt(dx*dx+dy*dy);
+                if(d<120){
+                    ctx.beginPath();
+                    ctx.moveTo(pts[i].x, pts[i].y);
+                    ctx.lineTo(pts[j].x, pts[j].y);
+                    ctx.strokeStyle = `rgba(140,160,255,${0.06*(1-d/120)})`;
+                    ctx.stroke();
+                }
+            }
+        }
+        requestAnimationFrame(draw);
+    }
+    draw();
+})();
+
+// ── Functions ──
+let cd=30, cdI=null;
+
+async function go(){
+    const id=document.getElementById('uid').value.trim();
+    if(!id||isNaN(id)){toast('ใส่ User ID ที่ถูกต้อง','err');return;}
+    document.getElementById('ld').classList.add('on');
+    try{
+        const r=await fetch(`/api/check/${id}`);
+        const d=await r.json();
+        if(r.ok){
+            let m=`${d.display_name} — ${d.status}`;
+            if(d.game) m+=` (${d.game})`;
+            toast(m,'ok');
+            setTimeout(()=>location.reload(),500);
+        } else toast(d.error||'ไม่พบ','err');
+    }catch(e){toast('Error: '+e.message,'err');}
+    finally{document.getElementById('ld').classList.remove('on');}
+}
+
+async function rm(id){
+    try{
+        const r=await fetch(`/api/remove/${id}`,{method:'DELETE'});
+        if(r.ok){
+            document.getElementById(`c-${id}`)?.remove();
+            toast('ลบแล้ว','ok');
+            if(!document.querySelector('.card'))
+                document.getElementById('cardList').innerHTML='<div class="empty"><div class="big-icon">🎯</div><h2>ยังไม่มีผู้เล่นที่ติดตาม</h2><p>ใส่ User ID ด้านบน</p></div>';
+        }
+    }catch(e){toast('Error','err');}
+}
+
+function fil(uid, r, btn){
+    document.getElementById(`fg-${uid}`).querySelectorAll('.fcard').forEach(c=>{
+        c.style.display=(r==='all'||c.dataset.r===r)?'':'none';
+    });
+    btn.parentElement.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('on'));
+    btn.classList.add('on');
+}
+
+function toggleAR(){document.getElementById('arCheck').checked?startAR():stopAR();}
+function startAR(){stopAR();cd=30;updCD();cdI=setInterval(()=>{cd--;updCD();if(cd<=0)location.reload();},1000);}
+function stopAR(){if(cdI)clearInterval(cdI);document.getElementById('cdLabel').textContent='';}
+function updCD(){document.getElementById('cdLabel').textContent=cd+'s';}
+
+function cpScript(){
+    const t=document.getElementById('luaCode').innerText;
+    navigator.clipboard.writeText(t).then(()=>toast('คัดลอกแล้ว!','ok'));
+}
+
+function toast(m,t){
+    const el=document.getElementById('toast');
+    el.textContent=m; el.className=`toast ${t} show`;
+    setTimeout(()=>el.classList.remove('show'),3500);
+}
+
+if(document.getElementById('arCheck').checked) startAR();
+</script>
+
+</body>
+</html>

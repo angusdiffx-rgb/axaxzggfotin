@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#090919">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="referrer" content="no-referrer">
+<title>angushubxhunter — ค่ายโปรล่าค่าหัว Blox Fruits Realtime Tracker</title>
+<link rel="icon" type="image/jpeg" href="/static/logo.jpg">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+    --bg:#090919;
+    --card:rgba(255,255,255,0.035);
+    --card-border:rgba(255,255,255,0.08);
+    --card-hover:rgba(255,255,255,0.065);
+    --accent-blue:#6366f1;
+    --accent-purple:#a855f7;
+    --accent-pink:#ec4899;
+    --accent-green:#10b981;
+    --accent-gold:#f59e0b;
+    --accent-red:#ef4444;
+    --accent-cyan:#06b6d4;
+    --text-primary:#f1f5f9;
+    --text-secondary:#94a3b8;
+    --text-dim:#64748b;
+}
+
+body{
+    font-family:'Inter',sans-serif;
+    background:var(--bg);
+    color:var(--text-primary);
+    min-height:100vh;
+    overflow-x:hidden;
+}
+
+/* Background Atmosphere */
+.bg-scene{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.glow-orb{position:absolute;border-radius:50%;filter:blur(110px);opacity:.2}
+.glow-orb.o1{width:550px;height:550px;background:#4f46e5;top:-10%;left:-5%;animation:drift 18s ease-in-out infinite}
+.glow-orb.o2{width:450px;height:450px;background:#9333ea;top:35%;right:-10%;animation:drift 22s ease-in-out infinite reverse}
+.glow-orb.o3{width:400px;height:400px;background:#db2777;bottom:-10%;left:30%;animation:drift 26s ease-in-out infinite 2s}
+@keyframes drift{0%,100%{transform:translate(0,0)}50%{transform:translate(35px,-30px) scale(1.04)}}
+
+.grid-overlay{
+    position:fixed;inset:0;z-index:0;pointer-events:none;
+    background-image:linear-gradient(rgba(255,255,255,.015) 1px, transparent 1px),linear-gradient(90deg, rgba(255,255,255,.015) 1px, transparent 1px);
+    background-size:48px 48px;
+}
+
+.app-wrapper{position:relative;z-index:1}
+
+/* Nav */
+.top-nav{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:16px 36px;
+    background:rgba(9,9,25,.75);backdrop-filter:blur(24px);
+    border-bottom:1px solid var(--card-border);
+    position:sticky;top:0;z-index:50;
+}
+.brand{display:flex;align-items:center;gap:12px}
+.brand-icon{
+    width:36px;height:36px;border-radius:10px;
+    background:linear-gradient(135deg,var(--accent-blue),var(--accent-purple));
+    display:flex;align-items:center;justify-content:center;font-size:1.15em;
+    box-shadow:0 0 16px rgba(99,102,241,.4);flex-shrink:0;
+}
+.brand-meta{display:flex;flex-direction:column;gap:1px}
+.brand-title{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.1em;color:#fff;line-height:1.2}
+.brand-host{font-size:0.68em;color:var(--text-secondary);font-family:'JetBrains Mono',monospace;max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.nav-right{display:flex;align-items:center;gap:10px}
+.live-indicator{
+    display:flex;align-items:center;gap:8px;
+    padding:6px 14px;border-radius:100px;
+    background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);
+    font-size:.76em;font-weight:700;color:var(--accent-green);
+    letter-spacing:.5px;flex-shrink:0;
+}
+.pulse{width:8px;height:8px;border-radius:50%;background:var(--accent-green);animation:livePulse 2s infinite}
+@keyframes livePulse{0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,.6)}50%{box-shadow:0 0 0 6px rgba(16,185,129,0)}}
+
+.main-content{max-width:1120px;margin:0 auto;padding:36px 24px 80px}
+
+/* Hero Section */
+.hero{text-align:center;padding:24px 0 36px;position:relative}
+.hero-logo{
+    width:110px;height:110px;border-radius:50%;object-fit:cover;
+    border:3px solid rgba(239,68,68,.7);
+    box-shadow:0 0 30px rgba(239,68,68,.4),0 0 60px rgba(239,68,68,.2);
+    margin-bottom:16px;animation:logoPulse 3s ease-in-out infinite;
+}
+@keyframes logoPulse{
+    0%,100%{transform:scale(1);box-shadow:0 0 25px rgba(239,68,68,.4),0 0 50px rgba(239,68,68,.2)}
+    50%{transform:scale(1.04);box-shadow:0 0 38px rgba(239,68,68,.7),0 0 75px rgba(239,68,68,.4)}
+}
+.hero h1{
+    font-family:'Space Grotesk',sans-serif;font-size:clamp(2.4em, 5vw, 3.4em);font-weight:800;
+    background:linear-gradient(135deg,#fff 0%,#f87171 45%,#ef4444 100%);
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+    letter-spacing:-1px;margin-bottom:6px;text-transform:lowercase;
+}
+.hero-sub-title{
+    color:#fca5a5;font-weight:700;font-size:1.05em;letter-spacing:1px;
+    margin-bottom:6px;display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.hero p{color:var(--text-secondary);font-size:0.95em}
+
+/* Search bar */
+.search-bar{
+    max-width:540px;margin:0 auto 36px;
+    display:flex;background:var(--card);
+    border:1px solid var(--card-border);border-radius:16px;
+    overflow:hidden;transition:border-color .3s,box-shadow .3s;
+}
+.search-bar:focus-within{border-color:var(--accent-blue);box-shadow:0 0 0 4px rgba(99,102,241,.15)}
+.search-bar input{flex:1;padding:15px 20px;background:0;border:0;color:#fff;font-size:.95em;outline:0;font-family:inherit}
+.search-bar input::placeholder{color:var(--text-dim)}
+.search-bar button{
+    padding:15px 28px;border:0;
+    background:linear-gradient(135deg,var(--accent-blue),var(--accent-purple));
+    color:#fff;font-weight:700;font-size:.92em;cursor:pointer;font-family:inherit;
+    transition:opacity .2s;
+}
+.search-bar button:hover{opacity:.9}
+
+/* Players Carousel */
+.sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.sec-title{font-family:'Space Grotesk',sans-serif;font-size:1.3em;font-weight:700;display:flex;align-items:center;gap:10px}
+.sec-badge{font-size:.65em;padding:3px 10px;border-radius:100px;background:rgba(255,255,255,.08);color:var(--text-secondary)}
+
+.carousel-box{margin-bottom:44px}
+.carousel{display:flex;gap:16px;overflow-x:auto;padding:6px 2px 16px;scroll-snap-type:x mandatory;scrollbar-width:none}
+.carousel::-webkit-scrollbar{display:none}
+
+.pcard{
+    flex:0 0 210px;scroll-snap-align:start;
+    background:var(--card);border:1px solid var(--card-border);
+    border-radius:20px;padding:22px 16px 18px;text-align:center;
+    transition:.3s;position:relative;
+}
+.pcard:hover{background:var(--card-hover);transform:translateY(-4px);box-shadow:0 16px 36px rgba(0,0,0,.4)}
+.pcard .abox{position:relative;display:inline-block;margin-bottom:12px}
+.pcard .av{width:70px;height:70px;border-radius:50%;border:3px solid rgba(255,255,255,.1);object-fit:cover;background:#15152e}
+.pcard .dot{position:absolute;bottom:2px;right:2px;width:18px;height:18px;border-radius:50%;border:3px solid var(--bg)}
+.dot.offline{background:var(--accent-red)}
+.dot.online{background:var(--accent-green);box-shadow:0 0 8px rgba(16,185,129,.6)}
+.dot.ingame{background:var(--accent-cyan);box-shadow:0 0 8px rgba(6,182,212,.6)}
+.dot.studio{background:var(--accent-gold)}
+
+.pcard .pname{font-weight:700;font-size:1em;margin-bottom:2px}
+.pcard .phandle{color:var(--text-secondary);font-size:.74em;margin-bottom:8px}
+
+.status-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 12px;border-radius:100px;font-size:.72em;font-weight:600}
+.status-badge.offline{background:rgba(239,68,68,.12);color:#f87171}
+.status-badge.online{background:rgba(16,185,129,.12);color:#4ade80}
+.status-badge.ingame{background:rgba(6,182,212,.12);color:#22d3ee}
+.status-badge.studio{background:rgba(245,158,11,.12);color:#fbbf24}
+
+.pcard .location-tag{color:var(--text-dim);font-size:.7em;margin-top:6px}
+
+/* ════════════════════════════════════════════════════════════
+   LIVE PLAYER STATS HUD (BLOXI FRUITS REALTIME)
+════════════════════════════════════════════════════════════ */
+.hud-container{margin-bottom:44px}
+.hud-card{
+    background:linear-gradient(145deg, rgba(255,255,255,.05) 0%, rgba(255,255,255,.02) 100%);
+    border:1px solid rgba(255,255,255,.1);border-radius:24px;
+    padding:28px;position:relative;overflow:hidden;
+    box-shadow:0 20px 50px rgba(0,0,0,.4);
+}
+.hud-card::before{
+    content:'';position:absolute;top:0;left:0;right:0;height:3px;
+    background:linear-gradient(90deg,var(--accent-green),var(--accent-purple),var(--accent-gold));
+}
+
+.hud-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px}
+.hud-user{display:flex;align-items:center;gap:14px}
+.hud-avatar{width:56px;height:56px;border-radius:50%;border:2px solid rgba(255,255,255,.15);object-fit:cover}
+.hud-name{font-family:'Space Grotesk',sans-serif;font-size:1.3em;font-weight:700}
+.hud-sub{font-size:.8em;color:var(--text-secondary)}
+.hud-sea{
+    padding:6px 16px;border-radius:100px;
+    background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.3);
+    color:#a5b4fc;font-size:.8em;font-weight:600;
+}
+
+/* Stats 4-Grid */
+.stats-grid{
+    display:grid;grid-template-columns:repeat(auto-fit, minmax(210px, 1fr));
+    gap:14px;margin-bottom:24px;
+}
+.stat-box{
+    background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);
+    border-radius:18px;padding:18px 20px;
+    display:flex;align-items:center;gap:16px;
+    transition:transform .3s,border-color .3s;
+}
+.stat-box:hover{transform:translateY(-3px);border-color:rgba(255,255,255,.15)}
+.stat-icon{
+    width:50px;height:50px;border-radius:14px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:1.6em;flex-shrink:0;
+}
+.stat-icon.beli{background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.3);color:#34d399}
+.stat-icon.frags{background:rgba(168,85,247,.15);border:1px solid rgba(168,85,247,.3);color:#c084fc}
+.stat-icon.bounty{background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.3);color:#fbbf24}
+.stat-icon.level{background:rgba(6,182,212,.15);border:1px solid rgba(6,182,212,.3);color:#22d3ee}
+
+.stat-label{font-size:.76em;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+.stat-value{
+    font-family:'Space Grotesk',sans-serif;font-size:1.4em;font-weight:800;
+    margin-top:2px;letter-spacing:-.5px;
+}
+.stat-value.beli-val{color:#34d399}
+.stat-value.frags-val{color:#c084fc}
+.stat-value.bounty-val{color:#fbbf24}
+.stat-value.level-val{color:#22d3ee}
+
+/* Character Info Row */
+.char-details-row{
+    display:flex;gap:12px;flex-wrap:wrap;
+    padding-top:18px;border-top:1px solid rgba(255,255,255,.07);
+}
+.char-pill{
+    display:flex;align-items:center;gap:8px;
+    padding:8px 16px;border-radius:12px;
+    background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);
+    font-size:.82em;
+}
+.char-pill .cp-lbl{color:var(--text-secondary)}
+.char-pill .cp-val{font-weight:700;color:#fff}
+
+/* ════════════════════════════════════════════════════════════
+   LIVE INVENTORY MATRIX
+════════════════════════════════════════════════════════════ */
+.inv-container{margin-bottom:48px}
+
+.inv-toolbar{
+    display:flex;align-items:center;justify-content:space-between;
+    margin-bottom:18px;flex-wrap:wrap;gap:12px;
+}
+.cat-filters{display:flex;gap:6px;flex-wrap:wrap}
+.cbtn{
+    padding:8px 16px;border-radius:10px;
+    background:var(--card);border:1px solid var(--card-border);
+    color:var(--text-secondary);font-size:.8em;font-weight:600;
+    cursor:pointer;font-family:inherit;transition:.2s;
+    display:flex;align-items:center;gap:6px;
+}
+.cbtn:hover{background:var(--card-hover);color:#fff}
+.cbtn.active{background:rgba(99,102,241,.18);border-color:rgba(99,102,241,.4);color:#a5b4fc}
+.cbtn .count-badge{
+    padding:2px 7px;border-radius:6px;
+    background:rgba(255,255,255,.08);font-size:.82em;
+}
+
+.inv-search{
+    padding:8px 14px;border-radius:10px;
+    background:var(--card);border:1px solid var(--card-border);
+    color:#fff;font-size:.82em;outline:0;font-family:inherit;width:200px;
+}
+.inv-search:focus{border-color:var(--accent-blue)}
+
+/* Item Grid */
+.items-matrix{
+    display:grid;grid-template-columns:repeat(auto-fill, minmax(170px, 1fr));
+    gap:14px;
+}
+.item-card{
+    background:var(--card);border:1px solid var(--card-border);
+    border-radius:18px;padding:20px 14px 16px;text-align:center;
+    transition:transform .3s,border-color .3s,box-shadow .3s;
+    position:relative;cursor:default;overflow:hidden;
+}
+.item-card:hover{
+    transform:translateY(-5px);border-color:rgba(255,255,255,.2);
+    box-shadow:0 16px 36px rgba(0,0,0,.35);
+    background:var(--card-hover);
+}
+
+.item-img-frame{
+    width:84px;height:84px;margin:0 auto 12px;border-radius:16px;
+    display:flex;align-items:center;justify-content:center;
+    background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);
+    padding:6px;position:relative;
+}
+.item-img{
+    width:100%;height:100%;object-fit:contain;
+    filter:drop-shadow(0 6px 12px rgba(0,0,0,.4));
+    transition:transform .3s;
+}
+.item-card:hover .item-img{transform:scale(1.1)}
+
+.item-name{font-weight:700;font-size:.9em;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.item-tag{
+    display:inline-block;padding:3px 10px;border-radius:6px;
+    font-size:.65em;font-weight:700;text-transform:uppercase;letter-spacing:.5px;
+}
+.tag-Fruit{background:rgba(168,85,247,.18);color:#d8b4fe;border:1px solid rgba(168,85,247,.3)}
+.tag-Sword{background:rgba(239,68,68,.18);color:#fca5a5;border:1px solid rgba(239,68,68,.3)}
+.tag-Gun{background:rgba(249,115,22,.18);color:#fdba74;border:1px solid rgba(249,115,22,.3)}
+.tag-FightingStyle{background:rgba(236,72,153,.18);color:#f472b6;border:1px solid rgba(236,72,153,.3)}
+.tag-Accessory{background:rgba(6,182,212,.18);color:#67e8f9;border:1px solid rgba(6,182,212,.3)}
+.tag-Ability{background:rgba(245,158,11,.18);color:#fcd34d;border:1px solid rgba(245,158,11,.3)}
+.tag-Item{background:rgba(16,185,129,.18);color:#6ee7b7;border:1px solid rgba(16,185,129,.3)}
+.tag-Other{background:rgba(148,163,184,.15);color:#cbd5e1;border:1px solid rgba(148,163,184,.3)}
+
+.equipped-pill{
+    position:absolute;top:10px;right:10px;
+    padding:3px 8px;border-radius:6px;
+    background:rgba(16,185,129,.2);border:1px solid rgba(16,185,129,.4);
+    color:#34d399;font-size:.6em;font-weight:800;letter-spacing:.5px;
+}
+.item-source{font-size:.65em;color:var(--text-dim);margin-top:6px}
+
+/* Script Box */
+.script-card{
+    background:var(--card);border:1px solid var(--card-border);
+    border-radius:20px;overflow:hidden;margin-top:50px;
+}
+.script-header{
+    padding:24px 28px 16px;
+    display:flex;align-items:center;justify-content:space-between;
+}
+.script-header h3{font-family:'Space Grotesk',sans-serif;font-size:1.15em}
+.script-header p{color:var(--text-secondary);font-size:.84em;margin-top:2px}
+.terminal-window{
+    margin:0 20px 20px;background:#060613;border-radius:14px;
+    border:1px solid rgba(255,255,255,.05);overflow:hidden;
+}
+.terminal-bar{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:10px 16px;background:rgba(255,255,255,.02);border-bottom:1px solid rgba(255,255,255,.04);
+}
+.window-dots{display:flex;gap:6px}
+.window-dots span{width:10px;height:10px;border-radius:50%}
+.window-dots span:nth-child(1){background:#ff5f57}
+.window-dots span:nth-child(2){background:#ffbd2e}
+.window-dots span:nth-child(3){background:#28c840}
+.btn-copy{
+    padding:6px 14px;border-radius:8px;
+    background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);
+    color:var(--text-secondary);cursor:pointer;font-size:.76em;font-family:inherit;
+    font-weight:600;transition:.2s;
+}
+.btn-copy:hover{background:rgba(99,102,241,.2);color:#fff}
+.code-area{
+    padding:18px;font-family:'JetBrains Mono',monospace;
+    font-size:.76em;line-height:1.8;overflow-x:auto;max-height:320px;color:#cbd5e1;
+}
+
+/* Toast */
+.toast-notice{
+    position:fixed;bottom:24px;right:24px;z-index:999;
+    padding:14px 24px;border-radius:14px;
+    font-size:.88em;font-weight:600;backdrop-filter:blur(20px);
+    transform:translateY(80px);opacity:0;transition:all .4s cubic-bezier(.16,1,.3,1);
+}
+.toast-notice.show{transform:translateY(0);opacity:1}
+.toast-notice.ok{background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.3);color:#34d399}
+.toast-notice.err{background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);color:#f87171}
+
+/* ════════════════════════════════════════════════════════════
+   MOBILE RESPONSIVENESS & TOUCH OPTIMIZATIONS
+════════════════════════════════════════════════════════════ */
+@media(max-width:768px){
+    .top-nav{padding:12px 16px}
+    .brand-title{font-size:0.95em}
+    .brand-host{max-width:130px;font-size:0.62em}
+    .live-indicator{padding:5px 10px;font-size:0.7em}
+    .main-content{padding:18px 12px calc(40px + env(safe-area-inset-bottom))}
+    
+    .hero{padding:12px 0 24px}
+    .hero h1{font-size:clamp(1.7em, 6.5vw, 2.4em);margin-bottom:6px}
+    .hero p{font-size:0.86em}
+    
+    .search-bar{margin-bottom:24px;border-radius:12px}
+    .search-bar input{padding:12px 14px;font-size:0.88em}
+    .search-bar button{padding:12px 18px;font-size:0.85em}
+    
+    .sec-head{margin-bottom:12px}
+    .sec-title{font-size:1.1em}
+    
+    .carousel-box{margin-bottom:30px}
+    .carousel{gap:12px;padding:4px 0 12px;-webkit-overflow-scrolling:touch}
+    .pcard{flex:0 0 160px;padding:16px 12px 14px;border-radius:16px}
+    .pcard .av{width:56px;height:56px}
+    .pcard .pname{font-size:0.9em}
+    .pcard .phandle{font-size:0.68em}
+    .status-badge{font-size:0.65em;padding:3px 8px}
+    
+    .hud-container{margin-bottom:32px}
+    .hud-card{padding:18px 14px;border-radius:18px}
+    .hud-header{margin-bottom:16px;gap:10px}
+    .hud-avatar{width:46px;height:46px}
+    .hud-name{font-size:1.05em}
+    .hud-sub{font-size:0.72em}
+    .hud-sea{padding:4px 10px;font-size:0.72em}
+    
+    .stats-grid{grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+    .stat-box{padding:12px 10px;border-radius:14px;gap:10px}
+    .stat-icon{width:40px;height:40px;border-radius:10px;font-size:1.25em}
+    .stat-label{font-size:0.66em}
+    .stat-value{font-size:1.15em}
+    .stat-sub{font-size:0.68em}
+    
+    .char-details-row{gap:6px;padding-top:12px}
+    .char-pill{padding:6px 10px;font-size:0.72em;border-radius:8px}
+    
+    .inv-container{margin-bottom:36px}
+    .inv-toolbar{flex-direction:column;align-items:stretch;gap:10px;margin-bottom:14px}
+    .cat-filters{overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch;padding-bottom:4px;scrollbar-width:none}
+    .cat-filters::-webkit-scrollbar{display:none}
+    .cbtn{padding:6px 12px;font-size:0.75em;flex-shrink:0;border-radius:8px}
+    .inv-search{width:100%;font-size:0.82em;padding:9px 12px}
+    
+    .items-matrix{grid-template-columns:repeat(2, 1fr);gap:10px}
+    .item-card{padding:14px 8px 12px;border-radius:14px}
+    .item-img-frame{width:64px;height:64px;border-radius:12px;margin-bottom:8px}
+    .item-name{font-size:0.8em}
+    .item-tag{font-size:0.6em;padding:2px 6px}
+    .equipped-pill{top:6px;right:6px;font-size:0.55em;padding:2px 6px}
+    .item-source{font-size:0.6em}
+    
+    .script-card{margin-top:28px;border-radius:16px}
+    .script-header{padding:16px 14px 12px;flex-direction:column;align-items:flex-start;gap:10px}
+    .script-header > div:last-child{width:100%;display:flex;gap:6px}
+    .btn-copy{flex:1;text-align:center;padding:8px 6px;font-size:0.72em}
+    
+    .one-line-box{margin:0 12px 12px!important;padding:10px 12px!important;flex-direction:column!important;align-items:stretch!important;gap:8px!important}
+    .one-line-box code{font-size:0.72em;word-break:break-all}
+    
+    .terminal-window{margin:0 12px 14px;border-radius:10px}
+    .code-area{padding:12px;font-size:0.66em;max-height:200px}
+    
+    .toast-notice{left:12px;right:12px;bottom:calc(16px + env(safe-area-inset-bottom));max-width:380px;margin:0 auto;text-align:center;font-size:0.82em;padding:12px 16px}
+}
+
+@media(max-width:380px){
+    .stats-grid{grid-template-columns:1fr 1fr;gap:6px}
+    .stat-box{padding:10px 8px;gap:8px}
+    .stat-icon{width:34px;height:34px;font-size:1.1em}
+    .stat-value{font-size:1.02em}
+    .items-matrix{grid-template-columns:repeat(2, 1fr);gap:8px}
+}
+</style>
+</head>
+<body>
+
+<div class="bg-scene">
+    <div class="glow-orb o1"></div>
+    <div class="glow-orb o2"></div>
+    <div class="glow-orb o3"></div>
+</div>
+<div class="grid-overlay"></div>
+
+<div class="app-wrapper">
+
+    <!-- Navbar -->
+    <nav class="top-nav">
+        <div class="brand">
+            <img src="/static/logo.jpg" alt="AngusHub" style="width:38px;height:38px;border-radius:10px;object-fit:cover;border:1.5px solid rgba(239,68,68,0.5);box-shadow:0 0 14px rgba(239,68,68,0.4);flex-shrink:0">
+            <div class="brand-meta">
+                <span class="brand-title">angushubxhunter</span>
+                <span class="brand-host" id="hostBadge" title="Server URL">ค่ายโปรล่าค่าหัว · {{ current_host_url or 'https://angushubxhunter.onrender.com' }}</span>
+            </div>
+        </div>
+        <div class="nav-right">
+            <div class="live-indicator">
+                <span class="pulse"></span>
+                <span class="live-text">LIVE SYNC</span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="main-content">
+
+        <!-- Hero -->
+        <div class="hero">
+            <div>
+                <img class="hero-logo" src="/static/logo.jpg" alt="AngusHub Logo">
+            </div>
+            <h1>angushubxhunter</h1>
+            <div class="hero-sub-title">⚔️ ค่ายโปรล่าค่าหัว BLOX FRUITS ☠️</div>
+            <p>ติดตามสถานะออนไลน์, ค่าหัวจริง, เงินเขียว, เงินม่วง และสแกนคลังไอเทมแบบเรียลไทม์</p>
+        </div>
+
+        <!-- Search -->
+        <div class="search-bar">
+            <input id="userIdInput" placeholder="ใส่ Roblox User ID เพื่อเริ่มติดตาม..." onkeydown="if(event.key==='Enter')checkUser()">
+            <button onclick="checkUser()">ค้นหา</button>
+        </div>
+
+        <!-- Players Carousel -->
+        <div class="sec-head">
+            <div class="sec-title">👥 ผู้เล่นที่ติดตาม <span class="sec-badge" id="playerCount">{{ players|length }}</span></div>
+        </div>
+        <div class="carousel-box">
+            <div class="carousel" id="playersCarousel">
+                {% if players %}
+                    {% for uid, p in players.items() %}
+                    <div class="pcard" id="pc-{{ uid }}">
+                        <div class="abox">
+                            <img class="av" src="{{ p.avatar }}" alt="" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22150%22 height=%22150%22%3E%3Crect fill=%22%2315152e%22 width=%22150%22 height=%22150%22 rx=%2275%22/%3E%3Ctext x=%2275%22 y=%2295%22 text-anchor=%22middle%22 fill=%22%23666%22 font-size=%2250%22%3E%3F%3C/text%3E%3C/svg%3E'">
+                            <div class="dot {{ p.cls }}"></div>
+                        </div>
+                        <div class="pname">{{ p.display }}</div>
+                        <div class="phandle">@{{ p.name }} · {{ p.uid }}</div>
+                        <div class="status-badge {{ p.cls }}">{{ p.status }}</div>
+                        <div class="location-tag">📍 {{ p.location or 'กำลังติดตาม' }}</div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div style="padding:28px;text-align:center;color:var(--text-dim);width:100%">
+                        👤 ยังไม่มีผู้เล่นในระบบ — ใส่ User ID ด้านบน หรือรันสคริปต์ในเกมเพื่อเชื่อมต่ออัตโนมัติ
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- ════════════════════════════════════════════════════════════
+             REALTIME BLOX FRUITS HUD (DYNAMIC LIVE UPDATES)
+        ════════════════════════════════════════════════════════════ -->
+        <div id="hudWrapper">
+            {% for uid, inv in inventories.items() %}
+            <div class="hud-container" id="hud-{{ uid }}">
+                <div class="hud-card">
+                    <div class="hud-header">
+                        <div class="hud-user">
+                            <img class="hud-avatar" src="{{ players[uid].avatar if uid in players else '' }}" onerror="this.style.display='none'">
+                            <div>
+                                <div class="hud-name">{{ inv.display_name }} (@{{ inv.username }})</div>
+                                <div class="hud-sub">🔄 อัพเดตล่าสุด: <span class="sync-time">{{ inv.scan_time }}</span></div>
+                            </div>
+                        </div>
+                        <div class="hud-sea">🌊 {{ inv.sea or inv.game_name or 'Blox Fruits' }}</div>
+                    </div>
+
+                    <!-- 4 Live Stats Cards -->
+                    <div class="stats-grid">
+                        <!-- Beli (เงินเขียว) -->
+                        <div class="stat-box">
+                            <div class="stat-icon beli">💰</div>
+                            <div>
+                                <div class="stat-label">Beli (เงินเขียว)</div>
+                                <div class="stat-value beli-val" id="beli-{{ uid }}">${{ "{:,.0f}".format(inv.beli or 0) }}</div>
+                            </div>
+                        </div>
+
+                        <!-- Fragments (เงินม่วง) -->
+                        <div class="stat-box">
+                            <div class="stat-icon frags">🔮</div>
+                            <div>
+                                <div class="stat-label">Fragments (เงินม่วง)</div>
+                                <div class="stat-value frags-val" id="frags-{{ uid }}">ƒ {{ "{:,.0f}".format(inv.fragments or 0) }}</div>
+                            </div>
+                        </div>
+
+                        <!-- Bounty / Honor (ค่าหัว / เกียรติยศ) -->
+                        <div class="stat-box">
+                            <div class="stat-icon bounty" id="bounty-icon-{{ uid }}">{{ inv.bounty_icon or '☠️' }}</div>
+                            <div>
+                                <div class="stat-label" id="bounty-lbl-{{ uid }}">{{ inv.bounty_label or 'Bounty / Honor' }}</div>
+                                <div class="stat-value bounty-val" id="bounty-{{ uid }}">{{ "{:,.0f}".format(inv.bounty or 0) if (inv.bounty is number) else inv.bounty }}</div>
+                                <div class="stat-sub" id="bounty-sub-{{ uid }}" style="font-size:0.75em;color:#fcd34d;font-weight:600;margin-top:2px">
+                                    {% if inv.bounty and inv.bounty >= 1000000 %}
+                                    ≈ {{ "%.2f"|format(inv.bounty / 1000000) }}M
+                                    {% elif inv.bounty and inv.bounty >= 1000 %}
+                                    ≈ {{ "%.1f"|format(inv.bounty / 1000) }}K
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Level -->
+                        <div class="stat-box">
+                            <div class="stat-icon level">🆙</div>
+                            <div>
+                                <div class="stat-label">Level (เลเวล)</div>
+                                <div class="stat-value level-val" id="level-{{ uid }}">Lv. {{ inv.level or 0 }} / 3000</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Character Details Row -->
+                    <div class="char-details-row">
+                        <div class="char-pill">
+                            <span class="cp-lbl">🚩 ฝั่ง:</span>
+                            <span class="cp-val" id="team-{{ uid }}">{{ inv.team or 'Pirates' }}</span>
+                        </div>
+                        <div class="char-pill">
+                            <span class="cp-lbl">🧬 เผ่า (Race):</span>
+                            <span class="cp-val" id="race-{{ uid }}">{{ inv.race or 'Human' }}</span>
+                        </div>
+                        <div class="char-pill">
+                            <span class="cp-lbl">🍎 ผลที่ใช้:</span>
+                            <span class="cp-val" id="fruit-{{ uid }}">{{ inv.devil_fruit or 'None' }}</span>
+                        </div>
+                        {% if inv.health %}
+                        <div class="char-pill">
+                            <span class="cp-lbl">❤️ เลือด (HP):</span>
+                            <span class="cp-val" id="hp-{{ uid }}">{{ inv.health }}</span>
+                        </div>
+                        {% endif %}
+                        {% if inv.energy %}
+                        <div class="char-pill">
+                            <span class="cp-lbl">⚡ พลังงาน (Energy):</span>
+                            <span class="cp-val" id="energy-{{ uid }}">{{ inv.energy }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Inventory Matrix for this player -->
+            <div class="inv-container" id="inv-matrix-{{ uid }}">
+                <div class="inv-toolbar">
+                    <div class="cat-filters" data-uid="{{ uid }}">
+                        <button class="cbtn active" onclick="filterCategory('{{ uid }}','all',this)">
+                            ทั้งหมด <span class="count-badge">{{ inv.total }}</span>
+                        </button>
+                        {% for cat, items in inv.categorized.items() %}
+                        <button class="cbtn" onclick="filterCategory('{{ uid }}','{{ cat }}',this)">
+                            {{ categories[cat].icon if cat in categories else '📦' }} {{ categories[cat].label if cat in categories else cat }}
+                            <span class="count-badge">{{ items|length }}</span>
+                        </button>
+                        {% endfor %}
+                    </div>
+                    <input class="inv-search" placeholder="🔍 ค้นหาไอเทม..." oninput="searchItems('{{ uid }}', this.value)">
+                </div>
+
+                <div class="items-matrix" id="grid-{{ uid }}">
+                    {% for item in inv.item_list %}
+                    <div class="item-card" data-cat="{{ item.category }}" data-name="{{ item.name|lower }}">
+                        {% if item.equipped %}<div class="equipped-pill">EQUIPPED</div>{% endif %}
+                        <div class="item-img-frame">
+                            {% if item.image %}
+                            <img class="item-img" src="{{ item.image }}" alt="{{ item.name }}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                            <div style="font-size:2.4em;display:none">{% if item.category in categories %}{{ categories[item.category].icon }}{% else %}📦{% endif %}</div>
+                            {% else %}
+                            <div style="font-size:2.4em">{% if item.category in categories %}{{ categories[item.category].icon }}{% else %}📦{% endif %}</div>
+                            {% endif %}
+                        </div>
+                        <div class="item-name" title="{{ item.name }}">{{ item.name }}</div>
+                        <span class="item-tag tag-{{ item.category.replace(' ', '') }}">{{ item.category }}</span>
+                        <div class="item-source">{{ item.source }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+
+            {% if not inventories %}
+            <div style="text-align:center;padding:50px 20px;background:var(--card);border:1px dashed var(--card-border);border-radius:24px;margin-bottom:44px">
+                <div style="font-size:3em;margin-bottom:12px">🎮</div>
+                <h3 style="font-family:'Space Grotesk';font-size:1.3em;margin-bottom:6px">รอการเชื่อมต่อข้อมูลจากในเกม...</h3>
+                <p style="color:var(--text-secondary);font-size:.9em;max-width:500px;margin:0 auto">
+                    คัดลอกสคริปต์ด้านล่างไปรันใน Roblox เพื่อซิงค์ Beli, Fragments, ค่าหัว และคลังไอเทมมาแสดงผลแบบเรียลไทม์
+                </p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- ════════════════════════════════════════════════════════════
+             ROBLOX EXECUTOR SCRIPT
+        ════════════════════════════════════════════════════════════ -->
+        <div class="script-card">
+            <div class="script-header">
+                <div>
+                    <h3>📜 สคริปต์ส่งข้อมูล Realtime (Roblox Executor) <span style="font-size:0.7em;background:rgba(99,102,241,0.2);color:#a5b4fc;padding:3px 8px;border-radius:6px;border:1px solid rgba(99,102,241,0.4)">v4.2 ล่าสุด</span></h3>
+                    <p>รันสคริปต์นี้ในเกม — ระบบจะส่งข้อมูล Beli, Fragments, ค่าหัว และไอเทมมาอัพเดตแบบเรียลไทม์อัตโนมัติ</p>
+                </div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap">
+                    <button class="btn-copy" onclick="loadScriptText(true)">🔄 ซิงค์สคริปต์ล่าสุด</button>
+                    <button class="btn-copy" onclick="copyOneLiner()" style="background:rgba(99,102,241,0.2);border-color:rgba(99,102,241,0.4);color:#c7d2fe">⚡ คำสั่งรัน 1 บรรทัด</button>
+                    <button class="btn-copy" onclick="copyLuaScript()" style="background:rgba(16,185,129,0.2);border-color:rgba(16,185,129,0.4);color:#6ee7b7">📋 คัดลอกโค้ดเต็ม</button>
+                </div>
+            </div>
+
+            <!-- 1-line loader box -->
+            <div class="one-line-box" style="margin:0 20px 14px;padding:12px 18px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);border-radius:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+                <div style="display:flex;align-items:center;gap:10px;font-family:'JetBrains Mono',monospace;font-size:0.82em;color:#fca5a5;word-break:break-all">
+                    <span style="background:rgba(239,68,68,0.3);padding:3px 8px;border-radius:6px;font-weight:700;color:#fff;font-size:0.85em;flex-shrink:0">⚡ แนะนำ</span>
+                    <code id="oneLineCode">loadstring(game:HttpGet("https://angushubxhunter.onrender.com/script.lua"))()</code>
+                </div>
+                <button class="btn-copy" onclick="copyOneLiner()" style="background:rgba(239,68,68,0.25);color:#fff;border-color:rgba(239,68,68,0.5)">⚡ คัดลอก 1 บรรทัด</button>
+            </div>
+
+            <div class="terminal-window">
+                <div class="terminal-bar">
+                    <div class="window-dots"><span></span><span></span><span></span></div>
+                    <span style="font-size:.72em;color:var(--text-dim);font-family:'JetBrains Mono'">AngusHub_x_Hunter_v4.2.lua</span>
+                </div>
+                <pre class="code-area" id="luaScriptText">-- 🔥 AngusHub x Hunter — ค่ายโปรล่าค่าหัว Blox Fruits
+-- ⚡ Realtime Live Tracker v4.2
+-- อัพเดต Beli (เงินเขียว), Fragments (เงินม่วง), ค่าหัว, เลเวล /3000 และไอเทมเรียลไทม์ทุก 3 วินาที
+-- รันควบคู่กับ Hermanos Hub (PVP Mode)
+
+local HttpService = game:GetService("HttpService")
+local Players = game:GetService("Players")
+local LP = Players.LocalPlayer
+local SERVER_URL = "https://angushubxhunter.onrender.com"
+
+local function extractAssetId(tex)
+    if not tex or tex == "" then return nil end
+    return tex:match("(%d+)")
+end
+
+local function scanItem(item)
+    local info = {
+        name = item.Name, className = item.ClassName,
+        textureId = "", assetId = nil, toolTip = "", category = "Other"
+    }
+    if item:IsA("Tool") then
+        info.textureId = item.TextureId or ""
+        info.assetId = extractAssetId(info.textureId)
+        info.toolTip = item.ToolTip or ""
+    end
+    return info
+end
+
+local lastBounty = 0
+local lastBeli = 0
+local lastFrags = 0
+local lastLevel = 0
+
+local function parseNumber(val)
+    if type(val) == "number" then return math.floor(val) end
+    local s = tostring(val or "")
+    if s == "" then return 0 end
+    local numStr, unit = s:match("([%d%,%.]+)%s*([KkMmBb]?)")
+    if numStr then
+        local clean = numStr:gsub(",", "")
+        local n = tonumber(clean)
+        if n then
+            local u = (unit or ""):upper()
+            if u == "M" then return math.floor(n * 1000000)
+            elseif u == "K" then return math.floor(n * 1000)
+            elseif u == "B" then return math.floor(n * 1000000000)
+            else return math.floor(n) end
+        end
+    end
+    local digits = s:gsub("%D", "")
+    return tonumber(digits) or 0
+end
+
+local function getPlayerBounty()
+    local ls = LP:FindFirstChild("leaderstats")
+    if ls then
+        for _, c in pairs(ls:GetChildren()) do
+            local cn = c.Name:lower()
+            if cn:find("bounty") or cn:find("honor") then
+                local v = parseNumber(c.Value)
+                if v and v > 0 then return v, "leaderstats." .. c.Name end
+            end
+        end
+    end
+
+    local d = LP:FindFirstChild("Data")
+    if d then
+        for _, c in pairs(d:GetChildren()) do
+            local cn = c.Name:lower()
+            if cn:find("bounty") or cn:find("honor") then
+                local v = parseNumber(c.Value)
+                if v and v > 0 then return v, "Data." .. c.Name end
+            end
+        end
+    end
+
+    if LP:FindFirstChild("PlayerGui") then
+        local pg = LP.PlayerGui
+        local main = pg:FindFirstChild("Main")
+        if main then
+            for _, desc in pairs(main:GetDescendants()) do
+                if desc:IsA("TextLabel") and desc.Visible then
+                    local dn = desc.Name:lower()
+                    local pn = desc.Parent and desc.Parent.Name:lower() or ""
+                    if dn:find("bounty") or dn:find("honor") or pn:find("bounty") or pn:find("honor") then
+                        local txt = desc.Text
+                        if not txt:lower():find("next") and not txt:lower():find("req") and not txt:find("/") then
+                            local v = parseNumber(txt)
+                            if v > 1000 and v ~= 8000000 and v ~= 10000000 and v ~= 20000000 and v ~= 30000000 then
+                                return v, "PlayerGui." .. desc.Name
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    return 0, "None"
+end
+
+local function syncData()
+    local inv = {}
+    for _, item in pairs(LP.Backpack:GetChildren()) do
+        if item:IsA("Tool") then
+            local i = scanItem(item); i.equipped = false; i.source = "Backpack"
+            table.insert(inv, i)
+        end
+    end
+    if LP.Character then
+        for _, item in pairs(LP.Character:GetChildren()) do
+            if item:IsA("Tool") then
+                local i = scanItem(item); i.equipped = true; i.source = "Equipped"
+                table.insert(inv, i)
+            end
+        end
+    end
+
+    local data = LP:FindFirstChild("Data")
+    local beli = data and data:FindFirstChild("Beli") and tonumber(data.Beli.Value) or 0
+    local frags = data and data:FindFirstChild("Fragments") and tonumber(data.Fragments.Value) or 0
+    local level = data and data:FindFirstChild("Level") and tonumber(data.Level.Value) or 0
+    local race = data and data:FindFirstChild("Race") and tostring(data.Race.Value) or "Human"
+    local fruit = data and data:FindFirstChild("DevilFruit") and tostring(data.DevilFruit.Value) or "None"
+
+    local bountyVal, bSource = getPlayerBounty()
+    if bountyVal > 0 then lastBounty = bountyVal else bountyVal = lastBounty end
+    if beli > 0 then lastBeli = beli else beli = lastBeli end
+    if frags > 0 then lastFrags = frags else frags = lastFrags end
+    if level > 0 then lastLevel = level else level = lastLevel end
+
+    local sea = "Blox Fruits"
+    if game.PlaceId == 2753915549 then sea = "ทะเลที่ 1 (First Sea)"
+    elseif game.PlaceId == 4442272183 then sea = "ทะเลที่ 2 (Second Sea)"
+    elseif game.PlaceId == 7449423635 then sea = "ทะเลที่ 3 (Third Sea)" end
+
+    local hpText = nil
+    if LP.Character and LP.Character:FindFirstChild("Humanoid") then
+        local hum = LP.Character.Humanoid
+        hpText = math.floor(hum.Health) .. " / " .. math.floor(hum.MaxHealth)
+    end
+
+    local teamName = "Pirates"
+    if LP.Team then teamName = LP.Team.Name end
+
+    local payload = {
+        user_id = tostring(LP.UserId), username = LP.Name, display_name = LP.DisplayName,
+        place_id = tostring(game.PlaceId), game_name = "Blox Fruits", sea = sea, team = teamName,
+        beli = beli, fragments = frags, bounty = bountyVal, bounty_source = bSource,
+        level = level, max_level = 3000, race = race, devil_fruit = fruit,
+        inventory = inv, health = hpText
+    }
+
+    request({
+        Url = SERVER_URL .. "/api/inventory", Method = "POST",
+        Headers = {["Content-Type"] = "application/json"},
+        Body = HttpService:JSONEncode(payload)
+    })
+end
+
+pcall(syncData)
+print("✅ Blox Fruits Realtime Tracker v4.2 รันแล้ว! ซิงค์ทุก 3 วินาที")
+
+task.spawn(function()
+    while true do
+        task.wait(3)
+        pcall(syncData)
+    end
+end)
+
+-- 🚀 รัน Hermanos Hub ควบคู่กับ Tracker (Multi-Threaded)
+task.spawn(function()
+    pcall(function()
+        getgenv().script_mode = "PVP" -- PVP, FARM
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/hermanos-dev/hermanos-hub/refs/heads/main/Loader.lua"))()
+    end)
+end)</pre>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div class="toast-notice" id="toast"></div>
+
+<script>
+// Format Number with Commas
+function fmt(n) {
+    if (typeof n === 'number') return n.toLocaleString();
+    return n || '0';
+}
+
+function formatShort(n) {
+    if (!n || isNaN(n)) return '';
+    const num = Number(n);
+    if (num >= 1000000) return `≈ ${(num / 1000000).toFixed(2)}M`;
+    if (num >= 1000) return `≈ ${(num / 1000).toFixed(1)}K`;
+    return '';
+}
+
+// Check user manually
+async function checkUser() {
+    const uid = document.getElementById('userIdInput').value.trim();
+    if (!uid || isNaN(uid)) {
+        showToast('กรุณาระบุ User ID ให้ถูกต้อง', 'err');
+        return;
+    }
+    try {
+        const res = await fetch(`/api/check/${uid}`);
+        const data = await res.json();
+        if (res.ok) {
+            showToast(`พบผู้เล่น: ${data.display} (${data.status})`, 'ok');
+            fetchLive();
+        } else {
+            showToast(data.error || 'ไม่พบผู้เล่น', 'err');
+        }
+    } catch(e) {
+        showToast('เกิดข้อผิดพลาดในการเชื่อมต่อ', 'err');
+    }
+}
+
+// Realtime live polling without page reload
+async function fetchLive() {
+    try {
+        const res = await fetch('/api/live_data');
+        if (!res.ok) return;
+        const data = await res.json();
+        const inventories = data.inventories || {};
+
+        for (const [uid, inv] of Object.entries(inventories)) {
+            // Update stats
+            const beliEl = document.getElementById(`beli-${uid}`);
+            if (beliEl) beliEl.textContent = `$${fmt(inv.beli || 0)}`;
+
+            const fragsEl = document.getElementById(`frags-${uid}`);
+            if (fragsEl) fragsEl.textContent = `ƒ ${fmt(inv.fragments || 0)}`;
+
+            const bountyEl = document.getElementById(`bounty-${uid}`);
+            if (bountyEl) bountyEl.textContent = fmt(inv.bounty || 0);
+
+            const bountySubEl = document.getElementById(`bounty-sub-${uid}`);
+            if (bountySubEl) bountySubEl.textContent = formatShort(inv.bounty || 0);
+
+            const bountyLblEl = document.getElementById(`bounty-lbl-${uid}`);
+            if (bountyLblEl && inv.bounty_label) bountyLblEl.textContent = inv.bounty_label;
+
+            const bountyIconEl = document.getElementById(`bounty-icon-${uid}`);
+            if (bountyIconEl && inv.bounty_icon) bountyIconEl.textContent = inv.bounty_icon;
+
+            const teamEl = document.getElementById(`team-${uid}`);
+            if (teamEl && inv.team) teamEl.textContent = inv.team;
+
+            const levelEl = document.getElementById(`level-${uid}`);
+            if (levelEl) levelEl.textContent = `Lv. ${inv.level || 0} / 3000`;
+
+            const raceEl = document.getElementById(`race-${uid}`);
+            if (raceEl) raceEl.textContent = inv.race || 'Human';
+
+            const fruitEl = document.getElementById(`fruit-${uid}`);
+            if (fruitEl) fruitEl.textContent = inv.devil_fruit || 'None';
+
+            const hpEl = document.getElementById(`hp-${uid}`);
+            if (hpEl && inv.health) hpEl.textContent = inv.health;
+
+            const timeEl = document.querySelector(`#hud-${uid} .sync-time`);
+            if (timeEl) timeEl.textContent = inv.scan_time || '';
+        }
+    } catch(e) {}
+}
+
+// Poll every 2.5 seconds
+setInterval(fetchLive, 2500);
+
+// Filter category
+function filterCategory(uid, cat, btn) {
+    const grid = document.getElementById(`grid-${uid}`);
+    if (!grid) return;
+    grid.querySelectorAll('.item-card').forEach(card => {
+        card.style.display = (cat === 'all' || card.dataset.cat === cat) ? '' : 'none';
+    });
+    btn.parentElement.querySelectorAll('.cbtn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+}
+
+// Search items within matrix
+function searchItems(uid, query) {
+    const q = query.toLowerCase().trim();
+    const grid = document.getElementById(`grid-${uid}`);
+    if (!grid) return;
+    grid.querySelectorAll('.item-card').forEach(card => {
+        const name = card.dataset.name || '';
+        card.style.display = (q === '' || name.includes(q)) ? '' : 'none';
+    });
+}
+
+// Copy Lua Script
+function copyLuaScript() {
+    const text = document.getElementById('luaScriptText').innerText;
+    navigator.clipboard.writeText(text).then(() => {
+        showToast('คัดลอกสคริปต์เต็ม v4.2 แล้ว! พร้อมนำไปรันในเกม 🚀', 'ok');
+    });
+}
+
+// Copy 1-Line command
+function copyOneLiner() {
+    const cmd = 'loadstring(game:HttpGet("https://angushubxhunter.onrender.com/script.lua"))()';
+    navigator.clipboard.writeText(cmd).then(() => {
+        showToast('⚡ คัดลอกคำสั่งรัน 1 บรรทัดของ AngusHub x Hunter แล้ว! 🚀', 'ok');
+    });
+}
+
+// Dynamically fetch latest script from server
+async function loadScriptText(showNotice = false) {
+    try {
+        const res = await fetch('/script.lua?t=' + Date.now());
+        if (res.ok) {
+            const code = await res.text();
+            const el = document.getElementById('luaScriptText');
+            if (el && code.length > 50) {
+                el.textContent = code;
+                if (showNotice) showToast('✅ ซิงค์สคริปต์ล่าสุด v4.2 สำเร็จ!', 'ok');
+            }
+        }
+    } catch(e) {}
+}
+
+// Auto load latest script immediately on page load
+loadScriptText();
+
+// Toast
+function showToast(msg, type) {
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.className = `toast-notice ${type} show`;
+    setTimeout(() => toast.classList.remove('show'), 3500);
+}
+</script>
+</body>
+</html>
