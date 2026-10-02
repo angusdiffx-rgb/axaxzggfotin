@@ -473,6 +473,7 @@ def _render_keep_alive():
         if ext_url:
             urls_to_try.append(ext_url)
         urls_to_try.extend([
+            "https://angushubxhunter-n4sp.onrender.com",
             "https://angushubxhunter.onrender.com",
             "https://angushubxhubter.onrender.com"
         ])
