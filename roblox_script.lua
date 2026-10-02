@@ -1,4 +1,4 @@
--- ╔════════════════════════════════════════════════════════════╗
+﻿-- ╔════════════════════════════════════════════════════════════╗
 -- ║   🔥 AngusHub x Hunter — ค่ายโปรล่าค่าหัว Blox Fruits       ║
 -- ║   ⚡ Realtime Live Tracker v4.2                            ║
 -- ║   อัพเดต Beli (เงินเขียว), Fragments (เงินม่วง),             ║
@@ -11,7 +11,7 @@ local Players = game:GetService("Players")
 local LP = Players.LocalPlayer
 
 -- 🌐 เซิร์ฟเวอร์หลัก (AngusHub Cloud on Render)
-local SERVER_URL = "https://angushubxhunter.onrender.com"
+local SERVER_URL = "https://angushubxhunter-n4sp.onrender.com"
 
 local function extractAssetId(tex)
     if not tex or tex == "" then return nil end

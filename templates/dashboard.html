@@ -1135,13 +1135,26 @@ function searchMatrix(uid, q) {
 // Copy One-Liner
 function copyOneLiner() {
     playChime(880);
-    const cmd = 'loadstring(game:HttpGet("https://angushubxhunter.onrender.com/script.lua"))()';
+    const host = window.location.origin;
+    const cmd = `loadstring(game:HttpGet("${host}/script.lua"))()`;
     navigator.clipboard.writeText(cmd).then(() => {
         showToast('⚡ คัดลอกคำสั่งรัน 1 บรรทัดเรียบร้อย!', 'ok');
     }).catch(() => {
         showToast('คัดลอกสำเร็จ!', 'ok');
     });
 }
+
+// Auto-sync domain on page load
+window.addEventListener('DOMContentLoaded', () => {
+    const host = window.location.origin;
+    const cmd = `loadstring(game:HttpGet("${host}/script.lua"))()`;
+    const el1 = document.getElementById('oneLinerCode');
+    if (el1) el1.textContent = cmd;
+    const el2 = document.querySelector('.exec-code-line');
+    if (el2) el2.textContent = cmd;
+    const hostBadge = document.getElementById('hostBadge');
+    if (hostBadge) hostBadge.textContent = `ค่ายโปรล่าค่าหัว · ${host}`;
+});
 
 // Copy full script
 function copyFullScript() {

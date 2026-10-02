@@ -440,7 +440,8 @@ def serve_script():
             proto = "https"
         public_url = f"{proto}://{host}".rstrip("/")
 
-        code = code.replace('SERVER_URL = "http://localhost:5000"', f'SERVER_URL = "{public_url}"')
+        import re
+        code = re.sub(r'SERVER_URL\s*=\s*"[^"]*"', f'SERVER_URL = "{public_url}"', code)
 
         from flask import Response
         return Response(code, mimetype="text/plain; charset=utf-8")
