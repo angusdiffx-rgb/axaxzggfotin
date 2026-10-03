@@ -116,6 +116,10 @@ local lastBounty = 0
 local lastBeli = 0
 local lastFrags = 0
 local lastLevel = 0
+local lastFruit = "None"
+local lastSea = "Blox Fruits"
+local lastSyncTime = "-"
+local onTrackerDataUpdated = nil
 
 local function parseNumber(val)
     if type(val) == "number" then
@@ -398,6 +402,14 @@ local function syncData()
         task.wait(1.5)
         ok, res = sendHttpRequest(SERVER_URL .. "/api/inventory", jsonData)
     end
+
+    lastFruit = fruit
+    lastSea = sea
+    lastSyncTime = os.date("%H:%M:%S")
+    if onTrackerDataUpdated then
+        pcall(onTrackerDataUpdated)
+    end
+
     return ok, res, bountyVal, bSource
 end
 
@@ -536,7 +548,382 @@ local function showClanNotification(title, message, duration)
     end)
 end
 
--- ฟังก์ชันสร้าง Watermark โลโก้ค่ายแบบพรีเมียมลอยบนหน้าจอเกม (ลากย้ายตำแหน่งได้)
+-- ════════════════════════════════════════════════════════════
+--  💎 ANGUSHUB X HUNTER — MODERN IN-GAME CLIENT GUI v4.3
+--  🎨 UI ล้ำสมัยที่สุด พร้อมปุ่มโลโก้ลอยเปิด-ปิด (Draggable Logo Toggle)
+--  ⚡ รองรับทั้งมือถือ (Touch) และคอมพิวเตอร์ (PC / Keybind) 100%
+-- ════════════════════════════════════════════════════════════
+
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local TeleportService = game:GetService("TeleportService")
+local Lighting = game:GetService("Lighting")
+
+local function formatCommas(amount)
+    local formatted = tostring(math.floor(tonumber(amount) or 0))
+    local k
+    while true do
+        formatted, k = string.gsub(formatted, "^(-?%d+)(%d%d%d)", "%1,%2")
+        if k == 0 then break end
+    end
+    return formatted
+end
+
+local function getBountyRank(b)
+    b = tonumber(b) or 0
+    if b >= 30000000 then return "👑 ราชาโจรสลัด (Pirate King)"
+    elseif b >= 20000000 then return "🔥 4 จักรพรรดิ (Yonko)"
+    elseif b >= 10000000 then return "⚡ แม่ทัพใหญ่ (Fleet Master)"
+    elseif b >= 5000000 then return "☠️ ยอดนักล่า (Elite Hunter)"
+    elseif b >= 2500000 then return "⚔️ โจรสลัดชื่อดัง"
+    else return "🏴‍☠️ กะลาสีมือใหม่"
+    end
+end
+
+local function copyToClipboard(text, msg)
+    local setclip = setclipboard or (syn and syn.set_clipboard) or (Clipboard and Clipboard.set)
+    if setclip then
+        setclip(text)
+        showClanNotification("📋 AngusHub x Hunter", msg or "คัดลอกลง Clipboard สำเร็จแล้ว!", 3)
+    else
+        showClanNotification("📋 AngusHub x Hunter", text, 5)
+    end
+end
+
+-- ════════════════════════════════════════════════════════════
+--  ⚙️ MOVEMENT & PLAYER STATE
+-- ════════════════════════════════════════════════════════════
+local customSpeed = 16
+local customJump = 50
+local infJumpActive = false
+local noclipActive = false
+local antiAfkActive = true
+
+local function applySpeedAndJump()
+    pcall(function()
+        local char = LP.Character
+        local hum = char and char:FindFirstChildOfClass("Humanoid")
+        if hum then
+            if customSpeed > 16 then hum.WalkSpeed = customSpeed end
+            if customJump > 50 then hum.JumpPower = customJump end
+        end
+    end)
+end
+
+task.spawn(function()
+    while true do
+        task.wait(0.3)
+        if customSpeed > 16 or customJump > 50 then
+            applySpeedAndJump()
+        end
+    end
+end)
+
+LP.CharacterAdded:Connect(function()
+    task.wait(0.6)
+    applySpeedAndJump()
+end)
+
+UserInputService.JumpRequest:Connect(function()
+    if infJumpActive then
+        pcall(function()
+            local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
+            if hum then
+                hum:ChangeState(Enum.HumanoidStateType.Jumping)
+            end
+        end)
+    end
+end)
+
+RunService.Stepped:Connect(function()
+    if noclipActive then
+        pcall(function()
+            if LP.Character then
+                for _, part in ipairs(LP.Character:GetDescendants()) do
+                    if part:IsA("BasePart") and part.CanCollide then
+                        part.CanCollide = false
+                    end
+                end
+            end
+        end)
+    end
+end)
+
+pcall(function()
+    LP.Idled:Connect(function()
+        if antiAfkActive then
+            local vu = game:GetService("VirtualUser")
+            if vu then
+                vu:CaptureController()
+                vu:ClickButton2(Vector2.new())
+            end
+        end
+    end)
+end)
+
+-- ════════════════════════════════════════════════════════════
+--  👁️ VISUALS & ESP LOGIC
+-- ════════════════════════════════════════════════════════════
+local playerEspActive = false
+local fruitEspActive = false
+local chestEspActive = false
+local fullBrightActive = false
+
+local originalAmbient = Lighting.Ambient
+local originalBrightness = Lighting.Brightness
+local originalFogEnd = Lighting.FogEnd
+local originalGlobalShadows = Lighting.GlobalShadows
+local originalClockTime = Lighting.ClockTime
+
+local function setFullBright(state)
+    fullBrightActive = state
+    pcall(function()
+        if state then
+            Lighting.Ambient = Color3.fromRGB(255, 255, 255)
+            Lighting.Brightness = 2
+            Lighting.FogEnd = 1e6
+            Lighting.GlobalShadows = false
+            Lighting.ClockTime = 14
+        else
+            Lighting.Ambient = originalAmbient
+            Lighting.Brightness = originalBrightness
+            Lighting.FogEnd = originalFogEnd
+            Lighting.GlobalShadows = originalGlobalShadows
+            Lighting.ClockTime = originalClockTime
+        end
+    end)
+end
+
+local function boostFPS()
+    pcall(function()
+        local Terrain = workspace:FindFirstChildOfClass("Terrain")
+        if Terrain then
+            Terrain.WaterWaveSize = 0
+            Terrain.WaterWaveSpeed = 0
+            Terrain.WaterReflectance = 0
+            Terrain.WaterTransparency = 0
+        end
+        Lighting.GlobalShadows = false
+        Lighting.FogEnd = 9e9
+        for _, v in ipairs(game:GetDescendants()) do
+            if v:IsA("BasePart") and not v:IsA("MeshPart") then
+                v.Material = Enum.Material.SmoothPlastic
+            elseif v:IsA("Decal") or v:IsA("Texture") then
+                v.Transparency = 0.5
+            elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
+                v.Lifetime = NumberRange.new(0)
+            end
+        end
+        showClanNotification("🚀 AngusHub FPS Boost", "เพิ่มความลื่นสำเร็จ! ลดกราฟิกและเอฟเฟกต์แล้ว", 4)
+    end)
+end
+
+-- ESP Background Loop
+task.spawn(function()
+    while true do
+        task.wait(0.5)
+        pcall(function()
+            -- 1) Player ESP
+            if playerEspActive then
+                for _, p in ipairs(Players:GetPlayers()) do
+                    if p ~= LP and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("Humanoid") then
+                        local char = p.Character
+                        local hrp = char.HumanoidRootPart
+                        local hum = char.Humanoid
+
+                        local hl = char:FindFirstChild("AngusHighlight")
+                        if not hl then
+                            hl = Instance.new("Highlight")
+                            hl.Name = "AngusHighlight"
+                            hl.FillColor = (p.Team and p.Team.Name == "Marines") and Color3.fromRGB(59, 130, 246) or Color3.fromRGB(239, 68, 68)
+                            hl.OutlineColor = Color3.fromRGB(255, 255, 255)
+                            hl.FillTransparency = 0.55
+                            hl.OutlineTransparency = 0
+                            hl.Adornee = char
+                            hl.Parent = char
+                        end
+
+                        local bill = char:FindFirstChild("AngusBill")
+                        if not bill then
+                            bill = Instance.new("BillboardGui")
+                            bill.Name = "AngusBill"
+                            bill.Size = UDim2.new(0, 150, 0, 36)
+                            bill.StudsOffset = Vector3.new(0, 3.4, 0)
+                            bill.AlwaysOnTop = true
+                            bill.Adornee = char:FindFirstChild("Head") or hrp
+                            bill.Parent = char
+
+                            local nameLbl = Instance.new("TextLabel")
+                            nameLbl.Name = "NameLbl"
+                            nameLbl.Size = UDim2.new(1, 0, 0, 16)
+                            nameLbl.BackgroundTransparency = 1
+                            nameLbl.Font = Enum.Font.GothamBold
+                            nameLbl.TextSize = 11
+                            nameLbl.TextColor3 = Color3.fromRGB(255, 255, 255)
+                            nameLbl.Parent = bill
+
+                            local distLbl = Instance.new("TextLabel")
+                            distLbl.Name = "DistLbl"
+                            distLbl.Size = UDim2.new(1, 0, 0, 14)
+                            distLbl.Position = UDim2.new(0, 0, 0, 16)
+                            distLbl.BackgroundTransparency = 1
+                            distLbl.Font = Enum.Font.GothamMedium
+                            distLbl.TextSize = 10
+                            distLbl.TextColor3 = Color3.fromRGB(239, 68, 68)
+                            distLbl.Parent = bill
+                        end
+
+                        if bill then
+                            local myPos = (LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")) and LP.Character.HumanoidRootPart.Position or Vector3.new()
+                            local dist = math.floor((hrp.Position - myPos).Magnitude)
+                            local hpPct = math.clamp(math.floor((hum.Health / math.max(hum.MaxHealth, 1)) * 100), 0, 100)
+                            local nLbl = bill:FindFirstChild("NameLbl")
+                            if nLbl then nLbl.Text = p.DisplayName .. " (@" .. p.Name .. ")" end
+                            local dLbl = bill:FindFirstChild("DistLbl")
+                            if dLbl then dLbl.Text = tostring(dist) .. "m | HP: " .. tostring(hpPct) .. "%" end
+                        end
+                    end
+                end
+            else
+                for _, p in ipairs(Players:GetPlayers()) do
+                    if p.Character then
+                        local hl = p.Character:FindFirstChild("AngusHighlight")
+                        if hl then hl:Destroy() end
+                        local b = p.Character:FindFirstChild("AngusBill")
+                        if b then b:Destroy() end
+                    end
+                end
+            end
+
+            -- 2) Fruit ESP
+            if fruitEspActive then
+                local myPos = (LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")) and LP.Character.HumanoidRootPart.Position or Vector3.new()
+                for _, obj in ipairs(workspace:GetChildren()) do
+                    if (obj:IsA("Tool") or obj:IsA("Model")) and (obj.Name:find("Fruit") or (obj:FindFirstChild("Handle") and obj.Handle:FindFirstChild("Fruit"))) then
+                        local part = obj:FindFirstChild("Handle") or obj:FindFirstChildOfClass("BasePart")
+                        if part then
+                            local b = obj:FindFirstChild("AngusFruitBill")
+                            if not b then
+                                b = Instance.new("BillboardGui")
+                                b.Name = "AngusFruitBill"
+                                b.Size = UDim2.new(0, 140, 0, 30)
+                                b.StudsOffset = Vector3.new(0, 2.5, 0)
+                                b.AlwaysOnTop = true
+                                b.Adornee = part
+                                b.Parent = obj
+
+                                local lbl = Instance.new("TextLabel")
+                                lbl.Name = "Lbl"
+                                lbl.Size = UDim2.new(1, 0, 1, 0)
+                                lbl.BackgroundTransparency = 1
+                                lbl.Font = Enum.Font.GothamBold
+                                lbl.TextSize = 11
+                                lbl.TextColor3 = Color3.fromRGB(245, 158, 11)
+                                lbl.Parent = b
+                            end
+                            local dist = math.floor((part.Position - myPos).Magnitude)
+                            local lbl = b:FindFirstChild("Lbl")
+                            if lbl then
+                                lbl.Text = "🍎 " .. obj.Name .. "\n[" .. tostring(dist) .. "m]"
+                            end
+                        end
+                    end
+                end
+            else
+                for _, obj in ipairs(workspace:GetChildren()) do
+                    local b = obj:FindFirstChild("AngusFruitBill")
+                    if b then b:Destroy() end
+                end
+            end
+
+            -- 3) Chest ESP
+            if chestEspActive then
+                local myPos = (LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")) and LP.Character.HumanoidRootPart.Position or Vector3.new()
+                for _, obj in ipairs(workspace:GetDescendants()) do
+                    if obj:IsA("BasePart") and (obj.Name:find("Chest") or (obj.Parent and obj.Parent.Name:find("Chest"))) then
+                        local b = obj:FindFirstChild("AngusChestBill")
+                        if not b then
+                            b = Instance.new("BillboardGui")
+                            b.Name = "AngusChestBill"
+                            b.Size = UDim2.new(0, 110, 0, 24)
+                            b.StudsOffset = Vector3.new(0, 2, 0)
+                            b.AlwaysOnTop = true
+                            b.Adornee = obj
+                            b.Parent = obj
+
+                            local lbl = Instance.new("TextLabel")
+                            lbl.Name = "Lbl"
+                            lbl.Size = UDim2.new(1, 0, 1, 0)
+                            lbl.BackgroundTransparency = 1
+                            lbl.Font = Enum.Font.GothamBold
+                            lbl.TextSize = 10
+                            lbl.TextColor3 = Color3.fromRGB(16, 185, 129)
+                            lbl.Parent = b
+                        end
+                        local dist = math.floor((obj.Position - myPos).Magnitude)
+                        local lbl = b:FindFirstChild("Lbl")
+                        if lbl then
+                            lbl.Text = "📦 " .. obj.Name .. " [" .. tostring(dist) .. "m]"
+                        end
+                    end
+                end
+            else
+                for _, obj in ipairs(workspace:GetDescendants()) do
+                    local b = obj:FindFirstChild("AngusChestBill")
+                    if b then b:Destroy() end
+                end
+            end
+        end)
+    end
+end)
+
+-- ════════════════════════════════════════════════════════════
+--  🌀 TELEPORTS & SERVER LOGIC
+-- ════════════════════════════════════════════════════════════
+local function teleportToPos(pos, name)
+    pcall(function()
+        if LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
+            LP.Character.HumanoidRootPart.CFrame = CFrame.new(pos + Vector3.new(0, 3, 0))
+            showClanNotification("🌀 AngusHub Teleport", "วาร์ปไป " .. (name or "จุดหมาย") .. " เรียบร้อยแล้ว!", 3)
+        end
+    end)
+end
+
+local function rejoinServer()
+    pcall(function()
+        showClanNotification("🔁 AngusHub Rejoin", "กำลังเชื่อมต่อเข้าเซิร์ฟเวอร์เดิม...", 3)
+        task.wait(0.5)
+        if #Players:GetPlayers() <= 1 then
+            TeleportService:Teleport(game.PlaceId, LP)
+        else
+            TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LP)
+        end
+    end)
+end
+
+local function serverHop()
+    pcall(function()
+        showClanNotification("🌐 AngusHub Server Hop", "กำลังค้นหาเซิร์ฟเวอร์ใหม่...", 4)
+        local placeId = game.PlaceId
+        local url = "https://games.roblox.com/v1/games/" .. placeId .. "/servers/Public?sortOrder=Asc&limit=100"
+        local res = game:HttpGet(url)
+        local data = HttpService:JSONDecode(res)
+        if data and data.data then
+            for _, s in ipairs(data.data) do
+                if s.playing and s.maxPlayers and s.playing < s.maxPlayers and s.id ~= game.JobId then
+                    TeleportService:TeleportToPlaceInstance(placeId, s.id, LP)
+                    return
+                end
+            end
+        end
+        TeleportService:Teleport(placeId, LP)
+    end)
+end
+
+-- ════════════════════════════════════════════════════════════
+--  🏷️ WATERMARK BADGE (ป้ายสถิติมุมขวาบน)
+-- ════════════════════════════════════════════════════════════
 local function createWatermarkBadge()
     pcall(function()
         local parentGui = (gethui and gethui()) or game:GetService("CoreGui") or LP:WaitForChild("PlayerGui")
@@ -595,7 +982,7 @@ local function createWatermarkBadge()
         t2.Size = UDim2.new(1, -44, 0, 16)
         t2.Position = UDim2.new(0, 44, 0, 20)
         t2.BackgroundTransparency = 1
-        t2.Text = "🟢 Live · PVP On"
+        t2.Text = "🟢 Live · Tracker v4.3"
         t2.TextColor3 = Color3.fromRGB(16, 185, 129)
         t2.Font = Enum.Font.GothamMedium
         t2.TextSize = 10
@@ -606,31 +993,1004 @@ local function createWatermarkBadge()
     end)
 end
 
--- แจ้งเตือนเมื่อเริ่มต้นรันสคริปต์
-showClanNotification("🔥 AngusHub x Hunter", "⚡ กำลังเชื่อมต่อระบบ Realtime Tracker v4.2...", 4)
+-- ════════════════════════════════════════════════════════════
+--  🖥️ ANGUSHUB MAIN GUI & FLOATING TOGGLE LOGO
+-- ════════════════════════════════════════════════════════════
+local function createCorner(parent, radius)
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, radius)
+    c.Parent = parent
+    return c
+end
 
--- ซิงค์ข้อมูลครั้งแรก
+local function createStroke(parent, color, thickness, trans)
+    local s = Instance.new("UIStroke")
+    s.Color = color or Color3.fromRGB(239, 68, 68)
+    s.Thickness = thickness or 1
+    s.Transparency = trans or 0
+    s.Parent = parent
+    return s
+end
+
+local function makeDraggable(dragHandle, frameToMove)
+    frameToMove = frameToMove or dragHandle
+    local dragging = false
+    local dragInput, mousePos, framePos
+
+    dragHandle.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            mousePos = input.Position
+            framePos = frameToMove.Position
+
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+
+    dragHandle.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - mousePos
+            frameToMove.Position = UDim2.new(
+                framePos.X.Scale,
+                framePos.X.Offset + delta.X,
+                framePos.Y.Scale,
+                framePos.Y.Offset + delta.Y
+            )
+        end
+    end)
+end
+
+local function createToggle(parent, title, desc, defaultState, callback)
+    local row = Instance.new("Frame")
+    row.Size = UDim2.new(1, 0, 0, 42)
+    row.BackgroundColor3 = Color3.fromRGB(18, 20, 32)
+    row.BorderSizePixel = 0
+    row.Parent = parent
+
+    createCorner(row, 8)
+    createStroke(row, Color3.fromRGB(38, 42, 60), 1, 0.4)
+
+    local titleLbl = Instance.new("TextLabel")
+    titleLbl.Size = UDim2.new(1, -65, 0, 20)
+    titleLbl.Position = UDim2.new(0, 10, 0, 3)
+    titleLbl.BackgroundTransparency = 1
+    titleLbl.Text = title
+    titleLbl.TextColor3 = Color3.fromRGB(243, 244, 246)
+    titleLbl.Font = Enum.Font.GothamBold
+    titleLbl.TextSize = 11
+    titleLbl.TextXAlignment = Enum.TextXAlignment.Left
+    titleLbl.Parent = row
+
+    local descLbl = Instance.new("TextLabel")
+    descLbl.Size = UDim2.new(1, -65, 0, 14)
+    descLbl.Position = UDim2.new(0, 10, 0, 21)
+    descLbl.BackgroundTransparency = 1
+    descLbl.Text = desc or ""
+    descLbl.TextColor3 = Color3.fromRGB(156, 163, 175)
+    descLbl.Font = Enum.Font.Gotham
+    descLbl.TextSize = 9
+    descLbl.TextXAlignment = Enum.TextXAlignment.Left
+    descLbl.Parent = row
+
+    local switchBtn = Instance.new("TextButton")
+    switchBtn.Size = UDim2.new(0, 42, 0, 22)
+    switchBtn.Position = UDim2.new(1, -50, 0.5, -11)
+    switchBtn.BackgroundColor3 = defaultState and Color3.fromRGB(239, 68, 68) or Color3.fromRGB(42, 45, 62)
+    switchBtn.Text = ""
+    switchBtn.AutoButtonColor = false
+    switchBtn.Parent = row
+
+    createCorner(switchBtn, 11)
+
+    local knob = Instance.new("Frame")
+    knob.Size = UDim2.new(0, 16, 0, 16)
+    knob.Position = defaultState and UDim2.new(1, -19, 0.5, -8) or UDim2.new(0, 3, 0.5, -8)
+    knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    knob.BorderSizePixel = 0
+    knob.Parent = switchBtn
+
+    createCorner(knob, 8)
+
+    local state = defaultState
+
+    local function updateView(animate)
+        local targetColor = state and Color3.fromRGB(239, 68, 68) or Color3.fromRGB(42, 45, 62)
+        local targetPos = state and UDim2.new(1, -19, 0.5, -8) or UDim2.new(0, 3, 0.5, -8)
+        if animate then
+            TweenService:Create(switchBtn, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {BackgroundColor3 = targetColor}):Play()
+            TweenService:Create(knob, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {Position = targetPos}):Play()
+        else
+            switchBtn.BackgroundColor3 = targetColor
+            knob.Position = targetPos
+        end
+    end
+
+    switchBtn.MouseButton1Click:Connect(function()
+        state = not state
+        updateView(true)
+        pcall(callback, state)
+    end)
+
+    return {
+        SetState = function(newState)
+            state = newState
+            updateView(true)
+            pcall(callback, state)
+        end,
+        GetState = function() return state end,
+        Frame = row
+    }
+end
+
+local function createButton(parent, text, bgColor, textColor, callback)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, 0, 0, 32)
+    btn.BackgroundColor3 = bgColor or Color3.fromRGB(239, 68, 68)
+    btn.Text = text
+    btn.TextColor3 = textColor or Color3.fromRGB(255, 255, 255)
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 11
+    btn.AutoButtonColor = false
+    btn.BorderSizePixel = 0
+    btn.Parent = parent
+
+    createCorner(btn, 8)
+
+    btn.MouseEnter:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.15), {BackgroundTransparency = 0.2}):Play()
+    end)
+    btn.MouseLeave:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.15), {BackgroundTransparency = 0}):Play()
+    end)
+    btn.MouseButton1Click:Connect(function()
+        local origSize = btn.Size
+        TweenService:Create(btn, TweenInfo.new(0.08), {Size = UDim2.new(origSize.X.Scale, origSize.X.Offset - 2, origSize.Y.Scale, origSize.Y.Offset - 2)}):Play()
+        task.delay(0.08, function()
+            if btn and btn.Parent then
+                TweenService:Create(btn, TweenInfo.new(0.08), {Size = origSize}):Play()
+            end
+        end)
+        pcall(callback)
+    end)
+
+    return btn
+end
+
+local function buildAngusHubUI()
+    local parentGui = (gethui and gethui()) or game:GetService("CoreGui") or LP:WaitForChild("PlayerGui")
+
+    -- Clean old instances
+    if parentGui:FindFirstChild("AngusHubMainGui") then parentGui.AngusHubMainGui:Destroy() end
+    if parentGui:FindFirstChild("AngusHubToggleGui") then parentGui.AngusHubToggleGui:Destroy() end
+
+    -- ════════════════════════════════════════════════════════════
+    -- 1) FLOATING LOGO TOGGLE GUI (ปุ่มเปิด-ปิดรูปโลโก้ค่าย)
+    -- ════════════════════════════════════════════════════════════
+    local toggleGui = Instance.new("ScreenGui")
+    toggleGui.Name = "AngusHubToggleGui"
+    toggleGui.ResetOnSpawn = false
+    toggleGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+    local floatBtn = Instance.new("ImageButton")
+    floatBtn.Name = "FloatingLogoBtn"
+    floatBtn.Size = UDim2.new(0, 52, 0, 52)
+    floatBtn.Position = UDim2.new(0, 20, 0.42, 0)
+    floatBtn.BackgroundColor3 = Color3.fromRGB(15, 17, 26)
+    floatBtn.BorderSizePixel = 0
+    floatBtn.AutoButtonColor = false
+    floatBtn.Parent = toggleGui
+
+    createCorner(floatBtn, 26)
+    local floatStroke = createStroke(floatBtn, Color3.fromRGB(239, 68, 68), 2.2, 0)
+
+    local floatLogo = Instance.new("ImageLabel")
+    floatLogo.Size = UDim2.new(1, -6, 1, -6)
+    floatLogo.Position = UDim2.new(0.5, 0, 0.5, 0)
+    floatLogo.AnchorPoint = Vector2.new(0.5, 0.5)
+    floatLogo.BackgroundTransparency = 1
+    floatLogo.Image = clanLogoAsset
+    floatLogo.Parent = floatBtn
+
+    createCorner(floatLogo, 23)
+
+    -- Glow pulse animation for floating logo button
+    task.spawn(function()
+        while floatBtn and floatBtn.Parent do
+            TweenService:Create(floatStroke, TweenInfo.new(1.3, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
+                Color = Color3.fromRGB(245, 158, 11),
+                Thickness = 2.8
+            }):Play()
+            task.wait(1.3)
+            if not floatBtn or not floatBtn.Parent then break end
+            TweenService:Create(floatStroke, TweenInfo.new(1.3, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
+                Color = Color3.fromRGB(239, 68, 68),
+                Thickness = 2.0
+            }):Play()
+            task.wait(1.3)
+        end
+    end)
+
+    -- ════════════════════════════════════════════════════════════
+    -- 2) MAIN CLIENT GUI (หน้าต่างหลัก AngusHub x Hunter)
+    -- ════════════════════════════════════════════════════════════
+    local mainGui = Instance.new("ScreenGui")
+    mainGui.Name = "AngusHubMainGui"
+    mainGui.ResetOnSpawn = false
+    mainGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+    local cam = workspace.CurrentCamera
+    local vp = cam and cam.ViewportSize or Vector2.new(1280, 720)
+    local winW = math.min(540, math.max(320, vp.X - 30))
+    local winH = math.min(350, math.max(260, vp.Y - 40))
+
+    local mainFrame = Instance.new("Frame")
+    mainFrame.Name = "MainFrame"
+    mainFrame.Size = UDim2.new(0, winW, 0, winH)
+    mainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+    mainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+    mainFrame.BackgroundColor3 = Color3.fromRGB(12, 13, 21)
+    mainFrame.BorderSizePixel = 0
+    mainFrame.ClipsDescendants = true
+    mainFrame.Visible = true
+    mainFrame.Parent = mainGui
+
+    createCorner(mainFrame, 14)
+    createStroke(mainFrame, Color3.fromRGB(239, 68, 68), 1.6, 0.15)
+
+    -- Toggle Window function
+    local isGuiOpen = true
+    local function toggleMainGui(force)
+        if force ~= nil then
+            isGuiOpen = force
+        else
+            isGuiOpen = not isGuiOpen
+        end
+
+        if isGuiOpen then
+            mainFrame.Visible = true
+            mainFrame.Position = UDim2.new(0.5, 0, 0.52, 0)
+            mainFrame.Size = UDim2.new(0, winW - 20, 0, winH - 20)
+            TweenService:Create(mainFrame, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+                Position = UDim2.new(0.5, 0, 0.5, 0),
+                Size = UDim2.new(0, winW, 0, winH)
+            }):Play()
+        else
+            local tw = TweenService:Create(mainFrame, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+                Position = UDim2.new(0.5, 0, 0.52, 0),
+                Size = UDim2.new(0, winW - 20, 0, winH - 20)
+            })
+            tw:Play()
+            tw.Completed:Connect(function()
+                if not isGuiOpen then
+                    mainFrame.Visible = false
+                end
+            end)
+        end
+    end
+
+    -- Floating Logo Button: Touch & Mouse dragging + Tap Detection
+    local isDraggingLogo = false
+    local dragStart = nil
+    local startPos = nil
+
+    floatBtn.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            isDraggingLogo = true
+            dragStart = input.Position
+            startPos = floatBtn.Position
+        end
+    end)
+
+    floatBtn.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            if isDraggingLogo then
+                isDraggingLogo = false
+                local dist = 0
+                if dragStart then
+                    dist = (Vector2.new(input.Position.X, input.Position.Y) - Vector2.new(dragStart.X, dragStart.Y)).Magnitude
+                end
+                if dist < 8 then
+                    toggleMainGui()
+                end
+            end
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if isDraggingLogo and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - dragStart
+            floatBtn.Position = UDim2.new(
+                startPos.X.Scale,
+                startPos.X.Offset + delta.X,
+                startPos.Y.Scale,
+                startPos.Y.Offset + delta.Y
+            )
+        end
+    end)
+
+    -- Top Header Bar
+    local topBar = Instance.new("Frame")
+    topBar.Name = "TopBar"
+    topBar.Size = UDim2.new(1, 0, 0, 44)
+    topBar.BackgroundColor3 = Color3.fromRGB(16, 18, 28)
+    topBar.BorderSizePixel = 0
+    topBar.Parent = mainFrame
+
+    makeDraggable(topBar, mainFrame)
+
+    local topLogo = Instance.new("ImageLabel")
+    topLogo.Size = UDim2.new(0, 30, 0, 30)
+    topLogo.Position = UDim2.new(0, 10, 0.5, -15)
+    topLogo.BackgroundTransparency = 1
+    topLogo.Image = clanLogoAsset
+    topLogo.Parent = topBar
+
+    createCorner(topLogo, 15)
+    createStroke(topLogo, Color3.fromRGB(245, 158, 11), 1.2, 0)
+
+    local titleLbl = Instance.new("TextLabel")
+    titleLbl.Size = UDim2.new(0, 200, 0, 22)
+    titleLbl.Position = UDim2.new(0, 48, 0, 5)
+    titleLbl.BackgroundTransparency = 1
+    titleLbl.Text = "ANGUSHUB x HUNTER"
+    titleLbl.TextColor3 = Color3.fromRGB(255, 255, 255)
+    titleLbl.Font = Enum.Font.GothamBold
+    titleLbl.TextSize = 13
+    titleLbl.TextXAlignment = Enum.TextXAlignment.Left
+    titleLbl.Parent = topBar
+
+    local subTitleLbl = Instance.new("TextLabel")
+    subTitleLbl.Size = UDim2.new(0, 160, 0, 14)
+    subTitleLbl.Position = UDim2.new(0, 48, 0, 25)
+    subTitleLbl.BackgroundTransparency = 1
+    subTitleLbl.Text = "🟢 v4.3 • CLOUD LIVE TRACKER"
+    subTitleLbl.TextColor3 = Color3.fromRGB(16, 185, 129)
+    subTitleLbl.Font = Enum.Font.GothamMedium
+    subTitleLbl.TextSize = 9
+    subTitleLbl.TextXAlignment = Enum.TextXAlignment.Left
+    subTitleLbl.Parent = topBar
+
+    -- Close & Minimize Buttons
+    local closeBtn = Instance.new("TextButton")
+    closeBtn.Size = UDim2.new(0, 28, 0, 28)
+    closeBtn.Position = UDim2.new(1, -34, 0.5, -14)
+    closeBtn.BackgroundColor3 = Color3.fromRGB(28, 30, 44)
+    closeBtn.Text = "✕"
+    closeBtn.TextColor3 = Color3.fromRGB(200, 200, 210)
+    closeBtn.Font = Enum.Font.GothamBold
+    closeBtn.TextSize = 12
+    closeBtn.AutoButtonColor = false
+    closeBtn.BorderSizePixel = 0
+    closeBtn.Parent = topBar
+
+    createCorner(closeBtn, 6)
+
+    closeBtn.MouseButton1Click:Connect(function()
+        toggleMainGui(false)
+        showClanNotification("💡 AngusHub", "กดที่ปุ่มโลโก้ หรือกด Right-Ctrl เพื่อเปิดเมนูอีกครั้ง", 3)
+    end)
+
+    local minBtn = Instance.new("TextButton")
+    minBtn.Size = UDim2.new(0, 28, 0, 28)
+    minBtn.Position = UDim2.new(1, -66, 0.5, -14)
+    minBtn.BackgroundColor3 = Color3.fromRGB(28, 30, 44)
+    minBtn.Text = "—"
+    minBtn.TextColor3 = Color3.fromRGB(200, 200, 210)
+    minBtn.Font = Enum.Font.GothamBold
+    minBtn.TextSize = 12
+    minBtn.AutoButtonColor = false
+    minBtn.BorderSizePixel = 0
+    minBtn.Parent = topBar
+
+    createCorner(minBtn, 6)
+
+    minBtn.MouseButton1Click:Connect(function()
+        toggleMainGui(false)
+    end)
+
+    -- Left Sidebar
+    local sidebar = Instance.new("Frame")
+    sidebar.Name = "Sidebar"
+    sidebar.Size = UDim2.new(0, 135, 1, -44)
+    sidebar.Position = UDim2.new(0, 0, 0, 44)
+    sidebar.BackgroundColor3 = Color3.fromRGB(15, 17, 26)
+    sidebar.BorderSizePixel = 0
+    sidebar.Parent = mainFrame
+
+    local sidebarDivider = Instance.new("Frame")
+    sidebarDivider.Size = UDim2.new(0, 1, 1, 0)
+    sidebarDivider.Position = UDim2.new(1, -1, 0, 0)
+    sidebarDivider.BackgroundColor3 = Color3.fromRGB(30, 33, 48)
+    sidebarDivider.BorderSizePixel = 0
+    sidebarDivider.Parent = sidebar
+
+    local tabListLayout = Instance.new("UIListLayout")
+    tabListLayout.Padding = UDim.new(0, 4)
+    tabListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    tabListLayout.Parent = sidebar
+
+    local sidebarPad = Instance.new("UIPadding")
+    sidebarPad.PaddingTop = UDim.new(0, 8)
+    sidebarPad.PaddingLeft = UDim.new(0, 6)
+    sidebarPad.PaddingRight = UDim.new(0, 6)
+    sidebarPad.Parent = sidebar
+
+    -- Right Content Pages Container
+    local pagesContainer = Instance.new("Frame")
+    pagesContainer.Name = "PagesContainer"
+    pagesContainer.Size = UDim2.new(1, -143, 1, -50)
+    pagesContainer.Position = UDim2.new(0, 140, 0, 47)
+    pagesContainer.BackgroundTransparency = 1
+    pagesContainer.Parent = mainFrame
+
+    -- Tab definition & switching
+    local tabData = {
+        { name = "Tracker", label = "📊 แดชบอร์ด" },
+        { name = "Movement", label = "⚡ เคลื่อนที่" },
+        { name = "Visuals", label = "👁️ มองทะลุ" },
+        { name = "Teleport", label = "🌀 วาร์ป & เซิร์ฟ" },
+        { name = "Settings", label = "⚙️ ตั้งค่า & ค่าย" },
+    }
+
+    local tabButtons = {}
+    local tabPages = {}
+    local currentTab = "Tracker"
+
+    local function switchTab(targetName)
+        currentTab = targetName
+        for name, page in pairs(tabPages) do
+            if name == targetName then
+                page.Visible = true
+                page.CanvasPosition = Vector2.new(0, 0)
+            else
+                page.Visible = false
+            end
+        end
+
+        for name, btn in pairs(tabButtons) do
+            local ind = btn:FindFirstChild("Indicator")
+            if name == targetName then
+                TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(28, 22, 34)}):Play()
+                btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+                if ind then ind.Visible = true end
+            else
+                TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(15, 17, 26)}):Play()
+                btn.TextColor3 = Color3.fromRGB(156, 163, 175)
+                if ind then ind.Visible = false end
+            end
+        end
+    end
+
+    -- Create Tab Pages and Sidebar Buttons
+    for i, t in ipairs(tabData) do
+        -- Button
+        local btn = Instance.new("TextButton")
+        btn.Size = UDim2.new(1, 0, 0, 34)
+        btn.BackgroundColor3 = (i == 1) and Color3.fromRGB(28, 22, 34) or Color3.fromRGB(15, 17, 26)
+        btn.Text = t.label
+        btn.TextColor3 = (i == 1) and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(156, 163, 175)
+        btn.Font = Enum.Font.GothamBold
+        btn.TextSize = 10.5
+        btn.TextXAlignment = Enum.TextXAlignment.Left
+        btn.AutoButtonColor = false
+        btn.BorderSizePixel = 0
+        btn.LayoutOrder = i
+        btn.Parent = sidebar
+
+        createCorner(btn, 8)
+
+        local btnPad = Instance.new("UIPadding")
+        btnPad.PaddingLeft = UDim.new(0, 10)
+        btnPad.Parent = btn
+
+        local ind = Instance.new("Frame")
+        ind.Name = "Indicator"
+        ind.Size = UDim2.new(0, 3, 0, 20)
+        ind.Position = UDim2.new(0, -7, 0.5, -10)
+        ind.BackgroundColor3 = Color3.fromRGB(239, 68, 68)
+        ind.BorderSizePixel = 0
+        ind.Visible = (i == 1)
+        ind.Parent = btn
+
+        createCorner(ind, 2)
+
+        btn.MouseButton1Click:Connect(function()
+            switchTab(t.name)
+        end)
+
+        tabButtons[t.name] = btn
+
+        -- Page (ScrollingFrame)
+        local page = Instance.new("ScrollingFrame")
+        page.Name = t.name .. "Page"
+        page.Size = UDim2.new(1, 0, 1, 0)
+        page.BackgroundTransparency = 1
+        page.BorderSizePixel = 0
+        page.ScrollBarThickness = 3
+        page.ScrollBarImageColor3 = Color3.fromRGB(239, 68, 68)
+        page.CanvasSize = UDim2.new(0, 0, 0, 0)
+        page.AutomaticCanvasSize = Enum.AutomaticSize.Y
+        page.Visible = (i == 1)
+        page.Parent = pagesContainer
+
+        local pageLayout = Instance.new("UIListLayout")
+        pageLayout.Padding = UDim.new(0, 8)
+        pageLayout.SortOrder = Enum.SortOrder.LayoutOrder
+        pageLayout.Parent = page
+
+        local pagePad = Instance.new("UIPadding")
+        pagePad.PaddingTop = UDim.new(0, 4)
+        pagePad.PaddingBottom = UDim.new(0, 12)
+        pagePad.PaddingLeft = UDim.new(0, 4)
+        pagePad.PaddingRight = UDim.new(0, 8)
+        pagePad.Parent = page
+
+        tabPages[t.name] = page
+    end
+
+    -- ════════════════════════════════════════════════════════════
+    -- 📊 TAB 1: TRACKER / DASHBOARD
+    -- ════════════════════════════════════════════════════════════
+    local p1 = tabPages["Tracker"]
+
+    -- Top Live Sync Banner
+    local syncBanner = Instance.new("Frame")
+    syncBanner.Size = UDim2.new(1, 0, 0, 44)
+    syncBanner.BackgroundColor3 = Color3.fromRGB(18, 21, 33)
+    syncBanner.BorderSizePixel = 0
+    syncBanner.Parent = p1
+
+    createCorner(syncBanner, 8)
+    createStroke(syncBanner, Color3.fromRGB(239, 68, 68), 1, 0.4)
+
+    local syncDot = Instance.new("TextLabel")
+    syncDot.Size = UDim2.new(0, 16, 0, 16)
+    syncDot.Position = UDim2.new(0, 10, 0, 8)
+    syncDot.BackgroundTransparency = 1
+    syncDot.Text = "🟢"
+    syncDot.TextSize = 10
+    syncDot.Parent = syncBanner
+
+    local syncTitle = Instance.new("TextLabel")
+    syncTitle.Size = UDim2.new(1, -36, 0, 16)
+    syncTitle.Position = UDim2.new(0, 30, 0, 7)
+    syncTitle.BackgroundTransparency = 1
+    syncTitle.Text = "AngusHub Cloud: เชื่อมต่อเรียลไทม์"
+    syncTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+    syncTitle.Font = Enum.Font.GothamBold
+    syncTitle.TextSize = 11
+    syncTitle.TextXAlignment = Enum.TextXAlignment.Left
+    syncTitle.Parent = syncBanner
+
+    local syncTimeLbl = Instance.new("TextLabel")
+    syncTimeLbl.Size = UDim2.new(1, -36, 0, 14)
+    syncTimeLbl.Position = UDim2.new(0, 30, 0, 23)
+    syncTimeLbl.BackgroundTransparency = 1
+    syncTimeLbl.Text = "ซิงค์ล่าสุด: กำลังโหลด..."
+    syncTimeLbl.TextColor3 = Color3.fromRGB(156, 163, 175)
+    syncTimeLbl.Font = Enum.Font.Gotham
+    syncTimeLbl.TextSize = 9
+    syncTimeLbl.TextXAlignment = Enum.TextXAlignment.Left
+    syncTimeLbl.Parent = syncBanner
+
+    -- 6 Live Stats Cards (Grid Rows)
+    local function createStatCard(parent, title, icon, defaultValue, accentColor)
+        local card = Instance.new("Frame")
+        card.Size = UDim2.new(0.485, 0, 0, 52)
+        card.BackgroundColor3 = Color3.fromRGB(18, 20, 32)
+        card.BorderSizePixel = 0
+        card.Parent = parent
+
+        createCorner(card, 8)
+        createStroke(card, accentColor or Color3.fromRGB(38, 42, 60), 1, 0.4)
+
+        local titleLbl = Instance.new("TextLabel")
+        titleLbl.Size = UDim2.new(1, -12, 0, 16)
+        titleLbl.Position = UDim2.new(0, 10, 0, 6)
+        titleLbl.BackgroundTransparency = 1
+        titleLbl.Text = icon .. " " .. title
+        titleLbl.TextColor3 = Color3.fromRGB(156, 163, 175)
+        titleLbl.Font = Enum.Font.GothamMedium
+        titleLbl.TextSize = 10
+        titleLbl.TextXAlignment = Enum.TextXAlignment.Left
+        titleLbl.Parent = card
+
+        local valLbl = Instance.new("TextLabel")
+        valLbl.Size = UDim2.new(1, -12, 0, 22)
+        valLbl.Position = UDim2.new(0, 10, 0, 22)
+        valLbl.BackgroundTransparency = 1
+        valLbl.Text = defaultValue or "-"
+        valLbl.TextColor3 = accentColor or Color3.fromRGB(255, 255, 255)
+        valLbl.Font = Enum.Font.GothamBold
+        valLbl.TextSize = 12.5
+        valLbl.TextXAlignment = Enum.TextXAlignment.Left
+        valLbl.Parent = card
+
+        return valLbl
+    end
+
+    local row1 = Instance.new("Frame")
+    row1.Size = UDim2.new(1, 0, 0, 52)
+    row1.BackgroundTransparency = 1
+    row1.Parent = p1
+
+    local beliValLbl = createStatCard(row1, "เงินเบลี (Beli)", "💰", "฿ 0", Color3.fromRGB(245, 158, 11))
+    beliValLbl.Parent.Position = UDim2.new(0, 0, 0, 0)
+
+    local fragsValLbl = createStatCard(row1, "ชิ้นส่วนม่วง (Frags)", "💎", "💎 0", Color3.fromRGB(192, 132, 252))
+    fragsValLbl.Parent.Position = UDim2.new(0.515, 0, 0, 0)
+
+    local row2 = Instance.new("Frame")
+    row2.Size = UDim2.new(1, 0, 0, 52)
+    row2.BackgroundTransparency = 1
+    row2.Parent = p1
+
+    local bountyValLbl = createStatCard(row2, "ค่าหัว (Bounty / Honor)", "☠️", "☠️ 0", Color3.fromRGB(239, 68, 68))
+    bountyValLbl.Parent.Position = UDim2.new(0, 0, 0, 0)
+
+    local levelValLbl = createStatCard(row2, "เลเวล (Level)", "⚡", "⚡ 0 / 3000", Color3.fromRGB(56, 189, 248))
+    levelValLbl.Parent.Position = UDim2.new(0.515, 0, 0, 0)
+
+    local row3 = Instance.new("Frame")
+    row3.Size = UDim2.new(1, 0, 0, 52)
+    row3.BackgroundTransparency = 1
+    row3.Parent = p1
+
+    local fruitValLbl = createStatCard(row3, "ผลปีศาจ (Devil Fruit)", "🍎", "None", Color3.fromRGB(251, 146, 60))
+    fruitValLbl.Parent.Position = UDim2.new(0, 0, 0, 0)
+
+    local seaValLbl = createStatCard(row3, "ทะเล (Sea)", "🌊", "Blox Fruits", Color3.fromRGB(52, 211, 153))
+    seaValLbl.Parent.Position = UDim2.new(0.515, 0, 0, 0)
+
+    -- Force Sync & Copy Web URL Action Buttons
+    createButton(p1, "⚡ ซิงค์ข้อมูลเดี๋ยวนี้ (Force Sync)", Color3.fromRGB(239, 68, 68), Color3.fromRGB(255, 255, 255), function()
+        showClanNotification("🔄 AngusHub Sync", "กำลังดึงสถิติล่าสุดและส่งขึ้นเว็บ...", 2)
+        local ok, msg, bVal = syncData()
+        if ok then
+            showClanNotification("✅ AngusHub Sync", "ซิงค์สำเร็จ! ค่าหัว: " .. tostring(bVal), 3)
+        end
+    end)
+
+    createButton(p1, "🌐 คัดลอกลิงก์เว็บสถิติ (Copy Web URL)", Color3.fromRGB(30, 34, 52), Color3.fromRGB(243, 244, 246), function()
+        copyToClipboard(SERVER_URL, "คัดลอกลิงก์เว็บสถิติ AngusHub สำเร็จ!")
+    end)
+
+    -- Tracker Callback Updater
+    onTrackerDataUpdated = function()
+        pcall(function()
+            if beliValLbl then beliValLbl.Text = "฿ " .. formatCommas(lastBeli) end
+            if fragsValLbl then fragsValLbl.Text = "💎 " .. formatCommas(lastFrags) end
+            if bountyValLbl then bountyValLbl.Text = "☠️ " .. formatCommas(lastBounty) end
+            if levelValLbl then levelValLbl.Text = "⚡ " .. tostring(lastLevel) .. " / 3000" end
+            if fruitValLbl then fruitValLbl.Text = "🍎 " .. tostring(lastFruit) end
+            if seaValLbl then seaValLbl.Text = "🌊 " .. tostring(lastSea) end
+            if syncTimeLbl then syncTimeLbl.Text = "🟢 ซิงค์ล่าสุด: " .. tostring(lastSyncTime) .. " • ออนไลน์" end
+        end)
+    end
+
+    -- Initial tracker text update
+    onTrackerDataUpdated()
+
+    -- ════════════════════════════════════════════════════════════
+    -- ⚡ TAB 2: MOVEMENT & PLAYER
+    -- ════════════════════════════════════════════════════════════
+    local p2 = tabPages["Movement"]
+
+    -- WalkSpeed Section
+    local wsCard = Instance.new("Frame")
+    wsCard.Size = UDim2.new(1, 0, 0, 56)
+    wsCard.BackgroundColor3 = Color3.fromRGB(18, 20, 32)
+    wsCard.BorderSizePixel = 0
+    wsCard.Parent = p2
+
+    createCorner(wsCard, 8)
+    createStroke(wsCard, Color3.fromRGB(38, 42, 60), 1, 0.4)
+
+    local wsTitle = Instance.new("TextLabel")
+    wsTitle.Size = UDim2.new(1, -20, 0, 16)
+    wsTitle.Position = UDim2.new(0, 10, 0, 6)
+    wsTitle.BackgroundTransparency = 1
+    wsTitle.Text = "🏃 WalkSpeed (ความเร็วเดิน/วิ่ง):"
+    wsTitle.TextColor3 = Color3.fromRGB(243, 244, 246)
+    wsTitle.Font = Enum.Font.GothamBold
+    wsTitle.TextSize = 11
+    wsTitle.TextXAlignment = Enum.TextXAlignment.Left
+    wsTitle.Parent = wsCard
+
+    local wsSpeeds = {
+        { label = "16 (ปกติ)", val = 16 },
+        { label = "45 (ว่องไว)", val = 45 },
+        { label = "80 (สปีด)", val = 80 },
+        { label = "140 (วาป)", val = 140 }
+    }
+    for idx, s in ipairs(wsSpeeds) do
+        local b = Instance.new("TextButton")
+        b.Size = UDim2.new(0.22, 0, 0, 24)
+        b.Position = UDim2.new(0.02 + (idx - 1) * 0.245, 0, 0, 24)
+        b.BackgroundColor3 = (customSpeed == s.val) and Color3.fromRGB(239, 68, 68) or Color3.fromRGB(30, 33, 48)
+        b.Text = s.label
+        b.TextColor3 = Color3.fromRGB(255, 255, 255)
+        b.Font = Enum.Font.GothamMedium
+        b.TextSize = 9.5
+        b.AutoButtonColor = false
+        b.BorderSizePixel = 0
+        b.Parent = wsCard
+
+        createCorner(b, 6)
+
+        b.MouseButton1Click:Connect(function()
+            customSpeed = s.val
+            applySpeedAndJump()
+            for _, child in ipairs(wsCard:GetChildren()) do
+                if child:IsA("TextButton") then
+                    child.BackgroundColor3 = (child.Text == s.label) and Color3.fromRGB(239, 68, 68) or Color3.fromRGB(30, 33, 48)
+                end
+            end
+            showClanNotification("🏃 ความเร็ว", "ตั้งความเร็วเดินเป็น " .. tostring(s.val), 2)
+        end)
+    end
+
+    -- JumpPower Section
+    local jpCard = Instance.new("Frame")
+    jpCard.Size = UDim2.new(1, 0, 0, 56)
+    jpCard.BackgroundColor3 = Color3.fromRGB(18, 20, 32)
+    jpCard.BorderSizePixel = 0
+    jpCard.Parent = p2
+
+    createCorner(jpCard, 8)
+    createStroke(jpCard, Color3.fromRGB(38, 42, 60), 1, 0.4)
+
+    local jpTitle = Instance.new("TextLabel")
+    jpTitle.Size = UDim2.new(1, -20, 0, 16)
+    jpTitle.Position = UDim2.new(0, 10, 0, 6)
+    jpTitle.BackgroundTransparency = 1
+    jpTitle.Text = "🦘 JumpPower (พลังกระโดด):"
+    jpTitle.TextColor3 = Color3.fromRGB(243, 244, 246)
+    jpTitle.Font = Enum.Font.GothamBold
+    jpTitle.TextSize = 11
+    jpTitle.TextXAlignment = Enum.TextXAlignment.Left
+    jpTitle.Parent = jpCard
+
+    local jpPowers = {
+        { label = "50 (ปกติ)", val = 50 },
+        { label = "90 (กระโดดสูง)", val = 90 },
+        { label = "160 (ลอยฟ้า)", val = 160 }
+    }
+    for idx, s in ipairs(jpPowers) do
+        local b = Instance.new("TextButton")
+        b.Size = UDim2.new(0.3, 0, 0, 24)
+        b.Position = UDim2.new(0.02 + (idx - 1) * 0.33, 0, 0, 24)
+        b.BackgroundColor3 = (customJump == s.val) and Color3.fromRGB(239, 68, 68) or Color3.fromRGB(30, 33, 48)
+        b.Text = s.label
+        b.TextColor3 = Color3.fromRGB(255, 255, 255)
+        b.Font = Enum.Font.GothamMedium
+        b.TextSize = 10
+        b.AutoButtonColor = false
+        b.BorderSizePixel = 0
+        b.Parent = jpCard
+
+        createCorner(b, 6)
+
+        b.MouseButton1Click:Connect(function()
+            customJump = s.val
+            applySpeedAndJump()
+            for _, child in ipairs(jpCard:GetChildren()) do
+                if child:IsA("TextButton") then
+                    child.BackgroundColor3 = (child.Text == s.label) and Color3.fromRGB(239, 68, 68) or Color3.fromRGB(30, 33, 48)
+                end
+            end
+            showClanNotification("🦘 กระโดด", "ตั้งพลังกระโดดเป็น " .. tostring(s.val), 2)
+        end)
+    end
+
+    -- Infinite Jump
+    createToggle(p2, "🚀 Infinite Jump (กระโดดไม่จำกัด)", "กดกระโดดกลางอากาศได้เรื่อยๆ ไม่มีตก", false, function(st)
+        infJumpActive = st
+    end)
+
+    -- NoClip
+    createToggle(p2, "👻 NoClip (เดินทะลุกำแพง)", "เดินทะลุกำแพง สิ่งก่อสร้าง และสิ่งกีดขวาง", false, function(st)
+        noclipActive = st
+    end)
+
+    -- Anti-AFK
+    createToggle(p2, "🛡️ Anti-AFK (กันหลุด 20 นาที)", "ป้องกันเกมเตะอัตโนมัติเมื่อยืนอยู่นิ่ง", true, function(st)
+        antiAfkActive = st
+    end)
+
+    -- ════════════════════════════════════════════════════════════
+    -- 👁️ TAB 3: VISUALS & ESP
+    -- ════════════════════════════════════════════════════════════
+    local p3 = tabPages["Visuals"]
+
+    createToggle(p3, "👤 Player ESP (มองผู้เล่นทะลุกำแพง)", "แสดงกล่องเรืองแสง ชื่อ ระยะห่าง และเลือด", false, function(st)
+        playerEspActive = st
+    end)
+
+    createToggle(p3, "🍇 Fruit ESP (มองผลปีศาจในแมพ)", "แสดงชื่อและตำแหน่งผลปีศาจที่ตกหรือเกิดในแมพ", false, function(st)
+        fruitEspActive = st
+    end)
+
+    createToggle(p3, "📦 Chest ESP (มองกล่องสมบัติ)", "แสดงตำแหน่งกล่องเงินและระยะห่าง", false, function(st)
+        chestEspActive = st
+    end)
+
+    createToggle(p3, "💡 FullBright (ไฟสว่าง ปิดหมอก)", "เปิดแสงสว่างทั่วทั้งแมพ ไม่มีมืดหรือหมอก", false, function(st)
+        setFullBright(st)
+    end)
+
+    createButton(p3, "🚀 บูสต์ FPS (ลดแลค ลื่นหัวแตก)", Color3.fromRGB(16, 185, 129), Color3.fromRGB(255, 255, 255), function()
+        boostFPS()
+    end)
+
+    -- ════════════════════════════════════════════════════════════
+    -- 🌀 TAB 4: TELEPORT & SERVER
+    -- ════════════════════════════════════════════════════════════
+    local p4 = tabPages["Teleport"]
+
+    local tpPoints = {
+        { name = "☕ คาเฟ่ (Cafe - Sea 2)", pos = Vector3.new(-380, 73, 298) },
+        { name = "🏰 คฤหาสน์ (Mansion - Sea 3)", pos = Vector3.new(-12463, 375, -7551) },
+        { name = "👑 ปราสาทกลางทะเล (Castle Sea - Sea 3)", pos = Vector3.new(-5085, 315, -3155) },
+        { name = "🏙️ เกาะกลาง (Middle Town - Sea 1)", pos = Vector3.new(-655, 15, 1582) },
+        { name = "🏴‍☠️ เกาะเริ่มโจรสลัด (Starter Island - Sea 1)", pos = Vector3.new(980, 16, 1428) }
+    }
+
+    for _, tp in ipairs(tpPoints) do
+        createButton(p4, tp.name, Color3.fromRGB(24, 27, 42), Color3.fromRGB(243, 244, 246), function()
+            teleportToPos(tp.pos, tp.name)
+        end)
+    end
+
+    local srvRow = Instance.new("Frame")
+    srvRow.Size = UDim2.new(1, 0, 0, 36)
+    srvRow.BackgroundTransparency = 1
+    srvRow.Parent = p4
+
+    local rejBtn = createButton(srvRow, "🔁 รีจอยเซิร์ฟเดิม (Rejoin)", Color3.fromRGB(30, 34, 52), Color3.fromRGB(243, 244, 246), function()
+        rejoinServer()
+    end)
+    rejBtn.Size = UDim2.new(0.485, 0, 1, 0)
+    rejBtn.Position = UDim2.new(0, 0, 0, 0)
+
+    local hopBtn = createButton(srvRow, "🌐 ย้ายเซิร์ฟ (Server Hop)", Color3.fromRGB(239, 68, 68), Color3.fromRGB(255, 255, 255), function()
+        serverHop()
+    end)
+    hopBtn.Size = UDim2.new(0.485, 0, 1, 0)
+    hopBtn.Position = UDim2.new(0.515, 0, 0, 0)
+
+    -- ════════════════════════════════════════════════════════════
+    -- ⚙️ TAB 5: SETTINGS & CLAN INFO
+    -- ════════════════════════════════════════════════════════════
+    local p5 = tabPages["Settings"]
+
+    createToggle(p5, "🏷️ แสดงป้าย Watermark บนหน้าจอ", "แสดงหรือซ่อนป้ายโลโก้ AngusHub มุมขวาบน", true, function(st)
+        local badge = parentGui:FindFirstChild("AngusHubBadge")
+        if badge then badge.Enabled = st end
+    end)
+
+    createToggle(p5, "🔘 แสดงปุ่มโลโก้ลอย", "เปิดหรือซ่อนปุ่มวงกลมโลโก้สำหรับเปิดปิด UI", true, function(st)
+        floatBtn.Visible = st
+    end)
+
+    -- Clan Info Card
+    local clanCard = Instance.new("Frame")
+    clanCard.Size = UDim2.new(1, 0, 0, 68)
+    clanCard.BackgroundColor3 = Color3.fromRGB(18, 20, 32)
+    clanCard.BorderSizePixel = 0
+    clanCard.Parent = p5
+
+    createCorner(clanCard, 8)
+    createStroke(clanCard, Color3.fromRGB(245, 158, 11), 1, 0.4)
+
+    local cLogo = Instance.new("ImageLabel")
+    cLogo.Size = UDim2.new(0, 44, 0, 44)
+    cLogo.Position = UDim2.new(0, 10, 0.5, -22)
+    cLogo.BackgroundTransparency = 1
+    cLogo.Image = clanLogoAsset
+    cLogo.Parent = clanCard
+
+    createCorner(cLogo, 22)
+
+    local cName = Instance.new("TextLabel")
+    cName.Size = UDim2.new(1, -70, 0, 20)
+    cName.Position = UDim2.new(0, 62, 0, 10)
+    cName.BackgroundTransparency = 1
+    cName.Text = "🔥 ค่าย AngusHub x Hunter"
+    cName.TextColor3 = Color3.fromRGB(255, 255, 255)
+    cName.Font = Enum.Font.GothamBold
+    cName.TextSize = 12
+    cName.TextXAlignment = Enum.TextXAlignment.Left
+    cName.Parent = clanCard
+
+    local cDesc = Instance.new("TextLabel")
+    cDesc.Size = UDim2.new(1, -70, 0, 28)
+    cDesc.Position = UDim2.new(0, 62, 0, 30)
+    cDesc.BackgroundTransparency = 1
+    cDesc.Text = "ค่ายล่าค่าหัวอันดับ 1 ในไทย • ระบบติดตามเรียลไทม์\nCloud Client v4.3 Official Release"
+    cDesc.TextColor3 = Color3.fromRGB(156, 163, 175)
+    cDesc.Font = Enum.Font.Gotham
+    cDesc.TextSize = 10
+    cDesc.TextXAlignment = Enum.TextXAlignment.Left
+    cDesc.Parent = clanCard
+
+    createButton(p5, "📋 คัดลอกลิงก์ Discord ค่าย AngusHub", Color3.fromRGB(30, 34, 52), Color3.fromRGB(243, 244, 246), function()
+        copyToClipboard("https://discord.gg/angushub", "คัดลอกลิงก์ Discord ค่ายเรียบร้อยแล้ว!")
+    end)
+
+    createButton(p5, "❌ ปิดการทำงานสคริปต์ UI ทั้งหมด (Unload)", Color3.fromRGB(153, 27, 27), Color3.fromRGB(255, 255, 255), function()
+        customSpeed = 16
+        customJump = 50
+        infJumpActive = false
+        noclipActive = false
+        playerEspActive = false
+        fruitEspActive = false
+        chestEspActive = false
+        setFullBright(false)
+        pcall(function()
+            local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
+            if hum then
+                hum.WalkSpeed = 16
+                hum.JumpPower = 50
+            end
+        end)
+        mainGui:Destroy()
+        toggleGui:Destroy()
+        showClanNotification("👋 AngusHub", "ปิดการทำงาน AngusHub In-Game UI สำเร็จ", 3)
+    end)
+
+    -- Keyboard shortcut (PC): RightControl or RightShift to toggle UI
+    UserInputService.InputBegan:Connect(function(input, gpe)
+        if not gpe then
+            if input.KeyCode == Enum.KeyCode.RightControl or input.KeyCode == Enum.KeyCode.RightShift then
+                toggleMainGui()
+            end
+        end
+    end)
+
+    -- Attach to parentGui
+    toggleGui.Parent = parentGui
+    mainGui.Parent = parentGui
+end
+
+-- ════════════════════════════════════════════════════════════
+--  🚀 STARTUP EXECUTION & INITIALIZATION
+-- ════════════════════════════════════════════════════════════
+-- 1) แสดง Watermark โลโก้ค่าย
+createWatermarkBadge()
+
+-- 2) สร้าง AngusHub In-Game UI และปุ่มโลโก้ลอย
+pcall(buildAngusHubUI)
+
+-- 3) แจ้งเตือนเมื่อเริ่มต้นรันสคริปต์
+showClanNotification("🔥 AngusHub x Hunter", "⚡ โหลด AngusHub Client v4.3 สำเร็จ! แตะที่ปุ่มโลโก้เพื่อเปิด/ปิดเมนู", 5)
+
+-- 4) ซิงค์ข้อมูลครั้งแรก
 local ok, res, bVal, bSrc = syncData()
 if ok then
     print("========================================")
-    print("  🔥 AngusHub x Hunter Live Tracker v4.2")
+    print("  🔥 AngusHub x Hunter Live Tracker v4.3")
     print("  ☠️ ค่าหัวจริง: " .. tostring(bVal) .. " (" .. tostring(bSrc) .. ")")
     print("  🚀 ซิงค์ข้อมูลเรียลไทม์ทุก 3 วินาที")
     print("  🌐 ดูข้อมูลที่: " .. SERVER_URL)
     print("========================================")
-
-    -- แจ้งเตือนเมื่อเชื่อมต่อสำเร็จ พร้อมรูปโลโก้ค่าย
-    showClanNotification("🔥 AngusHub x Hunter", "✅ เชื่อมต่อเรียลไทม์สำเร็จ! ค่าหัว: " .. tostring(bVal), 6)
-
-    -- สร้าง Watermark โลโก้ค่ายลอยบนหน้าจอ
-    createWatermarkBadge()
+    showClanNotification("🔥 AngusHub x Hunter", "✅ ซิงค์ข้อมูลเรียลไทม์สำเร็จ! ค่าหัว: " .. tostring(bVal), 5)
 else
     warn("❌ ซิงค์ครั้งแรกไม่สำเร็จ: " .. tostring(res))
     showClanNotification("⚠️ AngusHub Tracker", "กำลังเชื่อมต่อระบบในพื้นหลัง...", 4)
-    createWatermarkBadge()
 end
 
--- ลูปอัพเดตอัตโนมัติแบบเรียลไทม์ (Live Sync)
+-- 5) ลูปอัพเดตอัตโนมัติแบบเรียลไทม์ (Live Sync ทุก 3 วินาที)
 task.spawn(function()
     while true do
         task.wait(3)
@@ -638,14 +1998,12 @@ task.spawn(function()
     end
 end)
 
--- ════════════════════════════════════════════════════════════
---  🚀 รัน Hermanos Hub ควบคู่กับ Tracker (Multi-Threaded)
---  ทำงานแบบแยก Thread (task.spawn) ไม่ขัดขวางและไม่ทำให้ Tracker สะดุด
--- ════════════════════════════════════════════════════════════
+-- 6) รันสคริปต์เสริม Hermanos Hub ควบคู่ (Safe Multi-Threaded)
 task.spawn(function()
     pcall(function()
-        getgenv().script_mode = "PVP" -- PVP, FARM
+        getgenv().script_mode = "PVP"
         loadstring(game:HttpGet("https://raw.githubusercontent.com/hermanos-dev/hermanos-hub/refs/heads/main/Loader.lua"))()
     end)
 end)
+
 
