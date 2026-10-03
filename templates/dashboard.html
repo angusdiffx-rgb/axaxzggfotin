@@ -227,9 +227,19 @@ html, body {
     background: var(--bg-card); border: 1px solid var(--border-card);
     border-radius: 16px; padding: 14px 10px; text-align: center;
     backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-    transition: transform 0.2s, border-color 0.2s;
+    transition: transform 0.2s, border-color 0.2s, background 0.2s, box-shadow 0.2s;
+    cursor: pointer; user-select: none;
 }
-.player-chip:hover { transform: translateY(-2px); border-color: rgba(255, 255, 255, 0.18); }
+.player-chip:hover { transform: translateY(-2px); border-color: rgba(239, 68, 68, 0.4); }
+.player-chip.active {
+    border-color: #ef4444 !important;
+    background: rgba(239, 68, 68, 0.12) !important;
+    box-shadow: 0 0 18px rgba(239, 68, 68, 0.35) !important;
+    transform: translateY(-2px);
+}
+.player-chip.active .chip-av {
+    border-color: #ef4444;
+}
 .chip-av-wrap { position: relative; display: inline-block; margin-bottom: 8px; }
 .chip-av {
     width: 48px; height: 48px; border-radius: 50%; object-fit: cover;
@@ -251,6 +261,41 @@ html, body {
 .chip-badge.online { background: rgba(16, 185, 129, 0.15); color: #6ee7b7; }
 .chip-badge.ingame { background: rgba(6, 182, 212, 0.15); color: #67e8f9; }
 .chip-badge.offline { background: rgba(239, 68, 68, 0.15); color: #fca5a5; }
+.chip-bounty-val {
+    font-size: 0.72em; font-weight: 800; color: #fca5a5;
+    margin-top: 5px; font-family: 'JetBrains Mono', monospace;
+}
+
+/* Multi-Player HUD Controller Bar */
+.hud-control-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; margin: 18px 0 14px; padding: 10px 14px;
+    background: rgba(20, 20, 36, 0.75); border: 1px solid var(--border-card);
+    border-radius: 14px; backdrop-filter: blur(10px);
+}
+.hud-control-left {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.hud-control-title {
+    font-size: 0.88em; font-weight: 800; color: #fff;
+}
+.hud-active-hunter-name {
+    font-size: 0.78em; color: #fca5a5; font-weight: 700;
+}
+.hud-view-toggle {
+    display: flex; gap: 6px;
+}
+.btn-view-toggle {
+    padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border-card);
+    background: var(--bg-card); color: var(--text-secondary);
+    font-size: 0.74em; font-weight: 700; cursor: pointer; transition: 0.15s;
+    font-family: inherit;
+}
+.btn-view-toggle:hover { color: #fff; }
+.btn-view-toggle.active {
+    background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.5);
+    color: #fca5a5;
+}
 
 /* ════════════════════════════════════════════════════════════
    VIP REALTIME HUD CARD (THE MAIN SHOWCASE)
@@ -723,7 +768,7 @@ html, body {
             <div class="carousel-track" id="playersCarousel">
                 {% if players %}
                     {% for uid, p in players.items() %}
-                    <div class="player-chip" id="pc-{{ uid }}">
+                    <div class="player-chip {% if loop.first %}active{% endif %}" id="pc-{{ uid }}" onclick="selectPlayer('{{ uid }}')">
                         <div class="chip-av-wrap">
                             <img class="chip-av" src="{{ p.avatar }}" alt="" onerror="this.src='/static/logo.jpg'">
                             <div class="chip-status-dot {{ p.cls }}"></div>
@@ -731,6 +776,9 @@ html, body {
                         <div class="chip-name">{{ p.display }}</div>
                         <div class="chip-handle">@{{ p.name }}</div>
                         <span class="chip-badge {{ p.cls }}">{{ p.status }}</span>
+                        {% if uid in inventories and inventories[uid].bounty %}
+                        <div class="chip-bounty-val" id="chip-bounty-{{ uid }}">☠️ {{ "{:,.0f}".format(inventories[uid].bounty) }}</div>
+                        {% endif %}
                     </div>
                     {% endfor %}
                 {% else %}
@@ -738,6 +786,22 @@ html, body {
                         🎮 รันสคริปต์ในเกมเพื่อเชื่อมต่อสถานะผู้เล่นแบบเรียลไทม์
                     </div>
                 {% endif %}
+            </div>
+        </div>
+
+        <!-- ════════════════════════════════════════════════════════════
+             MULTI-PLAYER VIEW CONTROLLER & ACTIVE HUNTER SWITCHER
+        ════════════════════════════════════════════════════════════ -->
+        <div class="hud-control-bar">
+            <div class="hud-control-left">
+                <span class="hud-control-title">⚔️ ข้อมูลนักล่าค่าหัว</span>
+                <span class="hud-active-hunter-name" id="activeHunterName">
+                    {% if inventories %}({{ inventories|length }} คนเชื่อมต่ออยู่){% else %}รอการเชื่อมต่อ...{% endif %}
+                </span>
+            </div>
+            <div class="hud-view-toggle">
+                <button class="btn-view-toggle active" id="btnViewAll" onclick="setViewMode('all')">👥 ดูทุกคน</button>
+                <button class="btn-view-toggle" id="btnViewFocus" onclick="setViewMode('focus')">🎯 ดูคนเดียว</button>
             </div>
         </div>
 
@@ -1029,6 +1093,56 @@ function getHunterRank(bounty) {
     return '⚓ นักล่ามือใหม่ (Rookie)';
 }
 
+// ════════════════════════════════════════════════════════════
+//  👥 MULTI-PLAYER SELECTION & VIEW CONTROLLER
+// ════════════════════════════════════════════════════════════
+let currentViewMode = 'all'; // 'all' or 'focus'
+let selectedPlayerUid = null;
+
+function selectPlayer(uid) {
+    playChime(820);
+    selectedPlayerUid = uid;
+    document.querySelectorAll('.player-chip').forEach(c => c.classList.remove('active'));
+    const chip = document.getElementById(`pc-${uid}`);
+    if (chip) chip.classList.add('active');
+
+    const nameEl = document.getElementById(`name-${uid}`);
+    const activeLabel = document.getElementById('activeHunterName');
+    if (nameEl && activeLabel) {
+        activeLabel.textContent = `· ${nameEl.textContent}`;
+    }
+
+    if (currentViewMode === 'focus') {
+        applyViewMode();
+    } else {
+        const hud = document.getElementById(`hud-${uid}`);
+        if (hud) hud.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+}
+
+function setViewMode(mode) {
+    playChime(780);
+    currentViewMode = mode;
+    document.getElementById('btnViewAll').classList.toggle('active', mode === 'all');
+    document.getElementById('btnViewFocus').classList.toggle('active', mode === 'focus');
+    applyViewMode();
+}
+
+function applyViewMode() {
+    const allHuds = document.querySelectorAll('.vip-hud-card');
+    if (currentViewMode === 'all') {
+        allHuds.forEach(h => h.style.display = '');
+    } else {
+        if (!selectedPlayerUid && allHuds.length > 0) {
+            selectedPlayerUid = allHuds[0].id.replace('hud-', '');
+        }
+        allHuds.forEach(h => {
+            const uid = h.id.replace('hud-', '');
+            h.style.display = (uid === selectedPlayerUid) ? '' : 'none';
+        });
+    }
+}
+
 // Session bounty cache
 const initialBounties = {};
 
@@ -1046,6 +1160,60 @@ async function pollLiveData() {
         if (pingEl) pingEl.textContent = `${latency}ms LIVE`;
 
         const inventories = data.inventories || {};
+        const players = data.players || {};
+        const carousel = document.getElementById('playersCarousel');
+        let needsRefresh = false;
+
+        // Sync carousel for all active players in real time
+        for (const [uid, p] of Object.entries(players)) {
+            let chip = document.getElementById(`pc-${uid}`);
+            const inv = inventories[uid] || {};
+            const bty = inv.bounty ? `☠️ ${fmt(inv.bounty)}` : '';
+
+            if (!chip && carousel) {
+                const emptyMsg = carousel.querySelector('div[style*="text-align:center"]');
+                if (emptyMsg) emptyMsg.remove();
+
+                chip = document.createElement('div');
+                chip.className = 'player-chip';
+                chip.id = `pc-${uid}`;
+                chip.onclick = () => selectPlayer(uid);
+                chip.innerHTML = `
+                    <div class="chip-av-wrap">
+                        <img class="chip-av" src="${p.avatar || '/static/logo.jpg'}" alt="" onerror="this.src='/static/logo.jpg'">
+                        <div class="chip-status-dot ${p.cls || 'online'}"></div>
+                    </div>
+                    <div class="chip-name">${p.display || p.name}</div>
+                    <div class="chip-handle">@${p.name}</div>
+                    <span class="chip-badge ${p.cls || 'online'}">${p.status || 'ONLINE'}</span>
+                    <div class="chip-bounty-val" id="chip-bounty-${uid}">${bty}</div>
+                `;
+                carousel.appendChild(chip);
+
+                if (!document.getElementById(`hud-${uid}`)) {
+                    needsRefresh = true;
+                }
+            } else if (chip) {
+                const dot = chip.querySelector('.chip-status-dot');
+                if (dot) dot.className = `chip-status-dot ${p.cls || 'online'}`;
+                const badge = chip.querySelector('.chip-badge');
+                if (badge) {
+                    badge.className = `chip-badge ${p.cls || 'online'}`;
+                    badge.textContent = p.status || 'ONLINE';
+                }
+                const btyEl = document.getElementById(`chip-bounty-${uid}`);
+                if (btyEl && bty) btyEl.textContent = bty;
+            }
+        }
+
+        const pCountEl = document.getElementById('playerCount');
+        if (pCountEl) pCountEl.textContent = Object.keys(players).length;
+
+        if (needsRefresh) {
+            showToast('🎉 ตรวจพบนักล่าคนใหม่เริ่มรันสคริปต์! กำลังอัปเดตหน้าจอ...', 'ok');
+            setTimeout(() => window.location.reload(), 1000);
+            return;
+        }
         for (const [uid, inv] of Object.entries(inventories)) {
             // Update Beli
             const beliEl = document.getElementById(`beli-${uid}`);
