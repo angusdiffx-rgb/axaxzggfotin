@@ -1074,6 +1074,26 @@ local function createWatermarkBadge()
         t2.TextXAlignment = Enum.TextXAlignment.Left
         t2.Parent = frame
 
+        -- ปุ่มคลิกเพื่อเปิด/ปิดหน้าต่าง AngusHub Tracker & Utility Menu
+        local badgeClickBtn = Instance.new("TextButton")
+        badgeClickBtn.Name = "BadgeClickBtn"
+        badgeClickBtn.Size = UDim2.new(1, 0, 1, 0)
+        badgeClickBtn.BackgroundTransparency = 1
+        badgeClickBtn.Text = ""
+        badgeClickBtn.Parent = frame
+
+        badgeClickBtn.MouseButton1Click:Connect(function()
+            local mg = parentGui:FindFirstChild("AngusHubMainGui")
+            if mg then
+                local mf = mg:FindFirstChild("MainFrame")
+                if mf then
+                    mf.Visible = not mf.Visible
+                else
+                    mg.Enabled = not mg.Enabled
+                end
+            end
+        end)
+
         sg.Parent = parentGui
     end)
 end
@@ -1265,6 +1285,10 @@ local function buildAngusHubUI()
     toggleGui.Name = "AngusHubToggleGui"
     toggleGui.ResetOnSpawn = false
     toggleGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    -- หากรันคู่กับ Hermanos Hub ให้ซ่อน toggleGui เพื่อให้ปุ่มลอยของ Hermanos ทำหน้าที่เดี่ยวๆ ไม่ซ้อนทับกัน
+    if getgenv().HERMANOS_RUNNING then
+        toggleGui.Enabled = false
+    end
 
     local floatBtn = Instance.new("ImageButton")
     floatBtn.Name = "FloatingLogoBtn"
@@ -1318,6 +1342,7 @@ local function buildAngusHubUI()
     local winW = math.min(540, math.max(320, vp.X - 30))
     local winH = math.min(350, math.max(260, vp.Y - 40))
 
+    local isGuiOpen = not getgenv().HERMANOS_RUNNING
     local mainFrame = Instance.new("Frame")
     mainFrame.Name = "MainFrame"
     mainFrame.Size = UDim2.new(0, winW, 0, winH)
@@ -1326,14 +1351,13 @@ local function buildAngusHubUI()
     mainFrame.BackgroundColor3 = Color3.fromRGB(12, 13, 21)
     mainFrame.BorderSizePixel = 0
     mainFrame.ClipsDescendants = true
-    mainFrame.Visible = true
+    mainFrame.Visible = isGuiOpen
     mainFrame.Parent = mainGui
 
     createCorner(mainFrame, 14)
     createStroke(mainFrame, Color3.fromRGB(239, 68, 68), 1.6, 0.15)
 
     -- Toggle Window function
-    local isGuiOpen = true
     local function toggleMainGui(force)
         if force ~= nil then
             isGuiOpen = force
@@ -2070,99 +2094,245 @@ local function hookHermanosUI()
         if pg and not table.find(targetRoots, pg) then table.insert(targetRoots, pg) end
     end)
 
-    local ourGuiNames = {
+    local ignoredGuiNames = {
         ["AngusHubMainGui"] = true,
         ["AngusHubToggleGui"] = true,
         ["AngusHubBadge"] = true,
         ["AngusHubNotifGui"] = true,
-        ["AngusHubESP"] = true
-    }
-
-    local robloxCoreNames = {
+        ["AngusHubESP"] = true,
         ["RobloxGui"] = true,
         ["TopBarApp"] = true,
         ["PurchasePrompt"] = true,
         ["RobloxPromptGui"] = true,
         ["CoreScriptLocalization"] = true,
-        ["DevConsoleMaster"] = true
+        ["DevConsoleMaster"] = true,
+        ["BubbleChat"] = true,
+        ["Chat"] = true,
+        ["TouchGui"] = true,
+        ["PlayerList"] = true,
+        ["Main"] = true,
+        ["Mobile"] = true,
+        ["Combat"] = true,
+        ["Notifications"] = true,
+        ["Compass"] = true
     }
 
     local hookedElements = {}
+    local isHermanosCache = {}
+
+    -- ตรวจสอบว่า ScreenGui เป็นของ Hermanos Hub หรือไม่ (ป้องกันการดัดแปลง UI ของ Blox Fruits หรือ UI เกม)
+    local function isHermanosGui(sg)
+        if not sg or not sg:IsA("LayerCollector") then return false end
+        if ignoredGuiNames[sg.Name] then return false end
+        if isHermanosCache[sg] ~= nil then return isHermanosCache[sg] end
+
+        local n = sg.Name:lower()
+        if n:find("hermanos") or n:find("luarmor") then
+            isHermanosCache[sg] = true
+            return true
+        end
+
+        for _, d in ipairs(sg:GetDescendants()) do
+            if d:IsA("TextLabel") or d:IsA("TextButton") then
+                local txt = tostring(d.Text or "")
+                if txt:find("Hermanos") or txt:find("HERMANOS") or txt:find("hermanos")
+                   or txt:find("Roblox%-Script%.com") or txt:find("roblox%-script%.com")
+                   or txt:find("hermanos%-dev") or txt:find("AngusHub Dev") then
+                    isHermanosCache[sg] = true
+                    return true
+                end
+            end
+        end
+
+        return false
+    end
+
+    -- ฟังก์ชันแปลงข้อความของ Hermanos ให้เป็น AngusHub VIP Edition อย่างแม่นยำ 100%
+    local function sanitizeHermanosText(text)
+        if type(text) ~= "string" or text == "" then return text end
+        local t = text
+
+        -- 1) Title Bar: "Hermanos Dev | PVP" หรือ "AngusHub Dev | PVP" -> "🔥 AngusHub x Hunter | PVP"
+        if (t:find("Hermanos") or t:find("AngusHub")) and (t:find("PVP") or t:find("pvp")) then
+            return "🔥 AngusHub x Hunter | PVP"
+        end
+        if t:find("Hermanos%s*Dev") or t:find("AngusHub%s*Dev") then
+            return "🔥 AngusHub x Hunter"
+        end
+
+        -- 2) Subtitle: "Blox Fruit | Roblox-Script.com" -> "[X] - Blox Fruits | Official Clan Edition"
+        t = t:gsub("[Rr]oblox%-[Ss]cript%.[Cc]om", "Official Clan Edition")
+        t = t:gsub("Blox Fruit%s*|", "Blox Fruits |")
+
+        -- 3) Version Button: "0.8a - FREE" -> "v4.3 - VIP"
+        t = t:gsub("%d+%.%d+[a-zA-Z]*%s*%-%s*[Ff][Rr][Ee][Ee]", "v4.3 - VIP")
+        t = t:gsub("%-%s*[Ff][Rr][Ee][Ee]", "- VIP")
+
+        -- 4) Discord Link: "discord.gg/angushub-dev" / "discord.gg/hermanos-dev" -> "discord.gg/angushub"
+        t = t:gsub("discord%.gg/[%w%-_./]+", "discord.gg/angushub")
+
+        -- 5) คำว่า Hermanos ทั่วไป
+        t = t:gsub("Hermanos%s*Hub", "AngusHub x Hunter")
+        t = t:gsub("HERMANOS%s*HUB", "ANGUSHUB x HUNTER")
+        t = t:gsub("hermanos%s*hub", "angushub x hunter")
+        t = t:gsub("hermanos%-dev", "angushub")
+        t = t:gsub("Hermanos", "AngusHub")
+        t = t:gsub("HERMANOS", "ANGUSHUB")
+        t = t:gsub("hermanos", "angushub")
+
+        return t
+    end
 
     local function patchElement(elem)
         if not elem or not elem.Parent then return end
         if hookedElements[elem] then return end
 
-        -- ข้าม UI ของ AngusHub เองและ UI มาตรฐานของ Roblox
         local screenGui = elem:FindFirstAncestorOfClass("ScreenGui")
-        if screenGui and (ourGuiNames[screenGui.Name] or robloxCoreNames[screenGui.Name]) then
-            return
-        end
+        if not screenGui or ignoredGuiNames[screenGui.Name] then return end
 
-        -- 1) ดักจับข้อความที่เป็นชื่อค่าย Hermanos แล้วเปลี่ยนเป็น AngusHub x Hunter
+        -- ════════════════════════════════════════════════════════════
+        -- 1) ดักจับและเปลี่ยนข้อความ (Title, Subtitle, Version, Discord)
+        -- ════════════════════════════════════════════════════════════
         if elem:IsA("TextLabel") or elem:IsA("TextButton") or elem:IsA("TextBox") then
-            local txt = elem.Text
-            if txt and (txt:find("Hermanos") or txt:find("HERMANOS") or txt:find("hermanos")) then
+            local currentText = tostring(elem.Text or "")
+            local needsPatch = (
+                currentText:find("Hermanos") or currentText:find("hermanos") or currentText:find("HERMANOS") or
+                currentText:find("AngusHub Dev") or
+                currentText:find("Roblox-Script.com") or currentText:find("roblox-script.com") or
+                currentText:find("FREE") or currentText:find("Free") or
+                currentText:find("discord.gg")
+            )
+
+            if needsPatch then
                 hookedElements[elem] = true
+                local isUpdating = false
                 local function applyText()
-                    local t = elem.Text
-                    if t:find("Hermanos") or t:find("HERMANOS") or t:find("hermanos") then
-                        local newT = t:gsub("Hermanos%s*Hub", "AngusHub x Hunter")
-                                      :gsub("HERMANOS%s*HUB", "ANGUSHUB x HUNTER")
-                                      :gsub("hermanos%s*hub", "angushub x hunter")
-                                      :gsub("Hermanos", "AngusHub")
-                                      :gsub("HERMANOS", "ANGUSHUB")
-                                      :gsub("hermanos", "angushub")
-                        elem.Text = newT
+                    if isUpdating then return end
+                    local txt = elem.Text
+                    local newTxt = sanitizeHermanosText(txt)
+                    if newTxt and newTxt ~= txt then
+                        isUpdating = true
+                        elem.Text = newTxt
+                        isUpdating = false
                     end
                 end
                 applyText()
                 elem:GetPropertyChangedSignal("Text"):Connect(applyText)
+                return
             end
         end
 
-        -- 2) ดักจับโลโก้ของ Hermanos (ทั้งในแถบด้านบน ป้าย Watermark และปุ่มเปิด-ปิดลอย)
+        -- ════════════════════════════════════════════════════════════
+        -- 2) ดักจับโลโก้ (เปลี่ยนเฉพาะ Header Logo และ Floating Toggle Button เท่านั้น!)
+        --    ไม่เปลี่ยน Checkbox, Keybind, Sliders, Tab Icons หรือ UI เกมใดๆ ทั้งสิ้น
+        -- ════════════════════════════════════════════════════════════
         if elem:IsA("ImageLabel") or elem:IsA("ImageButton") then
+            -- กฎเหล็ก 1: ห้ามแตะต้อง Element ที่อยู่ใน ScrollingFrame เด็ดขาด! (Options, Keybinds, Toggles ทั้งหมดอยู่ในนี้)
+            if elem:FindFirstAncestorOfClass("ScrollingFrame") then
+                return
+            end
+
             local n = elem.Name:lower()
             local p = elem.Parent
             local parentName = p and p.Name:lower() or ""
 
-            local isHermanosRelated = false
-            if screenGui and (screenGui.Name:lower():find("hermanos") or screenGui.Name:lower():find("hub")) then
-                isHermanosRelated = true
+            -- กฎเหล็ก 2: ห้ามแตะต้อง Tab Buttons หรือ Navigation Sidebar (ไอคอนดาบ, รูปคน, รูปเป้า)
+            if n:find("tab") or parentName:find("tab") or parentName:find("side") or parentName:find("nav") then
+                return
             end
 
-            if not isHermanosRelated and p then
-                for _, sibling in ipairs(p:GetChildren()) do
-                    if (sibling:IsA("TextLabel") or sibling:IsA("TextButton")) and sibling.Text:lower():find("hermanos") then
-                        isHermanosRelated = true
-                        break
-                    end
+            -- กฎเหล็ก 3: ห้ามแตะต้อง List / Grid Layout ที่มีหลายไอคอน (เช่น Buff Icons แถบซ้าย)
+            if p and (p:FindFirstChildOfClass("UIListLayout") or p:FindFirstChildOfClass("UIGridLayout")) then
+                return
+            end
+            if p and p.Parent and (p.Parent:FindFirstChildOfClass("UIListLayout") or p.Parent:FindFirstChildOfClass("UIGridLayout")) then
+                local siblings = 0
+                for _, ch in ipairs(p.Parent:GetChildren()) do
+                    if ch:IsA("GuiObject") then siblings = siblings + 1 end
+                end
+                if siblings > 2 then
+                    return
                 end
             end
 
-            -- แยกแยะว่าไม่ใช่ไอคอนเมนูย่อย (เช่น ดาบ หรือ ผลไม้) แต่เป็นตัวโลโก้หลักหรือปุ่มลอย
-            local isTabIcon = (n:find("tab") or parentName:find("tab") or parentName:find("sidebar")) and not (n:find("logo") or n:find("icon") or parentName:find("topbar"))
-            local isLogoCandidate = (
-                n:find("logo") or n:find("icon") or n:find("hub") or n:find("avatar") or
-                parentName:find("logo") or parentName:find("topbar") or parentName:find("header") or
-                parentName:find("toggle") or parentName:find("float") or parentName:find("button") or
-                n:find("toggle") or n:find("float")
-            )
+            -- ขนาดของปุ่มหรือโลโก้ต้องสมเหตุสมผล
+            local w = elem.AbsoluteSize.X > 0 and elem.AbsoluteSize.X or elem.Size.X.Offset
+            local h = elem.AbsoluteSize.Y > 0 and elem.AbsoluteSize.Y or elem.Size.Y.Offset
+            if w < 16 or w > 120 or h < 16 or h > 120 then
+                return
+            end
 
-            if not isTabIcon and (isHermanosRelated or isLogoCandidate) then
-                local w = elem.AbsoluteSize.X > 0 and elem.AbsoluteSize.X or elem.Size.X.Offset
-                local h = elem.AbsoluteSize.Y > 0 and elem.AbsoluteSize.Y or elem.Size.Y.Offset
-                if (w >= 16 and w <= 100) or isLogoCandidate then
+            local isHermanos = isHermanosGui(screenGui)
+            local topFrame = elem:FindFirstAncestorOfClass("Frame")
+
+            -- A) Floating Toggle Button (ปุ่มเปิด-ปิดลอยของ Hermanos)
+            local isFloatingButton = false
+            if not topFrame or (topFrame.AbsoluteSize.X < 120 and topFrame.AbsoluteSize.Y < 120) then
+                if n:find("toggle") or n:find("float") or n:find("open") or n:find("logo") or n:find("hub")
+                   or parentName:find("toggle") or parentName:find("float") or parentName:find("open") or parentName:find("hub")
+                   or elem:IsA("ImageButton") or (p and p:IsA("ImageButton")) or (p and p:IsA("TextButton")) then
+                    isFloatingButton = true
+                end
+            end
+
+            if isFloatingButton then
+                hookedElements[elem] = true
+                -- ปิด AngusHubToggleGui ทันทีเพื่อไม่ให้มีปุ่มลอยซ้อนทับกันบนจอ
+                pcall(function()
+                    local pGui = (gethui and gethui()) or game:GetService("CoreGui") or LP:FindFirstChild("PlayerGui")
+                    if pGui then
+                        local tg = pGui:FindFirstChild("AngusHubToggleGui")
+                        if tg then tg.Enabled = false end
+                    end
+                end)
+
+                local updatingImg = false
+                local function applyLogo()
+                    if updatingImg then return end
+                    if elem.Image ~= clanLogoAsset then
+                        updatingImg = true
+                        elem.Image = clanLogoAsset
+                        elem.ImageColor3 = Color3.fromRGB(255, 255, 255)
+                        updatingImg = false
+                    end
+                end
+                applyLogo()
+                elem:GetPropertyChangedSignal("Image"):Connect(applyLogo)
+                return
+            end
+
+            -- B) TopBar Header Logo (โลโก้บนแถบหัวของหน้าต่าง Hermanos Hub)
+            if isHermanos then
+                local isHeader = parentName:find("top") or parentName:find("head") or parentName:find("title") or parentName:find("bar")
+                if not isHeader and p and p.Parent then
+                    local gpName = p.Parent.Name:lower()
+                    if gpName:find("top") or gpName:find("head") or gpName:find("title") or gpName:find("bar") then
+                        isHeader = true
+                    end
+                end
+
+                if not isHeader and topFrame then
+                    local relY = elem.AbsolutePosition.Y - topFrame.AbsolutePosition.Y
+                    if relY >= 0 and relY < 65 then
+                        isHeader = true
+                    end
+                end
+
+                if isHeader then
                     hookedElements[elem] = true
+                    local updatingImg = false
                     local function applyLogo()
+                        if updatingImg then return end
                         if elem.Image ~= clanLogoAsset then
+                            updatingImg = true
                             elem.Image = clanLogoAsset
                             elem.ImageColor3 = Color3.fromRGB(255, 255, 255)
+                            updatingImg = false
                         end
                     end
                     applyLogo()
                     elem:GetPropertyChangedSignal("Image"):Connect(applyLogo)
+                    return
                 end
             end
         end
@@ -2170,7 +2340,7 @@ local function hookHermanosUI()
 
     local function inspectScreenGui(gui)
         if not gui or not gui:IsA("LayerCollector") then return end
-        if ourGuiNames[gui.Name] or robloxCoreNames[gui.Name] then return end
+        if ignoredGuiNames[gui.Name] then return end
 
         for _, d in ipairs(gui:GetDescendants()) do
             pcall(patchElement, d)
