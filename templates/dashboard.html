@@ -1056,7 +1056,7 @@ html, body {
             </div>
 
             <div class="exec-banner">
-                <div class="exec-code-line">loadstring(game:HttpGet("https://angushubxhunter.onrender.com/script.lua"))()</div>
+                <div class="exec-code-line">loadstring(game:HttpGet("{{ current_host_url }}/script.lua"))()</div>
                 <div class="exec-btn-row">
                     <button class="btn-exec-action primary" onclick="copyOneLiner()"><img class="ui-ic-xs" src="/static/ui_icons/energy.png" alt="⚡"> คัดลอกคำสั่ง 1 บรรทัด (แนะนำ)</button>
                     <button class="btn-exec-action secondary" onclick="copyFullScript()">📋 คัดลอกโค้ดเต็ม</button>
@@ -1726,8 +1726,9 @@ function showToast(msg, type = 'ok') {
                 const ep = this.elems[i - 1];
                 const a = Math.atan2(e.y - ep.y, e.x - ep.x);
                 e.a = a;
-                e.x += (ep.x - e.x + (Math.cos(a) * (100 - i)) / 5) / 4;
-                e.y += (ep.y - e.y + (Math.sin(a) * (100 - i)) / 5) / 4;
+                const segDist = ((100 - i) / 5) * (this.isMobile ? 0.44 : 0.52);
+                e.x += (ep.x - e.x + (Math.cos(a) * segDist)) / 4;
+                e.y += (ep.y - e.y + (Math.sin(a) * segDist)) / 4;
             }
 
             if (this.rad < radm) this.rad++;
@@ -1785,7 +1786,7 @@ function showToast(msg, type = 'ok') {
         }
 
         draw(ctx) {
-            const baseScale = this.isMobile ? 0.65 : 0.88;
+            const baseScale = this.isMobile ? 0.35 : 0.45;
 
             // 1. Draw Sparks
             for (const s of this.sparks) {
@@ -2004,14 +2005,14 @@ function showToast(msg, type = 'ok') {
         drawTailPlumes(ctx) {
             ctx.save();
             ctx.shadowColor = '#ef4444';
-            ctx.shadowBlur = 18;
+            ctx.shadowBlur = 12;
 
             const wave = Math.sin(this.whiskerWave * 1.5);
             const plumes = [
-                { angle: -0.32 + wave * 0.1, len: 42, color: '#f59e0b' },
-                { angle: 0 + wave * 0.18, len: 48, color: '#ef4444' },
-                { angle: 0.32 - wave * 0.1, len: 42, color: '#dc2626' },
-                { angle: wave * 0.12, len: 54, color: '#38bdf8' }
+                { angle: -0.32 + wave * 0.1, len: 26, color: '#f59e0b' },
+                { angle: 0 + wave * 0.18, len: 32, color: '#ef4444' },
+                { angle: 0.32 - wave * 0.1, len: 26, color: '#dc2626' },
+                { angle: wave * 0.12, len: 36, color: '#38bdf8' }
             ];
 
             for (const p of plumes) {
@@ -2019,11 +2020,11 @@ function showToast(msg, type = 'ok') {
                 ctx.rotate(p.angle);
                 ctx.fillStyle = p.color;
                 ctx.shadowColor = p.color;
-                ctx.shadowBlur = 14;
+                ctx.shadowBlur = 10;
                 ctx.beginPath();
                 ctx.moveTo(0, 0);
-                ctx.quadraticCurveTo(p.len * 0.4, -6, p.len, 0);
-                ctx.quadraticCurveTo(p.len * 0.4, 6, 0, 0);
+                ctx.quadraticCurveTo(p.len * 0.4, -4, p.len, 0);
+                ctx.quadraticCurveTo(p.len * 0.4, 4, 0, 0);
                 ctx.fill();
                 ctx.restore();
             }

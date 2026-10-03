@@ -1,17 +1,94 @@
 -- ╔════════════════════════════════════════════════════════════╗
 -- ║   🔥 AngusHub x Hunter — ค่ายโปรล่าค่าหัว Blox Fruits       ║
--- ║   ⚡ Realtime Live Tracker v4.2                            ║
--- ║   อัพเดต Beli (เงินเขียว), Fragments (เงินม่วง),             ║
--- ║   ค่าหัว (Bounty / Honor), เลเวล /3000 และไอเทมเรียลไทม์    ║
--- ║   ซิงค์เข้าเว็บอัตโนมัติทุก 3 วินาที ไม่ต้องรีเฟรชหน้าเว็บ      ║
+-- ║   ⚡ Realtime Live Tracker v4.3                            ║
+-- ║   🛡️ ระบบกันหลุด / กันรีจอยแล้วสคริปต์หาย (Auto-Reconnect)   ║
+-- ║   อัพเดต Beli, Fragments, Bounty, Level และไอเทมเรียลไทม์   ║
 -- ╚════════════════════════════════════════════════════════════╝
+
+if not game:IsLoaded() then
+    game.Loaded:Wait()
+end
 
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
-local LP = Players.LocalPlayer
+local LP = Players.LocalPlayer or Players.PlayerAdded:Wait()
 
 -- 🌐 เซิร์ฟเวอร์หลัก (AngusHub Cloud on Render)
 local SERVER_URL = "https://angushubxhunter-n4sp.onrender.com"
+
+-- ════════════════════════════════════════════════════════════
+--  🔄 AUTO RE-EXECUTE ON REJOIN & TELEPORT (ข้ามเซิร์ฟ / รีจอย)
+-- ════════════════════════════════════════════════════════════
+local queue_on_teleport = (syn and syn.queue_on_teleport)
+    or queue_on_teleport
+    or (fluxus and fluxus.queue_on_teleport)
+    or (getgenv and getgenv().queue_on_teleport)
+
+local autoRejoinCode = 'repeat task.wait() until game:IsLoaded()\nloadstring(game:HttpGet("' .. SERVER_URL .. '/script.lua"))()'
+
+if queue_on_teleport then
+    pcall(queue_on_teleport, autoRejoinCode)
+end
+
+pcall(function()
+    LP.OnTeleport:Connect(function(state)
+        if queue_on_teleport then
+            pcall(queue_on_teleport, autoRejoinCode)
+        end
+    end)
+end)
+
+-- ════════════════════════════════════════════════════════════
+--  🛡️ AUTO RECONNECT ON DISCONNECT / KICK (ป้องกันหลุด)
+-- ════════════════════════════════════════════════════════════
+task.spawn(function()
+    pcall(function()
+        local CoreGui = game:GetService("CoreGui")
+        local TeleportService = game:GetService("TeleportService")
+        local promptOverlay = CoreGui:WaitForChild("RobloxPromptGui", 8)
+        if promptOverlay then
+            local overlay = promptOverlay:WaitForChild("promptOverlay", 8)
+            if overlay then
+                overlay.ChildAdded:Connect(function(child)
+                    if child.Name == "ErrorPrompt" then
+                        task.wait(2)
+                        pcall(function()
+                            if #Players:GetPlayers() <= 1 then
+                                TeleportService:Teleport(game.PlaceId, LP)
+                            else
+                                TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LP)
+                            end
+                        end)
+                    end
+                end)
+            end
+        end
+    end)
+end)
+
+-- ════════════════════════════════════════════════════════════
+--  🏴‍☠️ AUTO SELECT TEAM & WAIT FOR DATA ON REJOIN
+-- ════════════════════════════════════════════════════════════
+task.spawn(function()
+    pcall(function()
+        local remotes = game:GetService("ReplicatedStorage"):WaitForChild("Remotes", 8)
+        local commF = remotes and remotes:WaitForChild("CommF_", 8)
+        if commF and (not LP.Team or LP.Team.Name == "Neutral" or LP.Team.Name == "") then
+            pcall(function() commF:InvokeServer("SetTeam", "Pirates") end)
+        end
+    end)
+end)
+
+local function ensureDataLoaded()
+    local t0 = tick()
+    while tick() - t0 < 8 do
+        if LP:FindFirstChild("Data") or LP:FindFirstChild("leaderstats") then
+            break
+        end
+        task.wait(0.4)
+    end
+end
+ensureDataLoaded()
 
 local function extractAssetId(tex)
     if not tex or tex == "" then return nil end
@@ -317,6 +394,10 @@ local function syncData()
     end
 
     local ok, res = sendHttpRequest(SERVER_URL .. "/api/inventory", jsonData)
+    if not ok then
+        task.wait(1.5)
+        ok, res = sendHttpRequest(SERVER_URL .. "/api/inventory", jsonData)
+    end
     return ok, res, bountyVal, bSource
 end
 

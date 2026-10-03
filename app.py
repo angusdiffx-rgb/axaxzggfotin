@@ -510,16 +510,26 @@ def index():
         if ids:
             pres_list = get_presence(ids)
             with data_lock:
+                now_ts = time.time()
                 for p in pres_list:
                     uid = str(p.get("userId"))
                     if uid in tracked_players:
-                        s = STATUS_MAP.get(p.get("userPresenceType", 0), STATUS_MAP[0])
-                        tracked_players[uid].update({
-                            "presence": p.get("userPresenceType", 0),
-                            "status": s["text"], "status_th": s["th"], "cls": s["cls"],
-                            "location": p.get("lastLocation", ""),
-                            "checked": datetime.now().strftime("%H:%M:%S"),
-                        })
+                        last_sync = tracked_players[uid].get("last_sync_ts", 0)
+                        # If player synced via in-game script within the last 75 seconds, keep them IN GAME
+                        if now_ts - last_sync < 75:
+                            tracked_players[uid].update({
+                                "presence": 2,
+                                "status": "In Game", "status_th": "กำลังเล่นเกม", "cls": "ingame",
+                                "checked": datetime.now().strftime("%H:%M:%S"),
+                            })
+                        else:
+                            s = STATUS_MAP.get(p.get("userPresenceType", 0), STATUS_MAP[0])
+                            tracked_players[uid].update({
+                                "presence": p.get("userPresenceType", 0),
+                                "status": s["text"], "status_th": s["th"], "cls": s["cls"],
+                                "location": p.get("lastLocation", ""),
+                                "checked": datetime.now().strftime("%H:%M:%S"),
+                            })
                 current_players = dict(tracked_players)
 
     stats = {"total": len(current_players), "online": 0, "ingame": 0}
@@ -547,6 +557,15 @@ def index():
 def live_data():
     """Live JSON endpoint for real-time DOM updates without page refresh."""
     with data_lock:
+        now_ts = time.time()
+        for uid, p in tracked_players.items():
+            last_sync = p.get("last_sync_ts", 0)
+            if now_ts - last_sync < 75:
+                p["presence"] = 2
+                p["status"] = "In Game"
+                p["status_th"] = "กำลังเล่นเกม"
+                p["cls"] = "ingame"
+
         safe_players = dict(tracked_players)
         safe_inventories = dict(player_inventories)
 
@@ -772,6 +791,7 @@ def receive_inventory():
         }
 
         # Ensure player in tracked_players with instant non-blocking default avatar
+        now_ts = time.time()
         quick_avatar = f"https://www.roblox.com/headshot-thumbnail/image?userId={uid}&width=150&height=150&format=png"
         if uid not in tracked_players:
             tracked_players[uid] = {
@@ -785,6 +805,7 @@ def receive_inventory():
                 "location": sea or "Blox Fruits",
                 "avatar": quick_avatar,
                 "checked": datetime.now().strftime("%H:%M:%S"),
+                "last_sync_ts": now_ts,
             }
             # Background thread to fetch exact avatar without stalling HTTP response
             def _fetch_meta(target_uid):
@@ -798,8 +819,16 @@ def receive_inventory():
                     pass
             threading.Thread(target=_fetch_meta, args=(uid,), daemon=True).start()
         else:
+            # Renew in-game presence immediately on rejoin/sync
+            tracked_players[uid]["name"] = d.get("username", tracked_players[uid].get("name", "?"))
+            tracked_players[uid]["display"] = d.get("display_name", tracked_players[uid].get("display", "?"))
+            tracked_players[uid]["presence"] = 2
+            tracked_players[uid]["status"] = "In Game"
+            tracked_players[uid]["status_th"] = "กำลังเล่นเกม"
+            tracked_players[uid]["cls"] = "ingame"
             tracked_players[uid]["location"] = sea or tracked_players[uid].get("location", "")
             tracked_players[uid]["checked"] = datetime.now().strftime("%H:%M:%S")
+            tracked_players[uid]["last_sync_ts"] = now_ts
 
         save_state()
 
