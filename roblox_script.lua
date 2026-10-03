@@ -2205,28 +2205,34 @@ local function hookHermanosUI()
             end
         end
 
-        -- กรณีที่ 2: Target / Hop HUD Logo (media_1791028468820.png, media_1791029545126.png)
+        -- กรณีที่ 2: Target / Hop HUD / Notification Card (media_1791028468820.png, media_1791029545126.png, media_1791029696230.png)
         local currFrame = elem:FindFirstAncestorOfClass("Frame")
         while currFrame do
-            local isTargetHud = false
-            for _, d in ipairs(currFrame:GetChildren()) do
+            local isSpecialHud = false
+            for _, d in ipairs(currFrame:GetDescendants()) do
                 if d:IsA("TextLabel") or d:IsA("TextButton") then
                     local txt = tostring(d.Text or "")
                     if txt:find("Hermanos") or txt:find("Team Found") or txt:find("target") or txt:find("Target")
-                       or txt:find("hop") or txt:find("Hop") or txt:find("PVP") or txt:find("Pirates") or txt:find("Marine") then
-                        isTargetHud = true
+                       or txt:find("hop") or txt:find("Hop") or txt:find("PVP") or txt:find("Pirates") or txt:find("Marine")
+                       or txt:find("Safe Mode") or txt:find("safe mode") then
+                        isSpecialHud = true
                         break
                     end
                 end
             end
-            if isTargetHud then
+            if isSpecialHud then
                 return true
             end
             currFrame = currFrame:FindFirstAncestorOfClass("Frame")
         end
 
-        -- กรณีที่ 3: ปุ่มเปิด-ปิดลอย (Floating Toggle Button / OpenButton บนหน้าจอ)
+        -- กรณีที่ 3: กล่องแจ้งเตือนทั้งหมดของ WindUI (Notifications)
         local screenGui = elem:FindFirstAncestorOfClass("ScreenGui")
+        if screenGui and screenGui.Name:find("Notifications") then
+            return true
+        end
+
+        -- กรณีที่ 4: ปุ่มเปิด-ปิดลอย (Floating Toggle Button / OpenButton บนหน้าจอ)
         if screenGui and screenGui.Name:find("WindUI") then
             local mainWin = screenGui:FindFirstChild("Main", true)
             if not (mainWin and elem:IsDescendantOf(mainWin)) then
