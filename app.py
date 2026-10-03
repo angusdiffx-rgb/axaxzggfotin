@@ -603,20 +603,36 @@ def check(uid):
     return jsonify({"ok": True, "display": info.get("displayName"), "status": s["th"]})
 
 
-@app.route("/api/inventory", methods=["POST"])
+@app.route("/api/inventory", methods=["POST", "GET"])
 def receive_inventory():
-    """Receive inventory + realtime stats from Roblox script."""
-    d = request.json
+    """Receive inventory + realtime stats from Roblox script (ultra fast & fault-tolerant)."""
+    d = request.get_json(force=True, silent=True)
+    if not d:
+        try:
+            raw = request.get_data(as_text=True)
+            if raw:
+                d = json.loads(raw)
+        except Exception:
+            pass
+    if not d:
+        d = request.form.to_dict() or request.args.to_dict()
     if not d or not d.get("user_id"):
         return jsonify({"error": "need user_id"}), 400
 
     uid = str(d["user_id"])
     items = d.get("inventory", [])
+    if isinstance(items, str):
+        try:
+            items = json.loads(items)
+        except:
+            items = []
 
     # Process items — filter out blacklisted items, deduplicate & resolve local images
     processed = []
     seen_names = set()
     for item in items:
+        if not isinstance(item, dict):
+            continue
         item_name = item.get("name", "").strip()
         if not item_name:
             continue
@@ -659,7 +675,7 @@ def receive_inventory():
         categorized[c].append(item)
 
     # Blox Fruits player stats
-    player_stats = d.get("stats", {})
+    player_stats = d.get("stats", {}) if isinstance(d.get("stats"), dict) else {}
 
     def to_int(v, default=0):
         try:
@@ -748,20 +764,32 @@ def receive_inventory():
             "energy": energy,
         }
 
-        # Ensure player in tracked_players
+        # Ensure player in tracked_players with instant non-blocking default avatar
+        quick_avatar = f"https://www.roblox.com/headshot-thumbnail/image?userId={uid}&width=150&height=150&format=png"
         if uid not in tracked_players:
-            pres = get_presence([int(uid)])
-            p = pres[0] if pres else {}
-            s = STATUS_MAP.get(p.get("userPresenceType", 0), STATUS_MAP[0])
             tracked_players[uid] = {
-                "uid": uid, "name": d.get("username", "?"),
+                "uid": uid,
+                "name": d.get("username", "?"),
                 "display": d.get("display_name", "?"),
-                "presence": p.get("userPresenceType", 0),
-                "status": s["text"], "status_th": s["th"], "cls": s["cls"],
-                "location": sea or p.get("lastLocation", ""),
-                "avatar": get_avatar(uid),
+                "presence": 2,
+                "status": "In Game",
+                "status_th": "กำลังเล่นเกม",
+                "cls": "ingame",
+                "location": sea or "Blox Fruits",
+                "avatar": quick_avatar,
                 "checked": datetime.now().strftime("%H:%M:%S"),
             }
+            # Background thread to fetch exact avatar without stalling HTTP response
+            def _fetch_meta(target_uid):
+                try:
+                    av = get_avatar(target_uid)
+                    if av:
+                        with data_lock:
+                            if target_uid in tracked_players:
+                                tracked_players[target_uid]["avatar"] = av
+                except:
+                    pass
+            threading.Thread(target=_fetch_meta, args=(uid,), daemon=True).start()
         else:
             tracked_players[uid]["location"] = sea or tracked_players[uid].get("location", "")
             tracked_players[uid]["checked"] = datetime.now().strftime("%H:%M:%S")

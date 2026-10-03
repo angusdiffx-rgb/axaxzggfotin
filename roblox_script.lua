@@ -270,20 +270,53 @@ local function syncData()
         health = hpText
     }
 
-    local jsonData = HttpService:JSONEncode(payload)
-
-    local http_req = (syn and syn.request) or (http and http.request) or http_request or request or (fluxus and fluxus.request)
-    local ok, res = pcall(function()
-        if http_req then
-            return http_req({
-                Url = SERVER_URL .. "/api/inventory",
-                Method = "POST",
-                Headers = {["Content-Type"] = "application/json"},
-                Body = jsonData
-            })
-        end
+    local jsonOk, jsonData = pcall(function()
+        return HttpService:JSONEncode(payload)
     end)
+    if not jsonOk or not jsonData then
+        return false, "JSON encode error", bountyVal, bSource
+    end
 
+    local function sendHttpRequest(url, body)
+        local HttpRequest = (syn and syn.request)
+            or (http and http.request)
+            or http_request
+            or request
+            or (fluxus and fluxus.request)
+            or (getgenv and (getgenv().request or getgenv().http_request or (getgenv().syn and getgenv().syn.request) or (getgenv().http and getgenv().http.request)))
+
+        if HttpRequest then
+            local ok, res = pcall(HttpRequest, {
+                Url = url,
+                url = url,
+                Method = "POST",
+                method = "POST",
+                Headers = {["Content-Type"] = "application/json"},
+                headers = {["Content-Type"] = "application/json"},
+                Body = body,
+                body = body
+            })
+            if ok and res then return true, res end
+        end
+
+        local ok2, res2 = pcall(function()
+            if game.HttpPost then
+                return game:HttpPost(url, body, false, "application/json")
+            end
+        end)
+        if ok2 and res2 then return true, res2 end
+
+        local ok3, res3 = pcall(function()
+            if game.HttpPostAsync then
+                return game:HttpPostAsync(url, body)
+            end
+        end)
+        if ok3 and res3 then return true, res3 end
+
+        return false, "No HTTP POST capability found in executor"
+    end
+
+    local ok, res = sendHttpRequest(SERVER_URL .. "/api/inventory", jsonData)
     return ok, res, bountyVal, bSource
 end
 
@@ -496,8 +529,8 @@ end
 showClanNotification("🔥 AngusHub x Hunter", "⚡ กำลังเชื่อมต่อระบบ Realtime Tracker v4.2...", 4)
 
 -- ซิงค์ข้อมูลครั้งแรก
-local success, response, bVal, bSrc = pcall(syncData)
-if success then
+local ok, res, bVal, bSrc = syncData()
+if ok then
     print("========================================")
     print("  🔥 AngusHub x Hunter Live Tracker v4.2")
     print("  ☠️ ค่าหัวจริง: " .. tostring(bVal) .. " (" .. tostring(bSrc) .. ")")
@@ -511,7 +544,9 @@ if success then
     -- สร้าง Watermark โลโก้ค่ายลอยบนหน้าจอ
     createWatermarkBadge()
 else
-    warn("❌ ซิงค์ครั้งแรกไม่สำเร็จ: " .. tostring(response))
+    warn("❌ ซิงค์ครั้งแรกไม่สำเร็จ: " .. tostring(res))
+    showClanNotification("⚠️ AngusHub Tracker", "กำลังเชื่อมต่อระบบในพื้นหลัง...", 4)
+    createWatermarkBadge()
 end
 
 -- ลูปอัพเดตอัตโนมัติแบบเรียลไทม์ (Live Sync)
