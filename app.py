@@ -362,11 +362,11 @@ def resolve_bloxfruits_image(name):
 
 # Category metadata
 CATEGORIES = {
-    "Fruit":          {"icon": "🍎", "color": "#a855f7", "label": "Fruits"},
-    "Sword":          {"icon": "⚔️", "color": "#ef4444", "label": "Swords"},
-    "Gun":            {"icon": "🔫", "color": "#f97316", "label": "Guns"},
-    "Fighting Style": {"icon": "🥊", "color": "#ec4899", "label": "Fighting Styles"},
-    "Accessory":      {"icon": "👑", "color": "#06b6d4", "label": "Accessories"},
+    "Fruit":          {"icon": "/static/ui_icons/fruit.png", "color": "#a855f7", "label": "Fruits"},
+    "Sword":          {"icon": "/static/ui_icons/sword.png", "color": "#ef4444", "label": "Swords"},
+    "Gun":            {"icon": "/static/ui_icons/gun.png", "color": "#f97316", "label": "Guns"},
+    "Fighting Style": {"icon": "/static/ui_icons/fighting_style.png", "color": "#ec4899", "label": "Fighting Styles"},
+    "Accessory":      {"icon": "/static/ui_icons/accessory.png", "color": "#06b6d4", "label": "Accessories"},
 }
 
 # ════════════════════════════════════════════════════════════

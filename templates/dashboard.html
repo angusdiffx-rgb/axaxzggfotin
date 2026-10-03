@@ -429,6 +429,24 @@ html, body {
     width: 36px; height: 36px; border-radius: 9px;
     display: flex; align-items: center; justify-content: center;
     font-size: 1.15em; flex-shrink: 0;
+    overflow: hidden;
+}
+.stat-cell-icon img, .ui-ic-cell {
+    width: 28px; height: 28px; border-radius: 6px;
+    object-fit: cover; display: block;
+}
+.stat-cell-icon.pvp img { object-fit: contain; }
+.ui-ic-xs {
+    width: 15px; height: 15px; vertical-align: -2px;
+    object-fit: contain; display: inline-block;
+}
+.ui-ic-sm {
+    width: 18px; height: 18px; vertical-align: -3px;
+    object-fit: contain; display: inline-block;
+}
+.ui-ic-md {
+    width: 26px; height: 26px; vertical-align: middle;
+    object-fit: contain; display: inline-block;
 }
 .stat-cell-icon.beli { background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: #34d399; }
 .stat-cell-icon.frags { background: rgba(168, 85, 247, 0.15); border: 1px solid rgba(168, 85, 247, 0.3); color: #c084fc; }
@@ -751,25 +769,25 @@ html, body {
                 <img class="hero-logo" src="/static/logo.jpg" alt="AngusHub Logo">
             </div>
             <h1>angushubxhunter</h1>
-            <div class="hero-sub">⚔️ ค่ายโปรล่าค่าหัว BLOX FRUITS ☠️</div>
+            <div class="hero-sub"><img class="ui-ic-sm" src="/static/ui_icons/pvp.png" alt="Hunter"> ค่ายโปรล่าค่าหัว BLOX FRUITS <img class="ui-ic-sm" src="/static/ui_icons/bounty.png" alt="Pirate"></div>
             <p class="hero-desc">ติดตามค่าหัวจริง, เงินเขียว, เงินม่วง, เลเวล และระบบตรวจคลังไอเทมแบบเรียลไทม์ 24 ชม.</p>
 
             <!-- Quick Copy One-Liner Box (Mobile Perfect) -->
             <div class="hero-quick-script">
                 <div class="hqs-top">
-                    <span class="hqs-title">⚡ คำสั่งรันในเกม (One-Liner)</span>
+                    <span class="hqs-title"><img class="ui-ic-xs" src="/static/ui_icons/energy.png" alt="Command"> คำสั่งรันในเกม (One-Liner)</span>
                 </div>
                 <div class="hqs-code-box">
                     <code id="oneLinerCode">loadstring(game:HttpGet("https://angushubxhunter-n4sp.onrender.com/script.lua"))()</code>
                 </div>
-                <button class="btn-quick-copy" onclick="copyOneLiner()">⚡ คัดลอกคำสั่งรัน</button>
+                <button class="btn-quick-copy" onclick="copyOneLiner()"><img class="ui-ic-xs" src="/static/ui_icons/energy.png" alt="Copy"> คัดลอกคำสั่งรัน</button>
             </div>
         </header>
 
         <!-- Players Carousel Section -->
         <div class="sec-title-row">
             <div class="sec-title">
-                👥 ผู้เล่นที่ติดตาม
+                <img class="ui-ic-sm" src="/static/ui_icons/race.png" alt="Players"> ผู้เล่นที่ติดตาม
                 <span class="sec-count" id="playerCount">{{ players|length }}</span>
             </div>
         </div>
@@ -787,13 +805,13 @@ html, body {
                         <div class="chip-handle">@{{ p.name }}</div>
                         <span class="chip-badge {{ p.cls }}">{{ p.status }}</span>
                         {% if uid in inventories and inventories[uid].bounty %}
-                        <div class="chip-bounty-val" id="chip-bounty-{{ uid }}">☠️ {{ "{:,.0f}".format(inventories[uid].bounty) }}</div>
+                        <div class="chip-bounty-val" id="chip-bounty-{{ uid }}"><img class="ui-ic-xs" src="/static/ui_icons/bounty.png" alt="Bounty"> {{ "{:,.0f}".format(inventories[uid].bounty) }}</div>
                         {% endif %}
                     </div>
                     {% endfor %}
                 {% else %}
                     <div style="padding:16px;text-align:center;color:var(--text-dim);width:100%;font-size:0.8em">
-                        🎮 รันสคริปต์ในเกมเพื่อเชื่อมต่อสถานะผู้เล่นแบบเรียลไทม์
+                        <img class="ui-ic-xs" src="/static/ui_icons/pvp.png" alt="Run"> รันสคริปต์ในเกมเพื่อเชื่อมต่อสถานะผู้เล่นแบบเรียลไทม์
                     </div>
                 {% endif %}
             </div>
@@ -804,7 +822,7 @@ html, body {
         ════════════════════════════════════════════════════════════ -->
         <div class="hud-control-bar">
             <div class="hud-control-left">
-                <span class="hud-control-title">⚔️ ข้อมูลนักล่าค่าหัว</span>
+                <span class="hud-control-title"><img class="ui-ic-sm" src="/static/ui_icons/pvp.png" alt="Hunter"> ข้อมูลนักล่าค่าหัว</span>
                 <span class="hud-active-hunter-name" id="activeHunterName">
                     {% if inventories %}({{ inventories|length }} คนเชื่อมต่ออยู่){% else %}รอการเชื่อมต่อ...{% endif %}
                 </span>
@@ -839,14 +857,14 @@ html, body {
                 <div class="bounty-showcase-box">
                     <div class="bsb-top">
                         <span class="bsb-rank-badge" id="rank-badge-{{ uid }}">
-                            {% if inv.bounty and inv.bounty >= 20000000 %}👑 จักรพรรดิแห่งท้องทะเล (Emperor)
-                            {% elif inv.bounty and inv.bounty >= 10000000 %}⚔️ สุดยอดนักล่าค่าหัว (Supreme Hunter)
-                            {% elif inv.bounty and inv.bounty >= 5000000 %}🎖️ ซูเปอร์โนวา / พลเรือเอก (Supernova)
-                            {% elif inv.bounty and inv.bounty >= 2500000 %}🏴‍☠️ เจ็ดเทพโจรสลัด (Warlord)
-                            {% else %}⚓ นักล่ามือใหม่ (Rookie)
+                            {% if inv.bounty and inv.bounty >= 20000000 %}<img class="ui-ic-xs" src="/static/ui_icons/accessory.png" alt="Crown"> จักรพรรดิแห่งท้องทะเล (Emperor)
+                            {% elif inv.bounty and inv.bounty >= 10000000 %}<img class="ui-ic-xs" src="/static/ui_icons/pvp.png" alt="Hunter"> สุดยอดนักล่าค่าหัว (Supreme Hunter)
+                            {% elif inv.bounty and inv.bounty >= 5000000 %}<img class="ui-ic-xs" src="/static/ui_icons/level.jpg" alt="Supernova"> ซูเปอร์โนวา / พลเรือเอก (Supernova)
+                            {% elif inv.bounty and inv.bounty >= 2500000 %}<img class="ui-ic-xs" src="/static/ui_icons/sword.png" alt="Warlord"> เจ็ดเทพโจรสลัด (Warlord)
+                            {% else %}<img class="ui-ic-xs" src="/static/ui_icons/bounty.png" alt="Rookie"> นักล่ามือใหม่ (Rookie)
                             {% endif %}
                         </span>
-                        <span class="bsb-session-time" id="session-time-{{ uid }}">⏱️ เซสชั่น: 00:00:00</span>
+                        <span class="bsb-session-time" id="session-time-{{ uid }}"><img class="ui-ic-xs" src="/static/ui_icons/timer.png" alt="Timer"> เซสชั่น: 00:00:00</span>
                     </div>
 
                     <div class="bsb-main-val-row">
@@ -875,7 +893,7 @@ html, body {
                 <div class="stats-matrix">
                     <!-- Beli -->
                     <div class="stat-cell">
-                        <div class="stat-cell-icon beli">💰</div>
+                        <div class="stat-cell-icon beli"><img class="ui-ic-cell" src="/static/ui_icons/beli.jpg" alt="Beli"></div>
                         <div class="stat-cell-data">
                             <span class="stat-cell-label">Beli (เงินเขียว)</span>
                             <span class="stat-cell-value beli-val" id="beli-{{ uid }}">${{ "{:,.0f}".format(inv.beli or 0) }}</span>
@@ -884,7 +902,7 @@ html, body {
 
                     <!-- Fragments -->
                     <div class="stat-cell">
-                        <div class="stat-cell-icon frags">🔮</div>
+                        <div class="stat-cell-icon frags"><img class="ui-ic-cell" src="/static/ui_icons/fragments.jpg" alt="Fragments"></div>
                         <div class="stat-cell-data">
                             <span class="stat-cell-label">Fragments (เงินม่วง)</span>
                             <span class="stat-cell-value frags-val" id="frags-{{ uid }}">ƒ {{ "{:,.0f}".format(inv.fragments or 0) }}</span>
@@ -893,7 +911,7 @@ html, body {
 
                     <!-- Level -->
                     <div class="stat-cell">
-                        <div class="stat-cell-icon level">🆙</div>
+                        <div class="stat-cell-icon level"><img class="ui-ic-cell" src="/static/ui_icons/level.jpg" alt="Level"></div>
                         <div class="stat-cell-data">
                             <span class="stat-cell-label">Level (เลเวล)</span>
                             <span class="stat-cell-value level-val" id="level-{{ uid }}">Lv. {{ inv.level or 0 }} / 3000</span>
@@ -902,7 +920,7 @@ html, body {
 
                     <!-- PVP Status / Team -->
                     <div class="stat-cell">
-                        <div class="stat-cell-icon pvp">⚔️</div>
+                        <div class="stat-cell-icon pvp"><img class="ui-ic-cell" src="/static/ui_icons/pvp.png" alt="PVP"></div>
                         <div class="stat-cell-data">
                             <span class="stat-cell-label">ฝั่ง / โหมด</span>
                             <span class="stat-cell-value pvp-val" id="team-{{ uid }}">{{ inv.team or 'Pirates (PVP)' }}</span>
@@ -914,7 +932,7 @@ html, body {
                 <div class="gauges-row">
                     <div class="gauge-box">
                         <div class="gauge-header">
-                            <span style="color:#34d399">❤️ เลือด (HP)</span>
+                            <span style="color:#34d399;display:inline-flex;align-items:center;gap:5px"><img class="ui-ic-xs" src="/static/ui_icons/hp.png" alt="HP"> เลือด (HP)</span>
                             <span id="hp-txt-{{ uid }}">{{ inv.health or '100%' }}</span>
                         </div>
                         <div class="gauge-bar-track">
@@ -923,7 +941,7 @@ html, body {
                     </div>
                     <div class="gauge-box">
                         <div class="gauge-header">
-                            <span style="color:#38bdf8">⚡ พลังงาน (Energy)</span>
+                            <span style="color:#38bdf8;display:inline-flex;align-items:center;gap:5px"><img class="ui-ic-xs" src="/static/ui_icons/energy.png" alt="Energy"> พลังงาน (Energy)</span>
                             <span id="energy-txt-{{ uid }}">{{ inv.energy or '100%' }}</span>
                         </div>
                         <div class="gauge-bar-track">
@@ -935,11 +953,11 @@ html, body {
                 <!-- Character Tags Row -->
                 <div class="character-tags-row">
                     <div class="char-chip">
-                        <span class="char-chip-lbl">🧬 เผ่า:</span>
+                        <span class="char-chip-lbl"><img class="ui-ic-xs" src="/static/ui_icons/race.png" alt="Race"> เผ่า:</span>
                         <span class="char-chip-val" id="race-{{ uid }}">{{ inv.race or 'Human' }}</span>
                     </div>
                     <div class="char-chip">
-                        <span class="char-chip-lbl">🍎 ผลที่ใช้:</span>
+                        <span class="char-chip-lbl"><img class="ui-ic-xs" src="/static/ui_icons/fruit.png" alt="Fruit"> ผลที่ใช้:</span>
                         <span class="char-chip-val" id="fruit-{{ uid }}">{{ inv.devil_fruit or 'None' }}</span>
                     </div>
                 </div>
@@ -953,7 +971,14 @@ html, body {
                             </button>
                             {% for cat, items in inv.categorized.items() %}
                             <button class="filter-btn" onclick="filterItems('{{ uid }}', '{{ cat }}', this)">
-                                {{ categories[cat].icon if cat in categories else '📦' }} {{ categories[cat].label if cat in categories else cat }}
+                                {% if cat in categories and categories[cat].icon.startswith('/') %}
+                                <img src="{{ categories[cat].icon }}" class="ui-ic-sm" alt="{{ cat }}">
+                                {% elif cat in categories %}
+                                {{ categories[cat].icon }}
+                                {% else %}
+                                📦
+                                {% endif %}
+                                {{ categories[cat].label if cat in categories else cat }}
                                 <span class="filter-badge">{{ items|length }}</span>
                             </button>
                             {% endfor %}
@@ -975,9 +1000,25 @@ html, body {
                             <div class="item-img-box">
                                 {% if item.image %}
                                 <img class="item-img" src="{{ item.image }}" alt="{{ item.name }}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-                                <div style="font-size:2em;display:none">{% if item.category in categories %}{{ categories[item.category].icon }}{% else %}📦{% endif %}</div>
+                                <div style="font-size:2em;display:none;align-items:center;justify-content:center;width:100%;height:100%">
+                                    {% if item.category in categories and categories[item.category].icon.startswith('/') %}
+                                    <img src="{{ categories[item.category].icon }}" class="ui-ic-md" alt="{{ item.category }}">
+                                    {% elif item.category in categories %}
+                                    {{ categories[item.category].icon }}
+                                    {% else %}
+                                    📦
+                                    {% endif %}
+                                </div>
                                 {% else %}
-                                <div style="font-size:2em">{% if item.category in categories %}{{ categories[item.category].icon }}{% else %}📦{% endif %}</div>
+                                <div style="font-size:2em;display:flex;align-items:center;justify-content:center;width:100%;height:100%">
+                                    {% if item.category in categories and categories[item.category].icon.startswith('/') %}
+                                    <img src="{{ categories[item.category].icon }}" class="ui-ic-md" alt="{{ item.category }}">
+                                    {% elif item.category in categories %}
+                                    {{ categories[item.category].icon }}
+                                    {% else %}
+                                    📦
+                                    {% endif %}
+                                </div>
                                 {% endif %}
                             </div>
                             <div class="item-name" title="{{ item.name }}">{{ item.name }}</div>
@@ -992,7 +1033,9 @@ html, body {
 
             {% if not inventories %}
             <div style="text-align:center;padding:40px 16px;background:var(--bg-card);border:1px dashed var(--border-card);border-radius:18px;margin-bottom:24px">
-                <div style="font-size:2.5em;margin-bottom:8px">⚔️</div>
+                <div style="margin-bottom:12px">
+                    <img src="/static/ui_icons/pvp.png" style="width:48px;height:48px;filter:drop-shadow(0 0 12px rgba(239,68,68,0.7));" alt="Waiting">
+                </div>
                 <h3 style="font-family:'Space Grotesk';font-size:1.15em;margin-bottom:6px">รอการซิงค์ข้อมูลจากในเกม...</h3>
                 <p style="color:var(--text-secondary);font-size:0.8em;max-width:440px;margin:0 auto">
                     คัดลอกคำสั่งด้านล่างไปรันใน Executor บนมือถือหรือคอม เพื่อเริ่มซิงค์ค่าหัวจริงและคลังไอเทมสดๆ
@@ -1015,7 +1058,7 @@ html, body {
             <div class="exec-banner">
                 <div class="exec-code-line">loadstring(game:HttpGet("https://angushubxhunter.onrender.com/script.lua"))()</div>
                 <div class="exec-btn-row">
-                    <button class="btn-exec-action primary" onclick="copyOneLiner()">⚡ คัดลอกคำสั่ง 1 บรรทัด (แนะนำ)</button>
+                    <button class="btn-exec-action primary" onclick="copyOneLiner()"><img class="ui-ic-xs" src="/static/ui_icons/energy.png" alt="⚡"> คัดลอกคำสั่ง 1 บรรทัด (แนะนำ)</button>
                     <button class="btn-exec-action secondary" onclick="copyFullScript()">📋 คัดลอกโค้ดเต็ม</button>
                 </div>
             </div>
@@ -1033,7 +1076,7 @@ html, body {
 <div class="floating-dock">
     <button class="dock-btn active" onclick="window.scrollTo({top:0, behavior:'smooth'})">🔝 บนสุด</button>
     <button class="dock-btn" onclick="document.getElementById('hudWrapper').scrollIntoView({behavior:'smooth'})">📊 สเตตัส</button>
-    <button class="dock-btn copy-highlight" onclick="copyOneLiner()">⚡ คัดลอกสคริปต์</button>
+    <button class="dock-btn copy-highlight" onclick="copyOneLiner()"><img class="ui-ic-xs" src="/static/ui_icons/energy.png" alt="⚡"> คัดลอกสคริปต์</button>
 </div>
 
 <div class="toast-msg" id="toastMsg"></div>
@@ -1076,7 +1119,7 @@ setInterval(() => {
     const m = String(Math.floor((sessionSeconds % 3600) / 60)).padStart(2, '0');
     const s = String(sessionSeconds % 60).padStart(2, '0');
     document.querySelectorAll('[id^="session-time-"]').forEach(el => {
-        el.textContent = `⏱️ เซสชั่น: ${h}:${m}:${s}`;
+        el.innerHTML = `<img class="ui-ic-xs" src="/static/ui_icons/timer.png" alt="Timer"> เซสชั่น: ${h}:${m}:${s}`;
     });
 }, 1000);
 
@@ -1096,11 +1139,11 @@ function formatShort(n) {
 
 function getHunterRank(bounty) {
     const b = Number(bounty) || 0;
-    if (b >= 20000000) return '👑 จักรพรรดิแห่งท้องทะเล (Emperor)';
-    if (b >= 10000000) return '⚔️ สุดยอดนักล่าค่าหัว (Supreme Hunter)';
-    if (b >= 5000000) return '🎖️ ซูเปอร์โนวา / พลเรือเอก (Supernova)';
-    if (b >= 2500000) return '🏴‍☠️ เจ็ดเทพโจรสลัด (Warlord)';
-    return '⚓ นักล่ามือใหม่ (Rookie)';
+    if (b >= 20000000) return '<img class="ui-ic-xs" src="/static/ui_icons/accessory.png" alt="Crown"> จักรพรรดิแห่งท้องทะเล (Emperor)';
+    if (b >= 10000000) return '<img class="ui-ic-xs" src="/static/ui_icons/pvp.png" alt="Hunter"> สุดยอดนักล่าค่าหัว (Supreme Hunter)';
+    if (b >= 5000000) return '<img class="ui-ic-xs" src="/static/ui_icons/level.jpg" alt="Supernova"> ซูเปอร์โนวา / พลเรือเอก (Supernova)';
+    if (b >= 2500000) return '<img class="ui-ic-xs" src="/static/ui_icons/sword.png" alt="Warlord"> เจ็ดเทพโจรสลัด (Warlord)';
+    return '<img class="ui-ic-xs" src="/static/ui_icons/bounty.png" alt="Rookie"> นักล่ามือใหม่ (Rookie)';
 }
 
 // ════════════════════════════════════════════════════════════
@@ -1178,7 +1221,7 @@ async function pollLiveData() {
         for (const [uid, p] of Object.entries(players)) {
             let chip = document.getElementById(`pc-${uid}`);
             const inv = inventories[uid] || {};
-            const bty = inv.bounty ? `☠️ ${fmt(inv.bounty)}` : '';
+            const bty = inv.bounty ? `<img class="ui-ic-xs" src="/static/ui_icons/bounty.png" alt="Bounty"> ${fmt(inv.bounty)}` : '';
 
             if (!chip && carousel) {
                 const emptyMsg = carousel.querySelector('div[style*="text-align:center"]');
@@ -1212,7 +1255,7 @@ async function pollLiveData() {
                     badge.textContent = p.status || 'ONLINE';
                 }
                 const btyEl = document.getElementById(`chip-bounty-${uid}`);
-                if (btyEl && bty) btyEl.textContent = bty;
+                if (btyEl && bty) btyEl.innerHTML = bty;
             }
         }
 
@@ -1247,7 +1290,7 @@ async function pollLiveData() {
 
             // Hunter Rank
             const rankEl = document.getElementById(`rank-badge-${uid}`);
-            if (rankEl) rankEl.textContent = getHunterRank(rawBounty);
+            if (rankEl) rankEl.innerHTML = getHunterRank(rawBounty);
 
             // Bounty Progress calculation (to next million)
             const nextMil = Math.ceil((rawBounty + 1) / 1000000) * 1000000;
