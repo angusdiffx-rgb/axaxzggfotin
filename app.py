@@ -426,6 +426,13 @@ def load_saved_state():
                             p = df.split("-")
                             if len(p) == 2 and p[0].strip() == p[1].strip():
                                 inv_data["devil_fruit"] = p[0].strip()
+                    # Purge any test hunter entries
+                    for uid in list(tracked_players.keys()):
+                        if uid == "12345" or "test" in str(tracked_players[uid].get("name", "")).lower():
+                            tracked_players.pop(uid, None)
+                    for uid in list(player_inventories.keys()):
+                        if uid == "12345" or "test" in str(player_inventories[uid].get("username", "")).lower():
+                            player_inventories.pop(uid, None)
 
             print(f"[State] Successfully loaded {len(tracked_players)} players and refreshed inventories from disk.")
         except Exception as e:
@@ -807,13 +814,13 @@ def receive_inventory():
     })
 
 
-@app.route("/api/remove/<uid>", methods=["DELETE"])
+@app.route("/api/remove/<uid>", methods=["DELETE", "POST", "GET"])
 def remove(uid):
     with data_lock:
         tracked_players.pop(uid, None)
         player_inventories.pop(uid, None)
         save_state()
-    return jsonify({"ok": True})
+    return jsonify({"ok": True, "removed": uid})
 
 
 @app.route("/script.lua")
