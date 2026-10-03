@@ -60,7 +60,7 @@ html, body {
 /* Background Atmosphere */
 .clan-rain-canvas {
     position: fixed; inset: 0; width: 100vw; height: 100vh;
-    pointer-events: none; z-index: 0;
+    pointer-events: none; z-index: 3;
 }
 .bg-scene {
     position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
@@ -738,7 +738,7 @@ html, body {
                 <span class="live-pulse"></span>
                 <span id="pingText">LIVE</span>
             </div>
-            <button class="fx-toggle-btn active" id="fxBtn" onclick="toggleRainFX()" title="เปิด/ปิดเอฟเฟกต์ฝนโลโก้ & สายฟ้าแดง">⚡</button>
+            <button class="fx-toggle-btn active" id="fxBtn" onclick="toggleRainFX()" title="เปิด/ปิดเอฟเฟกต์มังกรสายฟ้า & ฝนโลโก้">🐉</button>
             <button class="sound-toggle-btn" id="soundBtn" onclick="toggleSound()" title="เปิด/ปิดเสียง">🔊</button>
         </div>
     </nav>
@@ -1599,6 +1599,410 @@ function showToast(msg, type = 'ok') {
         ctx.stroke();
     }
 
+    // ════════════════════════════════════════════════════════════
+    //  🐉 LIGHTNING DRAGON ENGINE (มังกรสายฟ้าบินวนหน้าจอ)
+    // ════════════════════════════════════════════════════════════
+    let mouse = { x: -1000, y: -1000, active: false, lastActive: 0 };
+    window.addEventListener('mousemove', (e) => {
+        mouse.x = e.clientX;
+        mouse.y = e.clientY;
+        mouse.active = true;
+        mouse.lastActive = Date.now();
+    });
+    window.addEventListener('touchmove', (e) => {
+        if (e.touches && e.touches[0]) {
+            mouse.x = e.touches[0].clientX;
+            mouse.y = e.touches[0].clientY;
+            mouse.active = true;
+            mouse.lastActive = Date.now();
+        }
+    }, { passive: true });
+
+    class LightningDragon {
+        constructor() {
+            this.isMobile = window.innerWidth < 768;
+            this.numSegments = this.isMobile ? 40 : 50;
+            this.segLength = this.isMobile ? 9 : 13;
+            this.segments = [];
+            this.x = width * 0.5;
+            this.y = height * 0.35;
+            this.angle = 0;
+            this.speed = this.isMobile ? 3.2 : 3.8;
+            this.time = Math.random() * 100;
+            this.whiskerWave = 0;
+
+            for (let i = 0; i < this.numSegments; i++) {
+                this.segments.push({
+                    x: this.x - i * this.segLength,
+                    y: this.y,
+                    angle: 0,
+                    radius: this.calcRadius(i)
+                });
+            }
+
+            this.sparks = [];
+            this.arcs = [];
+        }
+
+        calcRadius(i) {
+            const scale = this.isMobile ? 0.75 : 1.0;
+            if (i < 4) return (10 + i * 2.5) * scale;
+            if (i < 16) return (20 - (i - 4) * 0.4) * scale;
+            if (i < 36) return (15 - (i - 16) * 0.3) * scale;
+            return Math.max(3 * scale, (9 - (i - 36) * 0.5) * scale);
+        }
+
+        update() {
+            this.time += 0.016;
+            this.whiskerWave += 0.16;
+
+            let targetX, targetY;
+            const isMouseFresh = mouse.active && (Date.now() - mouse.lastActive < 3500);
+
+            if (isMouseFresh) {
+                // Interactive orbit around user cursor / touch
+                const orbitAngle = this.time * 2.2;
+                const orbitDist = this.isMobile ? 80 : 130;
+                targetX = mouse.x + Math.cos(orbitAngle) * orbitDist;
+                targetY = mouse.y + Math.sin(orbitAngle) * (orbitDist * 0.65);
+            } else {
+                // Majestic 3D Lissajous flight path sweeping across the webpage
+                targetX = width * 0.5 + Math.sin(this.time * 0.75) * (width * 0.40) + Math.cos(this.time * 0.35) * (width * 0.12);
+                targetY = height * 0.48 + Math.cos(this.time * 1.05) * (height * 0.36) + Math.sin(this.time * 0.45) * (height * 0.14);
+            }
+
+            const dx = targetX - this.x;
+            const dy = targetY - this.y;
+            const targetAngle = Math.atan2(dy, dx);
+
+            // Smooth angular rotation
+            let diff = targetAngle - this.angle;
+            while (diff < -Math.PI) diff += Math.PI * 2;
+            while (diff > Math.PI) diff -= Math.PI * 2;
+            this.angle += diff * (isMouseFresh ? 0.065 : 0.042);
+
+            // Natural swimming undulation
+            const undulation = Math.sin(this.time * 4.2) * 0.11;
+            const moveAngle = this.angle + undulation;
+
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const baseSpeed = this.isMobile ? 3.0 : 3.6;
+            this.speed = baseSpeed + Math.min(2.4, dist * 0.0055);
+
+            this.x += Math.cos(moveAngle) * this.speed;
+            this.y += Math.sin(moveAngle) * this.speed;
+
+            // Head segment
+            this.segments[0].x = this.x;
+            this.segments[0].y = this.y;
+            this.segments[0].angle = moveAngle;
+
+            // Follow-the-leader kinematics for body
+            for (let i = 1; i < this.numSegments; i++) {
+                const prev = this.segments[i - 1];
+                const curr = this.segments[i];
+
+                const segDx = curr.x - prev.x;
+                const segDy = curr.y - prev.y;
+                const segAngle = Math.atan2(segDy, segDx);
+
+                curr.x = prev.x + Math.cos(segAngle) * this.segLength;
+                curr.y = prev.y + Math.sin(segAngle) * this.segLength;
+                curr.angle = segAngle;
+            }
+
+            // Spawn electric lightning sparks from dragon body
+            if (Math.random() < 0.5) {
+                const randSeg = this.segments[Math.floor(Math.random() * (this.numSegments - 6))];
+                this.sparks.push({
+                    x: randSeg.x + (Math.random() - 0.5) * 14,
+                    y: randSeg.y + (Math.random() - 0.5) * 14,
+                    vx: (Math.random() - 0.5) * 2.2,
+                    vy: (Math.random() - 0.5) * 2.2,
+                    life: 1.0,
+                    decay: 0.035 + Math.random() * 0.035,
+                    color: Math.random() < 0.6 ? '#ef4444' : '#38bdf8',
+                    size: (1 + Math.random() * 2) * (this.isMobile ? 0.8 : 1)
+                });
+            }
+
+            for (let i = this.sparks.length - 1; i >= 0; i--) {
+                const s = this.sparks[i];
+                s.x += s.vx;
+                s.y += s.vy;
+                s.life -= s.decay;
+                if (s.life <= 0) this.sparks.splice(i, 1);
+            }
+
+            // Random lightning arcs between coils of dragon body
+            if (Math.random() < 0.25) {
+                const startIdx = Math.floor(Math.random() * (this.numSegments - 10));
+                const endIdx = startIdx + 3 + Math.floor(Math.random() * 5);
+                if (endIdx < this.numSegments) {
+                    this.arcs.push({
+                        p1: this.segments[startIdx],
+                        p2: this.segments[endIdx],
+                        life: 1.0,
+                        decay: 0.15,
+                        color: Math.random() < 0.5 ? '#ef4444' : '#38bdf8'
+                    });
+                }
+            }
+
+            for (let i = this.arcs.length - 1; i >= 0; i--) {
+                this.arcs[i].life -= this.arcs[i].decay;
+                if (this.arcs[i].life <= 0) this.arcs.splice(i, 1);
+            }
+        }
+
+        draw(ctx) {
+            // 1. Draw Sparks
+            for (const s of this.sparks) {
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, s.life * 0.85);
+                ctx.fillStyle = s.color;
+                ctx.shadowColor = s.color;
+                ctx.shadowBlur = 6;
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+
+            // 2. Draw Lightning Arcs
+            for (const arc of this.arcs) {
+                ctx.save();
+                ctx.strokeStyle = arc.color;
+                ctx.shadowColor = arc.color;
+                ctx.shadowBlur = 10;
+                ctx.lineWidth = 1.5;
+                ctx.globalAlpha = arc.life * 0.85;
+                ctx.beginPath();
+                const sx = arc.p1.x, sy = arc.p1.y;
+                const ex = arc.p2.x, ey = arc.p2.y;
+                const midX = (sx + ex) / 2 + (Math.random() - 0.5) * 18;
+                const midY = (sy + ey) / 2 + (Math.random() - 0.5) * 18;
+                ctx.moveTo(sx, sy);
+                ctx.lineTo(midX, midY);
+                ctx.lineTo(ex, ey);
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            // 3. Draw Body Segments (from Tail to Neck)
+            const claw1 = this.isMobile ? 8 : 10;
+            const claw2 = this.isMobile ? 20 : 26;
+
+            for (let i = this.numSegments - 1; i >= 1; i--) {
+                const seg = this.segments[i];
+                const r = seg.radius;
+
+                ctx.save();
+                ctx.translate(seg.x, seg.y);
+                ctx.rotate(seg.angle);
+
+                // Dorsal Lightning Spikes
+                if (i % 2 === 0 && i > 3 && i < this.numSegments - 4) {
+                    ctx.save();
+                    const spikeColor = (i % 4 === 0) ? '#38bdf8' : '#ef4444';
+                    ctx.fillStyle = spikeColor;
+                    ctx.shadowColor = spikeColor;
+                    ctx.shadowBlur = 8;
+                    const spikeH = (9 + Math.sin(this.time * 5 + i) * 3) * (this.isMobile ? 0.75 : 1);
+                    ctx.beginPath();
+                    ctx.moveTo(0, -r);
+                    ctx.lineTo(-3, -r - spikeH);
+                    ctx.lineTo(3, -r);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.restore();
+                }
+
+                // Claws
+                if (i === claw1 || i === claw2) {
+                    this.drawClaw(ctx, r, 1, i);
+                    this.drawClaw(ctx, r, -1, i);
+                }
+
+                // Segment Body with Neon Lightning Rim
+                ctx.shadowColor = '#ef4444';
+                ctx.shadowBlur = 10;
+
+                const grad = ctx.createRadialGradient(-2, -2, 1, 0, 0, r);
+                grad.addColorStop(0, '#fca5a5');
+                grad.addColorStop(0.4, '#ef4444');
+                grad.addColorStop(0.85, '#991b1b');
+                grad.addColorStop(1, '#1e1b4b');
+
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(0, 0, r, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Inner electric blue scale ring
+                ctx.shadowBlur = 0;
+                ctx.strokeStyle = 'rgba(56, 189, 248, 0.45)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.arc(0, 0, r * 0.65, 0, Math.PI);
+                ctx.stroke();
+
+                ctx.restore();
+            }
+
+            // 4. Tail Fire Plume
+            const tail = this.segments[this.numSegments - 1];
+            ctx.save();
+            ctx.translate(tail.x, tail.y);
+            ctx.rotate(tail.angle);
+            ctx.shadowColor = '#ef4444';
+            ctx.shadowBlur = 14;
+            ctx.fillStyle = '#f87171';
+            const tailLen = this.isMobile ? 20 : 28;
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.quadraticCurveTo(tailLen * 0.5, -8 + Math.sin(this.time * 7) * 7, tailLen, 0);
+            ctx.quadraticCurveTo(tailLen * 0.5, 8 - Math.sin(this.time * 7) * 7, 0, 0);
+            ctx.fill();
+            ctx.restore();
+
+            // 5. Draw Dragon Head
+            this.drawHead(ctx);
+        }
+
+        drawClaw(ctx, r, side, segIdx) {
+            ctx.save();
+            const clawAngle = (side * 0.8) + Math.sin(this.time * 5.5 + segIdx) * 0.25;
+            ctx.translate(0, side * r * 0.8);
+            ctx.rotate(clawAngle);
+
+            ctx.strokeStyle = '#ef4444';
+            ctx.lineWidth = this.isMobile ? 2 : 2.8;
+            ctx.shadowColor = '#ef4444';
+            ctx.shadowBlur = 6;
+
+            const armLen = (this.isMobile ? 10 : 14) * side;
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(6, armLen);
+            ctx.stroke();
+
+            // 3 White Talons
+            ctx.fillStyle = '#ffffff';
+            for (let t = -1; t <= 1; t++) {
+                ctx.beginPath();
+                ctx.moveTo(6, armLen);
+                ctx.lineTo(10 + t * 2.5, armLen + (side * (4 + Math.abs(t) * 2)));
+                ctx.lineTo(5, armLen + side);
+                ctx.fill();
+            }
+            ctx.restore();
+        }
+
+        drawHead(ctx) {
+            const head = this.segments[0];
+            const scale = this.isMobile ? 0.75 : 1.0;
+            ctx.save();
+            ctx.translate(head.x, head.y);
+            ctx.rotate(head.angle);
+
+            // Dragon Head Glow Aura
+            ctx.shadowColor = '#ef4444';
+            ctx.shadowBlur = 18;
+
+            // Head Skull & Snout
+            const headGrad = ctx.createLinearGradient(20 * scale, 0, -18 * scale, 0);
+            headGrad.addColorStop(0, '#fca5a5');
+            headGrad.addColorStop(0.45, '#ef4444');
+            headGrad.addColorStop(1, '#991b1b');
+
+            ctx.fillStyle = headGrad;
+            ctx.beginPath();
+            ctx.moveTo(22 * scale, 0);
+            ctx.lineTo(12 * scale, -9 * scale);
+            ctx.lineTo(-4 * scale, -13 * scale);
+            ctx.lineTo(-17 * scale, -10 * scale);
+            ctx.lineTo(-13 * scale, 0);
+            ctx.lineTo(-17 * scale, 10 * scale);
+            ctx.lineTo(-4 * scale, 13 * scale);
+            ctx.lineTo(12 * scale, 9 * scale);
+            ctx.closePath();
+            ctx.fill();
+
+            // 2 Swept-Back Stag Horns
+            ctx.strokeStyle = '#f59e0b';
+            ctx.shadowColor = '#f59e0b';
+            ctx.shadowBlur = 10;
+            ctx.lineWidth = 2.4 * scale;
+
+            ctx.beginPath();
+            ctx.moveTo(-5 * scale, -11 * scale);
+            ctx.quadraticCurveTo(-17 * scale, -25 * scale, -32 * scale, -22 * scale);
+            ctx.lineTo(-22 * scale, -18 * scale);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(-5 * scale, 11 * scale);
+            ctx.quadraticCurveTo(-17 * scale, 25 * scale, -32 * scale, 22 * scale);
+            ctx.lineTo(-22 * scale, 18 * scale);
+            ctx.stroke();
+
+            // 2 Long Cyan Lightning Whiskers
+            ctx.strokeStyle = '#38bdf8';
+            ctx.shadowColor = '#38bdf8';
+            ctx.shadowBlur = 8;
+            ctx.lineWidth = 1.4 * scale;
+
+            ctx.beginPath();
+            ctx.moveTo(17 * scale, -4 * scale);
+            ctx.bezierCurveTo(
+                26 * scale, (-13 + Math.sin(this.whiskerWave) * 5) * scale,
+                38 * scale, (-5 + Math.cos(this.whiskerWave) * 7) * scale,
+                54 * scale, (-10 + Math.sin(this.whiskerWave * 1.2) * 8) * scale
+            );
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(17 * scale, 4 * scale);
+            ctx.bezierCurveTo(
+                26 * scale, (13 + Math.cos(this.whiskerWave) * 5) * scale,
+                38 * scale, (5 + Math.sin(this.whiskerWave) * 7) * scale,
+                54 * scale, (10 + Math.cos(this.whiskerWave * 1.2) * 8) * scale
+            );
+            ctx.stroke();
+
+            // Piercing Glowing Eyes
+            ctx.fillStyle = '#fef08a';
+            ctx.shadowColor = '#fef08a';
+            ctx.shadowBlur = 12;
+
+            ctx.beginPath();
+            ctx.ellipse(3 * scale, -6 * scale, 4 * scale, 2.2 * scale, -0.2, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.ellipse(3 * scale, 6 * scale, 4 * scale, 2.2 * scale, 0.2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Eye Pupils
+            ctx.fillStyle = '#0f172a';
+            ctx.beginPath();
+            ctx.arc(3.5 * scale, -6 * scale, 1.1 * scale, 0, Math.PI * 2);
+            ctx.arc(3.5 * scale, 6 * scale, 1.1 * scale, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Fangs
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.moveTo(14 * scale, -4 * scale); ctx.lineTo(11 * scale, -1 * scale); ctx.lineTo(8 * scale, -4 * scale);
+            ctx.moveTo(14 * scale, 4 * scale); ctx.lineTo(11 * scale, 1 * scale); ctx.lineTo(8 * scale, 4 * scale);
+            ctx.fill();
+
+            ctx.restore();
+        }
+    }
+
+    const dragon = new LightningDragon();
     const logoDrops = Array.from({ length: LOGO_COUNT }, () => new LogoDrop(true));
     const redSparks = Array.from({ length: SPARK_COUNT }, () => new RedSpark(true));
 
@@ -1659,6 +2063,10 @@ function showToast(msg, type = 'ok') {
             drop.draw();
         }
 
+        // 5. Update & Draw Lightning Dragon (มังกรสายฟ้า บินวนพริ้วไหว)
+        dragon.update();
+        dragon.draw(ctx);
+
         animId = requestAnimationFrame(loop);
     }
 
@@ -1679,11 +2087,11 @@ function showToast(msg, type = 'ok') {
         if (btn) btn.classList.toggle('active', isFXActive);
         if (isFXActive) {
             animId = requestAnimationFrame(loop);
-            showToast('⚡ เปิดเอฟเฟกต์ฝนโลโก้ & สายฟ้าแดงแล้ว', 'ok');
+            showToast('🐉 เปิดเอฟเฟกต์มังกรสายฟ้า & ฝนโลโก้แล้ว', 'ok');
         } else {
             if (animId) cancelAnimationFrame(animId);
             ctx.clearRect(0, 0, width, height);
-            showToast('⚡ ปิดเอฟเฟกต์ฝนและสายฟ้าแล้ว', 'ok');
+            showToast('🐉 ปิดเอฟเฟกต์มังกรสายฟ้าแล้ว', 'ok');
         }
     };
 })();
