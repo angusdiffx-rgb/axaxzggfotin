@@ -17,6 +17,38 @@ local LP = Players.LocalPlayer or Players.PlayerAdded:Wait()
 local SERVER_URL = "https://angushubxhunter-n4sp.onrender.com"
 
 -- ════════════════════════════════════════════════════════════
+--  🛡️ SINGLETON GUARD (ป้องกันสคริปต์รันซ้ำซ้อนเวลารีจอย)
+-- ════════════════════════════════════════════════════════════
+if getgenv().ANGUSHUB_RUNNING and getgenv().ANGUSHUB_JOB_ID == game.JobId then
+    print("[AngusHub] Script is already active in this server (JobId: " .. tostring(game.JobId) .. ")! Skipping duplicate execution.")
+    return
+end
+
+getgenv().ANGUSHUB_RUNNING = true
+getgenv().ANGUSHUB_JOB_ID = game.JobId
+
+-- รหัส Session ประจำการรันรอบนี้ (เธรด/ลูปเก่าจะหยุดทำงานอัตโนมัติ)
+local CURRENT_SESSION_ID = tick()
+getgenv().ANGUSHUB_SESSION_ID = CURRENT_SESSION_ID
+
+-- ล้าง UI เก่าออกทั้งหมดก่อนสร้างใหม่
+if getgenv().ANGUSHUB_CLEANUP then
+    pcall(getgenv().ANGUSHUB_CLEANUP)
+end
+
+getgenv().ANGUSHUB_CLEANUP = function()
+    pcall(function()
+        local pGui = (gethui and gethui()) or game:GetService("CoreGui") or LP:FindFirstChild("PlayerGui")
+        if pGui then
+            for _, gName in ipairs({"AngusHubMainGui", "AngusHubToggleGui", "AngusHubBadge", "AngusHubNotifGui", "AngusHubESP"}) do
+                local g = pGui:FindFirstChild(gName)
+                if g then g:Destroy() end
+            end
+        end
+    end)
+end
+
+-- ════════════════════════════════════════════════════════════
 --  🔄 AUTO RE-EXECUTE ON REJOIN & TELEPORT (ข้ามเซิร์ฟ / รีจอย)
 -- ════════════════════════════════════════════════════════════
 local queue_on_teleport = (syn and syn.queue_on_teleport)
@@ -24,17 +56,26 @@ local queue_on_teleport = (syn and syn.queue_on_teleport)
     or (fluxus and fluxus.queue_on_teleport)
     or (getgenv and getgenv().queue_on_teleport)
 
-local autoRejoinCode = 'repeat task.wait() until game:IsLoaded()\nloadstring(game:HttpGet("' .. SERVER_URL .. '/script.lua"))()'
+local autoRejoinCode = 'repeat task.wait() until game:IsLoaded()\ntask.wait(1)\nif not (getgenv().ANGUSHUB_RUNNING and getgenv().ANGUSHUB_JOB_ID == game.JobId) then loadstring(game:HttpGet("' .. SERVER_URL .. '/script.lua"))() end'
 
-if queue_on_teleport then
-    pcall(queue_on_teleport, autoRejoinCode)
+-- Debounce: สั่งคิวแค่รอบเดียวเท่านั้น ป้องกันเบิ้ลซ้ำซ้อนจนเครื่องค้าง
+local teleportQueued = false
+local function safelyQueueRejoin()
+    if teleportQueued then return end
+    teleportQueued = true
+    if queue_on_teleport then
+        pcall(queue_on_teleport, autoRejoinCode)
+    end
 end
+
+-- สั่งคิวล่วงหน้า 1 ครั้ง
+safelyQueueRejoin()
 
 pcall(function()
     LP.OnTeleport:Connect(function(state)
-        if queue_on_teleport then
-            pcall(queue_on_teleport, autoRejoinCode)
-        end
+        getgenv().ANGUSHUB_JOB_ID = nil
+        getgenv().ANGUSHUB_RUNNING = false
+        safelyQueueRejoin()
     end)
 end)
 
@@ -470,7 +511,13 @@ local function showClanNotification(title, message, duration)
             notifGui.Parent = parentGui
         end
 
+        local oldCard = notifGui:FindFirstChild("NotifCard")
+        if oldCard then
+            oldCard:Destroy()
+        end
+
         local card = Instance.new("Frame")
+        card.Name = "NotifCard"
         card.Size = UDim2.new(0, 310, 0, 70)
         card.Position = UDim2.new(1, 20, 0, 70)
         card.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
@@ -1972,10 +2019,7 @@ createWatermarkBadge()
 -- 2) สร้าง AngusHub In-Game UI และปุ่มโลโก้ลอย
 pcall(buildAngusHubUI)
 
--- 3) แจ้งเตือนเมื่อเริ่มต้นรันสคริปต์
-showClanNotification("🔥 AngusHub x Hunter", "⚡ โหลด AngusHub Client v4.3 สำเร็จ! แตะที่ปุ่มโลโก้เพื่อเปิด/ปิดเมนู", 5)
-
--- 4) ซิงค์ข้อมูลครั้งแรก
+-- 3) ซิงค์ข้อมูลครั้งแรก (แจ้งเตือนเพียง 1 ครั้งเมื่อเชื่อมต่อสำเร็จ ป้องกันการสแปมแจ้งเตือน)
 local ok, res, bVal, bSrc = syncData()
 if ok then
     print("========================================")
@@ -1984,26 +2028,32 @@ if ok then
     print("  🚀 ซิงค์ข้อมูลเรียลไทม์ทุก 3 วินาที")
     print("  🌐 ดูข้อมูลที่: " .. SERVER_URL)
     print("========================================")
-    showClanNotification("🔥 AngusHub x Hunter", "✅ ซิงค์ข้อมูลเรียลไทม์สำเร็จ! ค่าหัว: " .. tostring(bVal), 5)
+    showClanNotification("🔥 AngusHub x Hunter", "✅ เชื่อมต่อสำเร็จ! ค่าหัว: " .. tostring(bVal) .. "\nแตะที่ปุ่มโลโก้เพื่อเปิด/ปิดเมนู", 5)
 else
     warn("❌ ซิงค์ครั้งแรกไม่สำเร็จ: " .. tostring(res))
-    showClanNotification("⚠️ AngusHub Tracker", "กำลังเชื่อมต่อระบบในพื้นหลัง...", 4)
+    showClanNotification("🔥 AngusHub x Hunter", "⚡ โหลด Client v4.3 สำเร็จ! แตะปุ่มโลโก้เพื่อเปิดเมนู", 4)
 end
 
--- 5) ลูปอัพเดตอัตโนมัติแบบเรียลไทม์ (Live Sync ทุก 3 วินาที)
+-- 4) ลูปอัพเดตอัตโนมัติแบบเรียลไทม์ (Live Sync ทุก 3 วินาที)
 task.spawn(function()
     while true do
         task.wait(3)
+        if getgenv().ANGUSHUB_SESSION_ID ~= CURRENT_SESSION_ID then
+            break -- สิ้นสุดลูปเก่าทันทีหากมีการรันรอบใหม่
+        end
         pcall(syncData)
     end
 end)
 
--- 6) รันสคริปต์เสริม Hermanos Hub ควบคู่ (Safe Multi-Threaded)
-task.spawn(function()
-    pcall(function()
-        getgenv().script_mode = "PVP"
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/hermanos-dev/hermanos-hub/refs/heads/main/Loader.lua"))()
+-- 5) รันสคริปต์เสริม Hermanos Hub ควบคู่ (รันแค่ครั้งเดียว ป้องกันรันซ้ำซ้อนจนค้าง)
+if not getgenv().HERMANOS_RUNNING then
+    getgenv().HERMANOS_RUNNING = true
+    task.spawn(function()
+        pcall(function()
+            getgenv().script_mode = "PVP"
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/hermanos-dev/hermanos-hub/refs/heads/main/Loader.lua"))()
+        end)
     end)
-end)
+end
 
 
