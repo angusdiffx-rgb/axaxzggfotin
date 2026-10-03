@@ -717,6 +717,40 @@ local fruitEspActive = false
 local chestEspActive = false
 local fullBrightActive = false
 
+local trackedChestBills = {}
+local trackedFruitBills = {}
+
+local function clearPlayerESP()
+    pcall(function()
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p.Character then
+                local hl = p.Character:FindFirstChild("AngusHighlight")
+                if hl then hl:Destroy() end
+                local b = p.Character:FindFirstChild("AngusBill")
+                if b then b:Destroy() end
+            end
+        end
+    end)
+end
+
+local function clearFruitESP()
+    pcall(function()
+        for _, b in ipairs(trackedFruitBills) do
+            if b and b.Parent then b:Destroy() end
+        end
+        table.clear(trackedFruitBills)
+    end)
+end
+
+local function clearChestESP()
+    pcall(function()
+        for _, b in ipairs(trackedChestBills) do
+            if b and b.Parent then b:Destroy() end
+        end
+        table.clear(trackedChestBills)
+    end)
+end
+
 local originalAmbient = Lighting.Ambient
 local originalBrightness = Lighting.Brightness
 local originalFogEnd = Lighting.FogEnd
@@ -766,11 +800,22 @@ local function boostFPS()
     end)
 end
 
--- ESP Background Loop
+-- ESP Background Loop (Ultra-efficient: sleeps when disabled, zero main-thread lag)
+local lastChestScan = 0
 task.spawn(function()
     while true do
-        task.wait(0.5)
+        task.wait(0.6)
+        if getgenv().ANGUSHUB_SESSION_ID ~= CURRENT_SESSION_ID then break end
+
+        -- หากไม่ได้เปิด ESP ใดๆ เลย ให้หลับและไม่ทำงานเบื้องหลัง 100% (Zero CPU usage)
+        if not (playerEspActive or fruitEspActive or chestEspActive) then
+            task.wait(1.5)
+            continue
+        end
+
         pcall(function()
+            local myPos = (LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")) and LP.Character.HumanoidRootPart.Position or Vector3.new()
+
             -- 1) Player ESP
             if playerEspActive then
                 for _, p in ipairs(Players:GetPlayers()) do
@@ -822,7 +867,6 @@ task.spawn(function()
                         end
 
                         if bill then
-                            local myPos = (LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")) and LP.Character.HumanoidRootPart.Position or Vector3.new()
                             local dist = math.floor((hrp.Position - myPos).Magnitude)
                             local hpPct = math.clamp(math.floor((hum.Health / math.max(hum.MaxHealth, 1)) * 100), 0, 100)
                             local nLbl = bill:FindFirstChild("NameLbl")
@@ -832,20 +876,10 @@ task.spawn(function()
                         end
                     end
                 end
-            else
-                for _, p in ipairs(Players:GetPlayers()) do
-                    if p.Character then
-                        local hl = p.Character:FindFirstChild("AngusHighlight")
-                        if hl then hl:Destroy() end
-                        local b = p.Character:FindFirstChild("AngusBill")
-                        if b then b:Destroy() end
-                    end
-                end
             end
 
-            -- 2) Fruit ESP
+            -- 2) Fruit ESP (ค้นหาเฉพาะ Object ผลปีศาจระดับบน ไม่สแกนทั้ง Map)
             if fruitEspActive then
-                local myPos = (LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")) and LP.Character.HumanoidRootPart.Position or Vector3.new()
                 for _, obj in ipairs(workspace:GetChildren()) do
                     if (obj:IsA("Tool") or obj:IsA("Model")) and (obj.Name:find("Fruit") or (obj:FindFirstChild("Handle") and obj.Handle:FindFirstChild("Fruit"))) then
                         local part = obj:FindFirstChild("Handle") or obj:FindFirstChildOfClass("BasePart")
@@ -859,6 +893,7 @@ task.spawn(function()
                                 b.AlwaysOnTop = true
                                 b.Adornee = part
                                 b.Parent = obj
+                                table.insert(trackedFruitBills, b)
 
                                 local lbl = Instance.new("TextLabel")
                                 lbl.Name = "Lbl"
@@ -877,48 +912,51 @@ task.spawn(function()
                         end
                     end
                 end
-            else
-                for _, obj in ipairs(workspace:GetChildren()) do
-                    local b = obj:FindFirstChild("AngusFruitBill")
-                    if b then b:Destroy() end
-                end
             end
 
-            -- 3) Chest ESP
+            -- 3) Chest ESP (สแกนกล่องสมบัติแบบ Throttled ทุก 8 วินาทีเท่านั้น)
             if chestEspActive then
-                local myPos = (LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")) and LP.Character.HumanoidRootPart.Position or Vector3.new()
-                for _, obj in ipairs(workspace:GetDescendants()) do
-                    if obj:IsA("BasePart") and (obj.Name:find("Chest") or (obj.Parent and obj.Parent.Name:find("Chest"))) then
-                        local b = obj:FindFirstChild("AngusChestBill")
-                        if not b then
-                            b = Instance.new("BillboardGui")
-                            b.Name = "AngusChestBill"
-                            b.Size = UDim2.new(0, 110, 0, 24)
-                            b.StudsOffset = Vector3.new(0, 2, 0)
-                            b.AlwaysOnTop = true
-                            b.Adornee = obj
-                            b.Parent = obj
+                local now = tick()
+                if now - lastChestScan > 8 then
+                    lastChestScan = now
+                    local searchRoot = workspace:FindFirstChild("ChestModels") or workspace
+                    for _, obj in ipairs(searchRoot:GetChildren()) do
+                        if obj.Name:find("Chest") then
+                            local part = obj:IsA("BasePart") and obj or obj:FindFirstChildOfClass("BasePart")
+                            if part and not part:FindFirstChild("AngusChestBill") then
+                                local b = Instance.new("BillboardGui")
+                                b.Name = "AngusChestBill"
+                                b.Size = UDim2.new(0, 110, 0, 24)
+                                b.StudsOffset = Vector3.new(0, 2, 0)
+                                b.AlwaysOnTop = true
+                                b.Adornee = part
+                                b.Parent = part
+                                table.insert(trackedChestBills, b)
 
-                            local lbl = Instance.new("TextLabel")
-                            lbl.Name = "Lbl"
-                            lbl.Size = UDim2.new(1, 0, 1, 0)
-                            lbl.BackgroundTransparency = 1
-                            lbl.Font = Enum.Font.GothamBold
-                            lbl.TextSize = 10
-                            lbl.TextColor3 = Color3.fromRGB(16, 185, 129)
-                            lbl.Parent = b
-                        end
-                        local dist = math.floor((obj.Position - myPos).Magnitude)
-                        local lbl = b:FindFirstChild("Lbl")
-                        if lbl then
-                            lbl.Text = "📦 " .. obj.Name .. " [" .. tostring(dist) .. "m]"
+                                local lbl = Instance.new("TextLabel")
+                                lbl.Name = "Lbl"
+                                lbl.Size = UDim2.new(1, 0, 1, 0)
+                                lbl.BackgroundTransparency = 1
+                                lbl.Font = Enum.Font.GothamBold
+                                lbl.TextSize = 10
+                                lbl.TextColor3 = Color3.fromRGB(16, 185, 129)
+                                lbl.Parent = b
+                            end
                         end
                     end
                 end
-            else
-                for _, obj in ipairs(workspace:GetDescendants()) do
-                    local b = obj:FindFirstChild("AngusChestBill")
-                    if b then b:Destroy() end
+
+                for i = #trackedChestBills, 1, -1 do
+                    local b = trackedChestBills[i]
+                    if b and b.Parent and b.Adornee then
+                        local dist = math.floor((b.Adornee.Position - myPos).Magnitude)
+                        local lbl = b:FindFirstChild("Lbl")
+                        if lbl then
+                            lbl.Text = "📦 " .. b.Parent.Name .. " [" .. tostring(dist) .. "m]"
+                        end
+                    else
+                        table.remove(trackedChestBills, i)
+                    end
                 end
             end
         end)
@@ -1862,14 +1900,17 @@ local function buildAngusHubUI()
 
     createToggle(p3, "👤 Player ESP (มองผู้เล่นทะลุกำแพง)", "แสดงกล่องเรืองแสง ชื่อ ระยะห่าง และเลือด", false, function(st)
         playerEspActive = st
+        if not st then clearPlayerESP() end
     end)
 
     createToggle(p3, "🍇 Fruit ESP (มองผลปีศาจในแมพ)", "แสดงชื่อและตำแหน่งผลปีศาจที่ตกหรือเกิดในแมพ", false, function(st)
         fruitEspActive = st
+        if not st then clearFruitESP() end
     end)
 
     createToggle(p3, "📦 Chest ESP (มองกล่องสมบัติ)", "แสดงตำแหน่งกล่องเงินและระยะห่าง", false, function(st)
         chestEspActive = st
+        if not st then clearChestESP() end
     end)
 
     createToggle(p3, "💡 FullBright (ไฟสว่าง ปิดหมอก)", "เปิดแสงสว่างทั่วทั้งแมพ ไม่มีมืดหรือหมอก", false, function(st)
@@ -2127,32 +2168,30 @@ local function hookHermanosUI()
         end
     end
 
-    -- สแกนทั้ง Instance ที่มีอยู่เดิมและสิ่งที่กำลังจะถูกสร้างขึ้นใหม่
-    for _, root in ipairs(targetRoots) do
-        pcall(function()
-            for _, d in ipairs(root:GetDescendants()) do
-                pcall(patchElement, d)
-            end
-            root.DescendantAdded:Connect(function(d)
-                pcall(patchElement, d)
-            end)
+    local function inspectScreenGui(gui)
+        if not gui or not gui:IsA("LayerCollector") then return end
+        if ourGuiNames[gui.Name] or robloxCoreNames[gui.Name] then return end
+
+        for _, d in ipairs(gui:GetDescendants()) do
+            pcall(patchElement, d)
+        end
+
+        gui.DescendantAdded:Connect(function(d)
+            pcall(patchElement, d)
         end)
     end
 
-    -- สแกนเป็นระยะในพื้นหลังเพื่อดักจับ UI ที่ render ช้า
-    task.spawn(function()
-        while true do
-            task.wait(1.5)
-            if getgenv().ANGUSHUB_SESSION_ID ~= CURRENT_SESSION_ID then break end
-            for _, root in ipairs(targetRoots) do
-                pcall(function()
-                    for _, d in ipairs(root:GetDescendants()) do
-                        pcall(patchElement, d)
-                    end
-                end)
+    -- สแกนเฉพาะ ScreenGui ใหม่ที่ถูกสร้างขึ้น (ประหยัด CPU 100% ไม่แลค ไม่กระตุก)
+    for _, root in ipairs(targetRoots) do
+        pcall(function()
+            for _, child in ipairs(root:GetChildren()) do
+                inspectScreenGui(child)
             end
-        end
-    end)
+            root.ChildAdded:Connect(function(child)
+                inspectScreenGui(child)
+            end)
+        end)
+    end
 end
 
 -- ════════════════════════════════════════════════════════════
