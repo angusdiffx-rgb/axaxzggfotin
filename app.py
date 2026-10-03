@@ -1,4 +1,4 @@
-﻿"""
+"""
 Roblox Tracker v4.1 — Realtime Blox Fruits Dashboard + Local Icons
 - Local icon caching (100% reliable, zero broken images)
 - Realtime stats: Beli, Fragments, Bounty, Level (/3000), Race, Fruit, Sea
@@ -23,53 +23,80 @@ os.makedirs(STATIC_ICONS_DIR, exist_ok=True)
 
 # Blacklist of unwanted items per user request:
 # 4) ไม่ต้องแสดง Tool Other
-# 5) Awakening ไม่ต้องแสดง
+# 5) Awakening / ปลุกชีพ ไม่ต้องแสดง
 # 6) Heightened Senses ไม่ต้องแสดง
-BLACKLIST_ITEMS = {"tool", "awakening", "heightened senses", "other"}
+# 7) เสกเจ้าทะเล / Summon Sea Beast ไม่ต้องแสดง
+BLACKLIST_ITEMS = {
+    "tool", "awakening", "heightened senses", "other",
+    "ปลุกชีพ", "เสกเจ้าทะเล", "summon sea beast", "sea beast summoner", "awaken"
+}
 
 
-def categorize_item(name):
-    """Categorize item accurately based on Blox Fruits item names."""
+def categorize_item(name, tooltip=""):
+    """
+    Categorize item accurately based on:
+    1) Blox Fruits in-game ToolTip (Melee, Gun, Sword, Blox Fruit, Wear)
+    2) Specific known item names / keywords with correct precedence
+    """
     n = name.lower().strip()
+    tt = str(tooltip or "").lower().strip()
 
-    # Fruit keywords
-    if any(w in n for w in [
-        "fruit", "gas", "kitsune", "dragon", "dough", "buddha", "leopard", "t-rex", "mammoth",
-        "venom", "shadow", "control", "spirit", "portal", "rumble", "blizzard", "gravity", "pain",
-        "sound", "phoenix", "magma", "ghost", "quake", "light", "love", "spider", "rubber",
-        "barrier", "dark", "sand", "ice", "falcon", "flame", "spike", "smoke", "bomb", "spring",
-        "chop", "spin", "rocket"
-    ]):
-        return "Fruit"
-
-    # Sword keywords
-    if any(w in n for w in [
-        "sword", "blade", "katana", "cutlass", "saber", "trident", "pole", "bisento", "yoru",
-        "shisui", "wando", "saddi", "tushita", "yama", "scythe", "anchor", "buddy", "canvander",
-        "dagger", "cane", "dual", "rengoku"
-    ]):
-        return "Sword"
-
-    # Gun keywords
-    if any(w in n for w in [
-        "rifle", "gun", "pistol", "musket", "cannon", "flintlock", "kabucha", "guitar", "bow",
-        "bazooka", "acidum", "slingshot"
-    ]):
+    # Priority 1: Check in-game ToolTip from Blox Fruits engine
+    if "melee" in tt:
+        return "Fighting Style"
+    if "gun" in tt:
         return "Gun"
+    if "sword" in tt:
+        return "Sword"
+    if "blox fruit" in tt or "fruit" in tt:
+        return "Fruit"
+    if "wear" in tt:
+        return "Accessory"
 
-    # Fighting Style keywords
+    # Priority 2: Fighting Style keywords
     if any(w in n for w in [
-        "sanguine", "godhuman", "talon", "karate", "claw", "superhuman", "combat", "death step",
-        "kung fu", "dark step", "electric", "art"
+        "sanguine", "godhuman", "dragon talon", "electric claw", "sharkman karate", "death step",
+        "superhuman", "water kung fu", "dragon breath", "dark step", "combat", "electro", "karate",
+        "kung fu", "talon", "claw"
     ]):
         return "Fighting Style"
 
-    # Accessory keywords
+    # Priority 3: Guns (check before fruits so dragonstorm / magma blaster / soul guitar are classified as Guns!)
+    if any(w in n for w in [
+        "dragonstorm", "dragon storm", "soul guitar", "skull guitar", "magma blaster", "acidum rifle",
+        "bizarre rifle", "serpent bow", "kabucha", "refined slingshot", "refined musket", "refined flintlock",
+        "slingshot", "musket", "flintlock", "cannon", "bazooka", "rifle", "gun", "pistol", "bow"
+    ]):
+        return "Gun"
+
+    # Priority 4: Swords (check before fruits so dragon trident / dark blade / ice rapier are classified as Swords!)
+    if any(w in n for w in [
+        "koko", "dragon trident", "dragonheart", "dark blade", "dark dagger", "yoru", "true triple katana",
+        "cursed dual katana", "midnight blade", "buddy sword", "spikey trident", "shark anchor", "hallow scythe",
+        "fox lamp", "warden sword", "warden's sword", "dual-headed blade", "dual headed blade", "soul cane",
+        "gravity cane", "iron mace", "shark saw", "triple katana", "dual katana", "katana", "cutlass", "saber",
+        "bisento", "pole (1st form)", "pole (2nd form)", "pole", "shisui", "wando", "saddi", "tushita", "yama",
+        "rengoku", "canvander", "cavander", "jitte", "pipe", "longsword", "trident", "scythe", "anchor",
+        "blade", "sword", "dagger"
+    ]):
+        return "Sword"
+
+    # Priority 5: Accessories
     if any(w in n for w in [
         "cap", "hat", "mask", "glasses", "coat", "scarf", "lei", "crown", "bandana", "ring",
-        "helmet", "cape", "shield", "earrings", "pendant", "ribbon"
+        "helmet", "cape", "shield", "earrings", "pendant", "ribbon", "jaw", "ears", "shades", "helm"
     ]):
         return "Accessory"
+
+    # Priority 6: Fruits (including werewolf, tiger, yeti, gas, kitsune, etc.)
+    if any(w in n for w in [
+        "werewolf", "tiger", "yeti", "gas", "kitsune", "dragon", "dough", "buddha", "leopard",
+        "t-rex", "trex", "mammoth", "venom", "shadow", "control", "spirit", "portal", "rumble",
+        "blizzard", "gravity", "pain", "sound", "phoenix", "magma", "ghost", "quake", "light",
+        "love", "spider", "rubber", "barrier", "dark", "sand", "ice", "falcon", "flame", "spike",
+        "smoke", "bomb", "spring", "chop", "spin", "rocket", "fruit"
+    ]):
+        return "Fruit"
 
     return "Other"
 
@@ -87,10 +114,16 @@ _icon_lock = threading.Lock()
 
 ITEM_NAME_ALIASES = {
     # Swords
+    "koko": "Koko.png",
+    "dragon trident": "Dragon_Trident.png",
+    "dragonheart": "Dragonheart.png",
+    "cavander": "Canvander.png",
+    "canvander": "Canvander.png",
     "midnight blade": "Midnight_Blade.png",
     "true triple katana": "True_Triple_Katana.png",
     "cursed dual katana": "Cursed_Dual_Katana.png",
     "dark blade": "Dark_Blade.png",
+    "dark dagger": "Dark_Dagger.png",
     "yoru": "Dark_Blade.png",
     "buddy sword": "Buddy_Sword.png",
     "spikey trident": "Spikey_Trident.png",
@@ -102,11 +135,27 @@ ITEM_NAME_ALIASES = {
     "dual headed blade": "Dual-Headed_Blade.png",
     "dual-headed blade": "Dual-Headed_Blade.png",
     "soul cane": "Soul_Cane.png",
+    "gravity cane": "Gravity_Cane.png",
     "iron mace": "Iron_Mace.png",
     "shark saw": "Shark_Saw.png",
     "triple katana": "Triple_Katana.png",
     "dual katana": "Dual_Katana.png",
+    "katana": "Katana.png",
+    "cutlass": "Cutlass.png",
+    "saber": "Saber.png",
+    "bisento": "Bisento.png",
+    "shisui": "Shisui.png",
+    "saddi": "Saddi.png",
+    "wando": "Wando.png",
+    "tushita": "Tushita.png",
+    "yama": "Yama.png",
+    "rengoku": "Rengoku.png",
+    "jitte": "Jitte.png",
+    "pipe": "Pipe.png",
+    "longsword": "Longsword.png",
     # Guns
+    "dragonstorm": "Dragonstorm.png",
+    "dragon storm": "Dragonstorm.png",
     "skull guitar": "Soul_Guitar.png",
     "soul guitar": "Soul_Guitar.png",
     "acidum rifle": "Acidum_Rifle.png",
@@ -116,6 +165,24 @@ ITEM_NAME_ALIASES = {
     "refined slingshot": "Refined_Slingshot.png",
     "refined musket": "Refined_Musket.png",
     "refined flintlock": "Refined_Flintlock.png",
+    "slingshot": "Slingshot.png",
+    "musket": "Musket.png",
+    "flintlock": "Flintlock.png",
+    "cannon": "Cannon.png",
+    "bazooka": "Bazooka.png",
+    "kabucha": "Kabucha.png",
+    # Fruits
+    "werewolf": "Werewolf_Fruit.png",
+    "werewolf fruit": "Werewolf_Fruit.png",
+    "werewolf (tiger)": "Werewolf_Fruit.png",
+    "werewolf (tiger)-werewolf (tiger)": "Werewolf_Fruit.png",
+    "tiger": "Werewolf_Fruit.png",
+    "tiger fruit": "Werewolf_Fruit.png",
+    "tiger-tiger": "Werewolf_Fruit.png",
+    "yeti": "Yeti_Fruit.png",
+    "gas": "Gas_Fruit.png",
+    "t-rex": "T-Rex_Fruit.png",
+    "trex": "T-Rex_Fruit.png",
     # Accessories
     "pale scarf": "Pale_Scarf.png",
     "dark coat": "Dark_Coat.png",
@@ -324,7 +391,43 @@ def load_saved_state():
                 with data_lock:
                     tracked_players = saved.get("players", {})
                     player_inventories = saved.get("inventories", {})
-            print(f"[State] Successfully loaded {len(tracked_players)} players from disk.")
+
+                    # Refresh and re-categorize existing items in case categories/icons were updated
+                    for uid, inv_data in player_inventories.items():
+                        raw_items = inv_data.get("items") or inv_data.get("item_list") or []
+                        refreshed = []
+                        seen = set()
+                        for it in raw_items:
+                            n = it.get("name", "").strip()
+                            if not n or n.lower() in BLACKLIST_ITEMS or n.lower() in seen:
+                                continue
+                            seen.add(n.lower())
+                            tt = it.get("tooltip", "")
+                            cat = categorize_item(n, tooltip=tt)
+                            if cat == "Other":
+                                continue
+                            it["category"] = cat
+                            it["image"] = resolve_bloxfruits_image(n)
+                            refreshed.append(it)
+                        inv_data["items"] = refreshed
+                        inv_data["item_list"] = refreshed
+                        inv_data["total"] = len(refreshed)
+                        cats = {}
+                        for it in refreshed:
+                            c = it["category"]
+                            if c not in cats:
+                                cats[c] = []
+                            cats[c].append(it)
+                        inv_data["categorized"] = cats
+
+                        # Clean fruit name if duplicated
+                        df = inv_data.get("devil_fruit", "")
+                        if df and "-" in df:
+                            p = df.split("-")
+                            if len(p) == 2 and p[0].strip() == p[1].strip():
+                                inv_data["devil_fruit"] = p[0].strip()
+
+            print(f"[State] Successfully loaded {len(tracked_players)} players and refreshed inventories from disk.")
         except Exception as e:
             print(f"[State] Error loading state: {e}")
 
@@ -510,20 +613,30 @@ def receive_inventory():
     uid = str(d["user_id"])
     items = d.get("inventory", [])
 
-    # Process items — filter out blacklisted items & resolve local images
+    # Process items — filter out blacklisted items, deduplicate & resolve local images
     processed = []
+    seen_names = set()
     for item in items:
         item_name = item.get("name", "").strip()
+        if not item_name:
+            continue
         name_lower = item_name.lower()
 
-        # 4, 5, 6: Skip Tool, Awakening, Heightened Senses, and Other
+        # Skip blacklisted items (tool, awakening/ปลุกชีพ, heightened senses, เสกเจ้าทะเล, etc.)
         if name_lower in BLACKLIST_ITEMS:
             continue
 
-        # Smart categorize
-        cat = categorize_item(name_lower)
+        tooltip = str(item.get("tooltip") or item.get("toolTip") or "").strip()
+
+        # Deduplicate identical items
+        if name_lower in seen_names:
+            continue
+        seen_names.add(name_lower)
+
+        # Smart categorize using native Blox Fruits tooltip + name rules
+        cat = categorize_item(name_lower, tooltip=tooltip)
         if cat == "Other":
-            # Per user request: 4 ไม่ต้องแสดง Tool Other
+            # Per user request: ไม่ต้องแสดง Tool Other
             continue
 
         img_url = resolve_bloxfruits_image(item_name)
@@ -531,10 +644,10 @@ def receive_inventory():
         processed.append({
             "name": item_name,
             "category": cat,
-            "equipped": item.get("equipped", False),
+            "equipped": bool(item.get("equipped", False)),
             "source": item.get("source", "Backpack"),
             "image": img_url,
-            "tooltip": item.get("toolTip", ""),
+            "tooltip": tooltip,
         })
 
     # Group by category
@@ -566,6 +679,13 @@ def receive_inventory():
     max_level = 3000
     race = d.get("race", "Human")
     devil_fruit = d.get("devil_fruit", "None")
+
+    # Clean up fruit display (e.g. "Werewolf (Tiger)-Werewolf (Tiger)" -> "Werewolf (Tiger)")
+    if devil_fruit and "-" in devil_fruit:
+        parts = devil_fruit.split("-")
+        if len(parts) == 2 and parts[0].strip() == parts[1].strip():
+            devil_fruit = parts[0].strip()
+
     sea = d.get("sea", "Blox Fruits")
     health = d.get("health", None)
     energy = d.get("energy", None)

@@ -1299,6 +1299,26 @@ async function pollLiveData() {
                     }
                 }
             }
+
+            // Race & Devil Fruit
+            if (inv.race) {
+                const raceEl = document.getElementById(`race-${uid}`);
+                if (raceEl) raceEl.textContent = inv.race;
+            }
+            if (inv.devil_fruit) {
+                const fruitEl = document.getElementById(`fruit-${uid}`);
+                if (fruitEl) fruitEl.textContent = inv.devil_fruit;
+            }
+
+            // If item total count changed, trigger refresh to render latest cards
+            const currentCards = document.querySelectorAll(`#grid-${uid} .item-card`);
+            if (inv.total !== undefined && currentCards.length > 0 && inv.total !== currentCards.length) {
+                needsRefresh = true;
+            }
+        }
+
+        if (needsRefresh) {
+            setTimeout(() => window.location.reload(), 1000);
         }
     } catch(e) {}
 }

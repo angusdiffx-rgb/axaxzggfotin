@@ -127,30 +127,80 @@ local function getPlayerBounty()
     return 0, "None"
 end
 
+local lastFullInvCheck = 0
+local cachedFullInv = {}
+
+local function getFullInventory()
+    local now = tick()
+    if now - lastFullInvCheck > 25 then
+        lastFullInvCheck = now
+        pcall(function()
+            local remotes = game:GetService("ReplicatedStorage"):FindFirstChild("Remotes")
+            local commF = remotes and remotes:FindFirstChild("CommF_")
+            if commF then
+                local res = commF:InvokeServer("getInventory")
+                if type(res) == "table" and #res > 0 then
+                    cachedFullInv = res
+                end
+            end
+        end)
+    end
+    return cachedFullInv
+end
+
 local function syncData()
     local inv = {}
+    local seen = {}
 
-    -- 1) Backpack
-    for _, item in pairs(LP.Backpack:GetChildren()) do
-        if item:IsA("Tool") then
-            local i = scanItem(item)
-            i.equipped = false
-            i.source = "Backpack"
-            table.insert(inv, i)
-        end
-    end
-
-    -- 2) Character (Equipped)
-    if LP.Character then
-        for _, item in pairs(LP.Character:GetChildren()) do
-            if item:IsA("Tool") then
+    local function addTool(item, isEquipped, source)
+        if item and item:IsA("Tool") then
+            local name = item.Name
+            if not seen[name] then
+                seen[name] = true
                 local i = scanItem(item)
-                i.equipped = true
-                i.source = "Equipped"
+                i.equipped = isEquipped
+                i.source = source
                 table.insert(inv, i)
             end
         end
     end
+
+    -- 1) Character (Equipped Tools in player's hands)
+    if LP.Character then
+        for _, item in pairs(LP.Character:GetChildren()) do
+            addTool(item, true, "Equipped")
+        end
+    end
+
+    -- 2) Backpack (Hotbar & Carried Tools)
+    if LP:FindFirstChild("Backpack") then
+        for _, item in pairs(LP.Backpack:GetChildren()) do
+            addTool(item, false, "Backpack")
+        end
+    end
+
+    -- 3) Blox Fruits In-Game Storage Inventory (CommF_ getInventory)
+    pcall(function()
+        local fullList = getFullInventory()
+        if type(fullList) == "table" then
+            for _, it in pairs(fullList) do
+                local itName = it.Name or it.name
+                if itName and not seen[itName] then
+                    seen[itName] = true
+                    table.insert(inv, {
+                        name = itName,
+                        className = "Tool",
+                        textureId = "",
+                        assetId = nil,
+                        toolTip = it.Type or it.type or "",
+                        category = "Other",
+                        equipped = false,
+                        source = "Inventory"
+                    })
+                end
+            end
+        end
+    end)
 
     -- 3) ดึงข้อมูล Live Stats
     local data = LP:FindFirstChild("Data")
