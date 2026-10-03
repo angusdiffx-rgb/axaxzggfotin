@@ -1675,111 +1675,83 @@ function showToast(msg, type = 'ok') {
         }
     }, { passive: true });
 
+    // ════════════════════════════════════════════════════════════
+    //  🐉 AUTHENTIC MYTHICAL DRAGON ENGINE (VECTOR PROCEDURAL IK)
+    //  Adapted from iconic vector anatomy with red electric theme
+    // ════════════════════════════════════════════════════════════
+    const DRAGON_PATHS = {
+        headWhite: new Path2D("M-28.9,-1.1L-28.55 -1.95Q-28.1 -3.1 -27.25 -2.95L-26.7 -2.95Q-27.7 -1.65 -28.9 -1.1M-18.35,-1.8Q-15.1 -10.3 -9.6 -6.05Q-15.1 -6.2 -18.35 -1.8M-18.35,1.1Q-15.1 5.45 -9.6 5.35Q-15.1 9.55 -18.35 1.1M-26.7,2.2L-27.25 2.25Q-28.1 2.4 -28.55 1.2L-28.9 0.35Q-27.7 0.9 -26.7 2.2"),
+        headDark: new Path2D("M-21.05,-8.25Q-13.6 -15.95 -1.3 -12.1Q-7.85 -8.5 -5.85 -4.35Q-2.3 -4.85 10.5 0.15Q0 4.35 -5.85 3.65Q-7.85 7.75 -1.25 12.45Q-13.6 15.2 -21.05 7.5Q-29.55 4.05 -30.2 -0.35Q-29.55 -4.8 -21.05 -8.25M-26.7,-2.95L-27.25 -2.95Q-28.1 -3.1 -28.55 -1.95L-28.9 -1.1Q-27.7 -1.65 -26.7 -2.95M-9.6,-6.05Q-15.1 -10.3 -18.35 -1.8Q-15.1 -6.2 -9.6 -6.05M-9.6,5.35Q-15.1 5.45 -18.35 1.1Q-15.1 9.55 -9.6 5.35M-28.9,0.35L-28.55 1.2Q-28.1 2.4 -27.25 2.25L-26.7 2.2Q-27.7 0.9 -28.9 0.35"),
+        fin: new Path2D("M29.75,-36.85Q-17.75 -61.45 -42.05 -40.95L-45.35 -38.35L-53.7 -41.15L-51.15 -44.85Q-34.85 -68.4 21 -57.8Q-32.2 -72.1 -50.25 -50Q-53.85 -45.65 -56.05 -41.95L-64.7 -43.35L-60.6 -50.3Q-45.9 -75.55 5.1 -79.35Q-2.2 -79.8 -9.45 -79.15Q-16.2 -78.55 -22.85 -77.15Q-29.85 -75.65 -36.5 -73Q-43.05 -70.4 -48.8 -66.85Q-54.55 -63.35 -56.8 -60.3L-60.5 -55.4Q-62.95 -52.1 -67 -43.55L-70.55 -43.55L-76.35 -42.95Q-74.6 -49.1 -71.85 -54.85Q-68.9 -61.25 -64.8 -67.1Q-60.8 -73 -55.45 -77.55Q-49.9 -82.35 -43.65 -85.85L-30.6 -92.7Q-24.05 -95.95 -17 -98.25Q-63.75 -86.35 -73.65 -57.1Q-75.75 -50.75 -77.45 -42.75Q-82.9 -41.75 -88 -39.65Q-87.65 -46.65 -86.3 -53.05Q-79.8 -89.8 -36.65 -117.2Q-80.65 -94.5 -87.55 -59.55Q-88.65 -54.15 -88.95 -39.4L-89.8 -38.85L-92.7 -37.6Q-93.75 -44.35 -94.1 -51.15Q-94.4 -58.2 -93.25 -65.1Q-92.15 -72.5 -90.05 -79.65Q-88.05 -86.55 -85 -93Q-82.1 -99.3 -78.45 -105.15Q-74.6 -111.35 -70.25 -117.25Q-65.95 -123.1 -61.1 -128.55Q-70.3 -119.35 -77.9 -108.7Q-86 -97.3 -90.8 -84.05Q-95.8 -70.5 -96 -56.15Q-96.1 -46 -94.05 -36.05L-93.25 -31.55Q-93.5 -35.65 -92.35 -36Q-79.85 -42 -66.6 -40.45Q-52.45 -38.85 -39.2 -33.25Q-28.3 -29.9 -21.25 -24.15Q-17.8 -23.3 -8.6 -15.6Q-12.1 -20.75 -16.75 -24.5Q-24.55 -30.7 -34.25 -34.05L-42.55 -37Q-38.9 -41.25 -31.5 -43.25Q-24.05 -45.3 -16.2 -46.3Q-8.35 -47.35 -1 -46Q5.95 -44.75 12.75 -42.85Q19.85 -40.9 29.75 -36.85M-92.45,-27.35L-94.95 -36.25Q-109.7 -105 -27.95 -154.65Q-98.65 -103.8 -91.75 -39.4L-89.95 -40.2Q-92.2 -105.25 -5.6 -130.9Q-78.8 -99.95 -87.45 -40.9Q-83.15 -42.95 -78.45 -43.95Q-70 -101.3 17.65 -103.8Q-56.9 -93.4 -74.5 -44.55L-67.4 -45.45Q-49.1 -94.95 39.25 -75.65Q-36.75 -84.35 -62.25 -44.25L-57.3 -43.6Q-31.65 -86.5 56.15 -46.05Q-20.3 -73.35 -51.35 -41.7L-45.95 -39.75Q-17.85 -71.35 51.85 -24.8Q-8.7 -56.4 -39.75 -37.05Q-28.15 -34.05 -14.25 -24.45Q-8.6 -19.85 -5.8 -16.95Q5.95 -2.4 20 0Q5.95 2.4 -5.8 16.95Q-8.6 19.85 -14.25 24.45Q-28.15 34.05 -39.75 37.05Q-8.7 56.4 51.85 24.8Q-17.85 71.35 -45.95 39.75L-51.35 41.7Q-20.3 73.35 56.15 46.1Q-31.65 86.5 -57.3 43.65L-62.25 44.3Q-36.75 84.35 39.25 75.7Q-49.1 94.95 -67.4 45.5L-74.5 44.6Q-56.9 93.4 17.65 103.85Q-70 101.3 -78.45 43.95Q-83.15 42.95 -87.45 40.9Q-78.8 99.95 -5.6 130.9Q-92.2 105.25 -89.95 40.25L-91.75 39.4Q-98.65 103.8 -27.95 154.65Q-109.7 105 -94.95 36.3L-92.45 27.35Q-93.05 33.9 -92.05 34.75Q-91.1 35.55 -88.95 36.7L-87.95 37Q-83.7 38.25 -79.05 38.8L-77.25 38.95Q-72.55 39.3 -67.5 38.85L-65.45 38.65Q-44.4 36.05 -17.8 19.6Q-9.9 12.8 -15.15 4.4Q-18.15 3.15 -19 0Q-18.15 -3.15 -15.15 -4.4Q-9.9 -12.8 -17.8 -19.6L-17.8 -19.55Q-44.4 -36.05 -65.45 -38.6L-67.5 -38.8Q-72.55 -39.3 -77.25 -38.95L-79.05 -38.75Q-83.7 -38.25 -87.95 -36.95L-88.95 -36.65Q-91.1 -35.55 -92.05 -34.7Q-93.05 -33.9 -92.45 -27.35M-8.6,15.6Q-17.8 23.3 -21.25 24.2Q-28.3 29.9 -39.2 33.3Q-52.45 38.85 -66.6 40.5Q-79.85 42 -92.35 36Q-93.5 35.65 -93.25 31.55L-94.05 36.1Q-96.1 46.05 -96 56.15Q-95.8 70.5 -90.8 84.1Q-86 97.3 -77.9 108.75Q-70.3 119.35 -61.1 128.6Q-65.95 123.1 -70.25 117.25Q-74.6 111.35 -78.45 105.15Q-82.1 99.3 -85 93Q-88.05 86.55 -90.05 79.7Q-92.15 72.5 -93.25 65.1Q-94.4 58.2 -94.1 51.2Q-93.75 44.35 -92.7 37.6L-89.8 38.9L-88.95 39.45Q-88.65 54.15 -87.55 59.55Q-80.65 94.5 -36.65 117.25Q-79.8 89.8 -86.3 53.1Q-87.65 46.65 -88 39.65Q-82.9 41.75 -77.45 42.75Q-75.75 50.75 -73.65 57.15Q-63.75 86.35 -17 98.3Q-24.05 95.95 -30.6 92.75L-43.65 85.9Q-49.9 82.35 -55.45 77.6Q-60.8 73 -64.8 67.15Q-68.9 61.25 -71.85 54.85Q-74.6 49.1 -76.35 42.95L-70.55 43.6L-67 43.6Q-62.95 52.1 -60.5 55.4L-56.8 60.35Q-54.55 63.35 -48.8 66.9Q-43.05 70.4 -36.5 73Q-29.85 75.65 -22.85 77.15Q-16.2 78.55 -9.45 79.15Q-2.2 79.8 5.1 79.35Q-45.9 75.55 -60.6 50.3L-64.7 43.4L-56.05 41.95Q-53.85 45.65 -50.25 50Q-32.2 72.1 21 57.85Q-34.85 68.4 -51.15 44.85L-53.7 41.2L-45.35 38.35L-42.05 40.95Q-17.75 61.45 29.75 36.85Q19.85 40.9 12.75 42.9Q5.95 44.75 -1 46Q-8.35 47.35 -16.2 46.35Q-24.05 45.3 -31.5 43.3Q-38.9 41.25 -42.55 37.05L-34.25 34.05Q-24.55 30.7 -16.75 24.5Q-12.1 20.75 -8.6 15.6"),
+        spineUpper: new Path2D("M-18.8,0Q-17.85 -5.7 -12.3 -9.6Q-11.2 -5.35 -6.5 -8.25L-6.45 -8.2L-6.2 -8.3Q1.25 -16.25 6.65 -12.4Q0.05 -12.55 0 -5.95Q2.7 -2.4 7.75 -4.1Q18 -1.45 18.8 0L-18.8 0"),
+        spineLower: new Path2D("M18.8,0Q18 1.45 7.75 4.1Q2.7 2.4 0 5.95Q0.05 12.55 6.65 12.4Q1.25 16.25 -6.2 8.35Q-6.35 8.25 -6.45 8.25L-6.5 8.25Q-11.2 5.35 -12.3 9.6Q-17.85 5.7 -18.8 0L18.8 0")
+    };
+
     class LightningDragon {
         constructor() {
             this.isMobile = window.innerWidth < 768;
-            this.numSegments = this.isMobile ? 40 : 50;
-            this.segLength = this.isMobile ? 9 : 13;
-            this.segments = [];
-            this.x = width * 0.5;
-            this.y = height * 0.35;
-            this.angle = 0;
-            this.speed = this.isMobile ? 3.2 : 3.8;
-            this.time = Math.random() * 100;
-            this.whiskerWave = 0;
-
-            for (let i = 0; i < this.numSegments; i++) {
-                this.segments.push({
-                    x: this.x - i * this.segLength,
-                    y: this.y,
-                    angle: 0,
-                    radius: this.calcRadius(i)
-                });
+            this.N = 40;
+            this.elems = [];
+            for (let i = 0; i < this.N; i++) {
+                this.elems.push({ x: width * 0.5, y: height * 0.35, a: 0 });
             }
-
+            this.pointer = { x: width * 0.5, y: height * 0.4 };
+            this.rad = 0;
+            this.frm = Math.random() * 50;
+            this.whiskerWave = 0;
             this.sparks = [];
             this.arcs = [];
         }
 
-        calcRadius(i) {
-            const scale = this.isMobile ? 0.75 : 1.0;
-            if (i < 4) return (10 + i * 2.5) * scale;
-            if (i < 16) return (20 - (i - 4) * 0.4) * scale;
-            if (i < 36) return (15 - (i - 16) * 0.3) * scale;
-            return Math.max(3 * scale, (9 - (i - 36) * 0.5) * scale);
-        }
-
         update() {
-            this.time += 0.016;
-            this.whiskerWave += 0.16;
-
-            let targetX, targetY;
-            const isMouseFresh = mouse.active && (Date.now() - mouse.lastActive < 3500);
+            this.isMobile = window.innerWidth < 768;
+            const isMouseFresh = mouse.active && (Date.now() - mouse.lastActive < 4000);
 
             if (isMouseFresh) {
-                // Interactive orbit around user cursor / touch
-                const orbitAngle = this.time * 2.2;
-                const orbitDist = this.isMobile ? 80 : 130;
-                targetX = mouse.x + Math.cos(orbitAngle) * orbitDist;
-                targetY = mouse.y + Math.sin(orbitAngle) * (orbitDist * 0.65);
-            } else {
-                // Majestic 3D Lissajous flight path sweeping across the webpage
-                targetX = width * 0.5 + Math.sin(this.time * 0.75) * (width * 0.40) + Math.cos(this.time * 0.35) * (width * 0.12);
-                targetY = height * 0.48 + Math.cos(this.time * 1.05) * (height * 0.36) + Math.sin(this.time * 0.45) * (height * 0.14);
+                this.pointer.x = mouse.x;
+                this.pointer.y = mouse.y;
+                this.rad = 0;
             }
 
-            const dx = targetX - this.x;
-            const dy = targetY - this.y;
-            const targetAngle = Math.atan2(dy, dx);
+            const radm = Math.min(width, height) * 0.38;
+            const ax = (Math.cos(3 * this.frm) * this.rad * width) / Math.max(1, height);
+            const ay = (Math.sin(4 * this.frm) * this.rad * height) / Math.max(1, width);
 
-            // Smooth angular rotation
-            let diff = targetAngle - this.angle;
-            while (diff < -Math.PI) diff += Math.PI * 2;
-            while (diff > Math.PI) diff -= Math.PI * 2;
-            this.angle += diff * (isMouseFresh ? 0.065 : 0.042);
+            const e0 = this.elems[0];
+            e0.x += (ax + this.pointer.x - e0.x) / 10;
+            e0.y += (ay + this.pointer.y - e0.y) / 10;
 
-            // Natural swimming undulation
-            const undulation = Math.sin(this.time * 4.2) * 0.11;
-            const moveAngle = this.angle + undulation;
-
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            const baseSpeed = this.isMobile ? 3.0 : 3.6;
-            this.speed = baseSpeed + Math.min(2.4, dist * 0.0055);
-
-            this.x += Math.cos(moveAngle) * this.speed;
-            this.y += Math.sin(moveAngle) * this.speed;
-
-            // Head segment
-            this.segments[0].x = this.x;
-            this.segments[0].y = this.y;
-            this.segments[0].angle = moveAngle;
-
-            // Follow-the-leader kinematics for body
-            for (let i = 1; i < this.numSegments; i++) {
-                const prev = this.segments[i - 1];
-                const curr = this.segments[i];
-
-                const segDx = curr.x - prev.x;
-                const segDy = curr.y - prev.y;
-                const segAngle = Math.atan2(segDy, segDx);
-
-                curr.x = prev.x + Math.cos(segAngle) * this.segLength;
-                curr.y = prev.y + Math.sin(segAngle) * this.segLength;
-                curr.angle = segAngle;
+            for (let i = 1; i < this.N; i++) {
+                const e = this.elems[i];
+                const ep = this.elems[i - 1];
+                const a = Math.atan2(e.y - ep.y, e.x - ep.x);
+                e.a = a;
+                e.x += (ep.x - e.x + (Math.cos(a) * (100 - i)) / 5) / 4;
+                e.y += (ep.y - e.y + (Math.sin(a) * (100 - i)) / 5) / 4;
             }
 
-            // Spawn electric lightning sparks from dragon body
-            if (Math.random() < 0.5) {
-                const randSeg = this.segments[Math.floor(Math.random() * (this.numSegments - 6))];
+            if (this.rad < radm) this.rad++;
+            this.frm += 0.003;
+            if (this.rad > 60 && !isMouseFresh) {
+                this.pointer.x += (width / 2 - this.pointer.x) * 0.04;
+                this.pointer.y += (height / 2 - this.pointer.y) * 0.04;
+            }
+
+            this.whiskerWave += 0.16;
+
+            // Spawn electric sparks from wings and horns
+            if (Math.random() < 0.6) {
+                const wingIdx = Math.random() < 0.5 ? 8 : 14;
+                const seg = this.elems[wingIdx] || this.elems[1];
                 this.sparks.push({
-                    x: randSeg.x + (Math.random() - 0.5) * 14,
-                    y: randSeg.y + (Math.random() - 0.5) * 14,
-                    vx: (Math.random() - 0.5) * 2.2,
-                    vy: (Math.random() - 0.5) * 2.2,
+                    x: seg.x + (Math.random() - 0.5) * 20,
+                    y: seg.y + (Math.random() - 0.5) * 20,
+                    vx: (Math.random() - 0.5) * 2.4,
+                    vy: (Math.random() - 0.5) * 2.4,
                     life: 1.0,
                     decay: 0.035 + Math.random() * 0.035,
                     color: Math.random() < 0.6 ? '#ef4444' : '#38bdf8',
-                    size: (1 + Math.random() * 2) * (this.isMobile ? 0.8 : 1)
+                    size: (1 + Math.random() * 2.2) * (this.isMobile ? 0.75 : 1)
                 });
             }
 
@@ -1791,16 +1763,16 @@ function showToast(msg, type = 'ok') {
                 if (s.life <= 0) this.sparks.splice(i, 1);
             }
 
-            // Random lightning arcs between coils of dragon body
-            if (Math.random() < 0.25) {
-                const startIdx = Math.floor(Math.random() * (this.numSegments - 10));
-                const endIdx = startIdx + 3 + Math.floor(Math.random() * 5);
-                if (endIdx < this.numSegments) {
+            // Occasional lightning arcs between wings or body coils
+            if (Math.random() < 0.18) {
+                const s1 = this.elems[8];
+                const s2 = this.elems[14];
+                if (s1 && s2) {
                     this.arcs.push({
-                        p1: this.segments[startIdx],
-                        p2: this.segments[endIdx],
+                        p1: s1,
+                        p2: s2,
                         life: 1.0,
-                        decay: 0.15,
+                        decay: 0.16,
                         color: Math.random() < 0.5 ? '#ef4444' : '#38bdf8'
                     });
                 }
@@ -1813,7 +1785,7 @@ function showToast(msg, type = 'ok') {
         }
 
         draw(ctx) {
-            const scale = this.isMobile ? 0.75 : 1.0;
+            const baseScale = this.isMobile ? 0.65 : 0.88;
 
             // 1. Draw Sparks
             for (const s of this.sparks) {
@@ -1828,7 +1800,7 @@ function showToast(msg, type = 'ok') {
                 ctx.restore();
             }
 
-            // 2. Draw Lightning Arcs leaping between coils & horns
+            // 2. Draw Lightning Arcs
             for (const arc of this.arcs) {
                 ctx.save();
                 ctx.strokeStyle = arc.color;
@@ -1839,8 +1811,8 @@ function showToast(msg, type = 'ok') {
                 ctx.beginPath();
                 const sx = arc.p1.x, sy = arc.p1.y;
                 const ex = arc.p2.x, ey = arc.p2.y;
-                const midX = (sx + ex) / 2 + (Math.random() - 0.5) * 22;
-                const midY = (sy + ey) / 2 + (Math.random() - 0.5) * 22;
+                const midX = (sx + ex) / 2 + (Math.random() - 0.5) * 25;
+                const midY = (sy + ey) / 2 + (Math.random() - 0.5) * 25;
                 ctx.moveTo(sx, sy);
                 ctx.lineTo(midX, midY);
                 ctx.lineTo(ex, ey);
@@ -1848,256 +1820,198 @@ function showToast(msg, type = 'ok') {
                 ctx.restore();
             }
 
-            // 3. Pre-calculate smooth serpentine ribbon tangents and left/right normals
-            const pts = [];
-            for (let i = 0; i < this.numSegments; i++) {
-                const seg = this.segments[i];
-                let angle;
-                if (i === 0) {
-                    angle = seg.angle;
-                } else if (i === this.numSegments - 1) {
-                    angle = this.segments[i - 1].angle;
-                } else {
-                    const pPrev = this.segments[i - 1];
-                    const pNext = this.segments[i + 1];
-                    angle = Math.atan2(pPrev.y - pNext.y, pPrev.x - pNext.x);
-                }
-                const nx = -Math.sin(angle);
-                const ny = Math.cos(angle);
-                const r = seg.radius;
-                pts.push({
-                    x: seg.x, y: seg.y,
-                    angle: angle,
-                    r: r,
-                    lx: seg.x + nx * r,
-                    ly: seg.y + ny * r,
-                    rx: seg.x - nx * r,
-                    ry: seg.y - ny * r,
-                    // Underbelly edge
-                    bx: seg.x - nx * (r * 0.45),
-                    by: seg.y - ny * (r * 0.45)
-                });
-            }
+            // 3. Draw Back Legs (behind body)
+            this.drawClaw(ctx, this.elems[6], -1, baseScale, 'front');
+            this.drawClaw(ctx, this.elems[18], -1, baseScale, 'hind');
 
-            // 4. Draw Flowing Fiery Dorsal Mane (แผงคอมังกร & เปลวเพลิงสายฟ้าหลัง)
-            ctx.save();
-            ctx.shadowBlur = 16;
-            ctx.shadowColor = '#ef4444';
-            for (let i = 2; i < this.numSegments - 3; i += 2) {
-                const p = pts[i];
-                const wave = Math.sin(this.time * 8 + i * 0.45);
-                const maneLen = (13 + wave * 6 + (this.numSegments - i) * 0.28) * scale;
-                const maneAngle = p.angle + Math.PI + wave * 0.25;
-                const maneColor = (i % 6 === 0) ? '#38bdf8' : (i % 4 === 0 ? '#fbbf24' : '#ef4444');
+            // 4. Draw Segments from Tail Tip (N-1) down to Head (1)
+            for (let i = this.N - 1; i >= 1; i--) {
+                const e = this.elems[i];
+                const ep = this.elems[i - 1];
+                const midX = (ep.x + e.x) / 2;
+                const midY = (ep.y + e.y) / 2;
+                const a = e.a;
+                const s = ((162 + 4 * (1 - i)) / 50) * baseScale;
 
                 ctx.save();
-                ctx.translate(p.lx, p.ly);
-                ctx.rotate(maneAngle);
-                ctx.fillStyle = maneColor;
-                ctx.shadowColor = maneColor;
+                ctx.translate(midX, midY);
+                ctx.rotate(a);
+                ctx.scale(s, s);
+
+                if (i === this.N - 1) {
+                    // Magnificent Tail Fan Plume (พู่หางเพลิงสายฟ้า)
+                    this.drawTailPlumes(ctx);
+                }
+
+                if (i === 1) {
+                    // 🐉 MAJESTIC HEAD (เศียรมังกร)
+                    this.drawHead(ctx);
+                } else if (i === 8 || i === 14) {
+                    // 🪽 DRAGON WINGS / FINS (ปีกและครีบมังกรสะบัดพลิ้ว)
+                    this.drawWings(ctx, i);
+                } else {
+                    // ⚡ SPINE VERTEBRAE & GOLDEN UNDERBELLY (กระดูกสันหลัง & เกล็ดท้องทองคำ)
+                    this.drawSpine(ctx);
+                }
+
+                ctx.restore();
+            }
+
+            // 5. Draw Fore Legs (in front of body)
+            this.drawClaw(ctx, this.elems[6], 1, baseScale, 'front');
+            this.drawClaw(ctx, this.elems[18], 1, baseScale, 'hind');
+        }
+
+        drawHead(ctx) {
+            // Dark Crimson Dragon Skull
+            ctx.save();
+            ctx.shadowColor = 'rgba(239, 68, 68, 0.95)';
+            ctx.shadowBlur = 18;
+            const headGrad = ctx.createLinearGradient(-30, 0, 12, 0);
+            headGrad.addColorStop(0, '#fca5a5');
+            headGrad.addColorStop(0.3, '#ef4444');
+            headGrad.addColorStop(0.7, '#991b1b');
+            headGrad.addColorStop(1, '#450a0a');
+            ctx.fillStyle = headGrad;
+            ctx.fill(DRAGON_PATHS.headDark);
+
+            // Dragon Horns & Ivory Fangs
+            const hornGrad = ctx.createLinearGradient(-30, 0, 10, 0);
+            hornGrad.addColorStop(0, '#ffffff');
+            hornGrad.addColorStop(0.4, '#fef08a');
+            hornGrad.addColorStop(1, '#fbbf24');
+            ctx.fillStyle = hornGrad;
+            ctx.shadowColor = '#fbbf24';
+            ctx.shadowBlur = 12;
+            ctx.fill(DRAGON_PATHS.headWhite);
+
+            // Horn & Brow Lightning Stroke
+            ctx.strokeStyle = 'rgba(251, 191, 36, 0.7)';
+            ctx.lineWidth = 0.8;
+            ctx.stroke(DRAGON_PATHS.headDark);
+
+            // Piercing Glowing Eyes with Slit Reptile Pupils
+            for (const side of [-1, 1]) {
+                const ey = side * 4.8;
+                ctx.fillStyle = '#fef08a';
+                ctx.shadowColor = '#fef08a';
+                ctx.shadowBlur = 12;
                 ctx.beginPath();
-                ctx.moveTo(0, 0);
-                ctx.quadraticCurveTo(maneLen * 0.5, -4 * scale, maneLen, 0);
-                ctx.quadraticCurveTo(maneLen * 0.5, 4 * scale, 0, 0);
+                ctx.ellipse(-16, ey, 2.5, 1.4, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Slit Pupil
+                ctx.fillStyle = '#0f172a';
+                ctx.shadowBlur = 0;
+                ctx.beginPath();
+                ctx.ellipse(-15.8, ey, 0.7, 1.3, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Long Undulating Dragon Whiskers (หนวดมังกรทอง/ฟ้าพริ้วสลวย)
+            for (const side of [-1, 1]) {
+                ctx.save();
+                ctx.strokeStyle = '#38bdf8';
+                ctx.shadowColor = '#38bdf8';
+                ctx.shadowBlur = 10;
+                ctx.lineWidth = 1.3;
+                ctx.lineCap = 'round';
+
+                const wWave1 = Math.sin(this.whiskerWave + side * 1.5) * 8;
+                const wWave2 = Math.cos(this.whiskerWave * 0.85 + side) * 12;
+                const wWave3 = Math.sin(this.whiskerWave * 1.25 - side) * 14;
+
+                ctx.beginPath();
+                ctx.moveTo(-28, side * 1.5);
+                ctx.bezierCurveTo(
+                    -40, side * 12 + wWave1,
+                    -20, side * 6 + wWave2,
+                    10, side * 16 + wWave3
+                );
+                ctx.stroke();
+
+                // Whisker Glowing Pearl Tip
+                ctx.fillStyle = '#fef08a';
+                ctx.shadowColor = '#fef08a';
+                ctx.shadowBlur = 8;
+                ctx.beginPath();
+                ctx.arc(10, side * 16 + wWave3, 1.8, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.restore();
             }
+
+            // Dragon Electric Breath from Nostrils
+            if (Math.random() < 0.4) {
+                ctx.fillStyle = Math.random() < 0.5 ? '#fbbf24' : '#38bdf8';
+                ctx.shadowColor = ctx.fillStyle;
+                ctx.shadowBlur = 8;
+                ctx.beginPath();
+                ctx.arc(-30 - Math.random() * 6, (Math.random() - 0.5) * 5, 1.3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
             ctx.restore();
+        }
 
-            // 5. Draw Back Legs (behind body)
-            const clawBackIdx = this.isMobile ? 24 : 30;
-            const clawFrontIdx = this.isMobile ? 7 : 9;
-            if (pts[clawBackIdx]) {
-                this.drawDragonLeg(ctx, pts[clawBackIdx], -1, scale, 'hind');
-            }
-            if (pts[clawFrontIdx]) {
-                this.drawDragonLeg(ctx, pts[clawFrontIdx], -1, scale, 'front');
-            }
+        drawWings(ctx, idx) {
+            ctx.save();
+            ctx.shadowColor = 'rgba(239, 68, 68, 0.85)';
+            ctx.shadowBlur = 16;
 
-            // 6. Draw Continuous Fluid Serpentine Body (NO CIRCLES!)
+            const wingGrad = ctx.createLinearGradient(30, 0, -96, 0);
+            wingGrad.addColorStop(0, '#f87171');
+            wingGrad.addColorStop(0.28, '#dc2626');
+            wingGrad.addColorStop(0.7, '#7f1d1d');
+            wingGrad.addColorStop(1, '#2e0808');
+            ctx.fillStyle = wingGrad;
+            ctx.fill(DRAGON_PATHS.fin);
+
+            // Wing Neon Red/Cyan Ribbing
+            ctx.strokeStyle = idx === 8 ? 'rgba(248, 113, 113, 0.75)' : 'rgba(56, 189, 248, 0.65)';
+            ctx.shadowColor = ctx.strokeStyle;
+            ctx.shadowBlur = 8;
+            ctx.lineWidth = 0.9;
+            ctx.stroke(DRAGON_PATHS.fin);
+
+            ctx.restore();
+        }
+
+        drawSpine(ctx) {
+            ctx.save();
+            // Upper Dorsal Spine (Crimson scales)
+            ctx.shadowColor = 'rgba(220, 38, 38, 0.6)';
+            ctx.shadowBlur = 8;
+            ctx.fillStyle = '#dc2626';
+            ctx.fill(DRAGON_PATHS.spineUpper);
+
+            ctx.strokeStyle = 'rgba(254, 202, 202, 0.45)';
+            ctx.lineWidth = 0.6;
+            ctx.stroke(DRAGON_PATHS.spineUpper);
+
+            // Lower Ventral Plates (Golden dragon underbelly scales)
+            ctx.shadowColor = 'rgba(245, 158, 11, 0.5)';
+            ctx.shadowBlur = 6;
+            ctx.fillStyle = '#f59e0b';
+            ctx.fill(DRAGON_PATHS.spineLower);
+
+            ctx.strokeStyle = 'rgba(120, 53, 15, 0.35)';
+            ctx.lineWidth = 0.5;
+            ctx.stroke(DRAGON_PATHS.spineLower);
+
+            ctx.restore();
+        }
+
+        drawTailPlumes(ctx) {
             ctx.save();
             ctx.shadowColor = '#ef4444';
             ctx.shadowBlur = 18;
 
-            // Main scaled back ribbon
-            ctx.beginPath();
-            ctx.moveTo(pts[0].lx, pts[0].ly);
-            for (let i = 1; i < pts.length; i++) {
-                const xc = (pts[i - 1].lx + pts[i].lx) / 2;
-                const yc = (pts[i - 1].ly + pts[i].ly) / 2;
-                ctx.quadraticCurveTo(pts[i - 1].lx, pts[i - 1].ly, xc, yc);
-            }
-            const tailPt = pts[pts.length - 1];
-            ctx.lineTo(tailPt.x, tailPt.y);
-            for (let i = pts.length - 1; i >= 1; i--) {
-                const xc = (pts[i].rx + pts[i - 1].rx) / 2;
-                const yc = (pts[i].ry + pts[i - 1].ry) / 2;
-                ctx.quadraticCurveTo(pts[i].rx, pts[i].ry, xc, yc);
-            }
-            ctx.closePath();
-
-            const headPt = pts[0];
-            const bodyGrad = ctx.createRadialGradient(headPt.x, headPt.y, 10, tailPt.x, tailPt.y, 450);
-            bodyGrad.addColorStop(0, '#f87171');
-            bodyGrad.addColorStop(0.3, '#dc2626');
-            bodyGrad.addColorStop(0.7, '#991b1b');
-            bodyGrad.addColorStop(1, '#450a0a');
-            ctx.fillStyle = bodyGrad;
-            ctx.fill();
-
-            // Spine neon lightning stroke
-            ctx.shadowBlur = 0;
-            ctx.strokeStyle = 'rgba(239, 68, 68, 0.9)';
-            ctx.lineWidth = 2.5 * scale;
-            ctx.stroke();
-
-            // 7. Draw Underbelly Golden Plates (เกล็ดท้องมังกรสีเหลืองทอง / ปล้องท้องแบบเสินหลง)
-            ctx.beginPath();
-            ctx.moveTo(pts[1].bx, pts[1].by);
-            for (let i = 2; i < pts.length - 4; i++) {
-                const xc = (pts[i - 1].bx + pts[i].bx) / 2;
-                const yc = (pts[i - 1].by + pts[i].by) / 2;
-                ctx.quadraticCurveTo(pts[i - 1].bx, pts[i - 1].by, xc, yc);
-            }
-            for (let i = pts.length - 5; i >= 2; i--) {
-                const xc = (pts[i].rx + pts[i - 1].rx) / 2;
-                const yc = (pts[i].ry + pts[i - 1].ry) / 2;
-                ctx.quadraticCurveTo(pts[i].rx, pts[i].ry, xc, yc);
-            }
-            ctx.closePath();
-
-            const bellyGrad = ctx.createLinearGradient(headPt.x, headPt.y, tailPt.x, tailPt.y);
-            bellyGrad.addColorStop(0, '#fef08a');
-            bellyGrad.addColorStop(0.5, '#f59e0b');
-            bellyGrad.addColorStop(1, '#b45309');
-            ctx.fillStyle = bellyGrad;
-            ctx.fill();
-
-            // Cross lines on underbelly (ปล้องท้องมังกร)
-            ctx.strokeStyle = 'rgba(120, 53, 15, 0.45)';
-            ctx.lineWidth = 1.2 * scale;
-            for (let i = 2; i < pts.length - 5; i += 2) {
-                ctx.beginPath();
-                ctx.moveTo(pts[i].bx, pts[i].by);
-                ctx.lineTo(pts[i].rx, pts[i].ry);
-                ctx.stroke();
-            }
-
-            // Glowing dorsal electric spine line
-            ctx.strokeStyle = '#38bdf8';
-            ctx.shadowColor = '#38bdf8';
-            ctx.shadowBlur = 8;
-            ctx.lineWidth = 1.5 * scale;
-            ctx.beginPath();
-            ctx.moveTo(pts[0].x, pts[0].y);
-            for (let i = 1; i < pts.length - 2; i++) {
-                ctx.lineTo(pts[i].x, pts[i].y);
-            }
-            ctx.stroke();
-
-            ctx.restore();
-
-            // 8. Draw Fore Legs (in front of body)
-            if (pts[clawFrontIdx]) {
-                this.drawDragonLeg(ctx, pts[clawFrontIdx], 1, scale, 'front');
-            }
-            if (pts[clawBackIdx]) {
-                this.drawDragonLeg(ctx, pts[clawBackIdx], 1, scale, 'hind');
-            }
-
-            // 9. Draw Magnificent Tail Fire Plume (พู่หางเพลิงมังกร)
-            this.drawTailFan(ctx, tailPt, pts[pts.length - 2], scale);
-
-            // 10. Draw Mythical Dragon Head (เศียรมังกรระดับเทพ)
-            this.drawMajesticHead(ctx, pts[0], scale);
-        }
-
-        drawDragonLeg(ctx, pt, side, scale, type) {
-            ctx.save();
-            ctx.translate(pt.x, pt.y);
-
-            const legPhase = (type === 'front') ? 0 : Math.PI * 0.7;
-            const swimAngle = Math.sin(this.time * 6 + legPhase) * 0.28;
-            const baseAngle = pt.angle + (side > 0 ? Math.PI * 0.45 : -Math.PI * 0.45) + swimAngle;
-            ctx.rotate(baseAngle);
-
-            ctx.shadowColor = '#ef4444';
-            ctx.shadowBlur = 10;
-
-            const thighLen = 14 * scale;
-            const shinLen = 12 * scale;
-
-            ctx.strokeStyle = '#dc2626';
-            ctx.lineWidth = 5 * scale;
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-
-            const kneeX = thighLen;
-            const kneeY = side * 5 * scale;
-            const footX = thighLen + shinLen * 0.8;
-            const footY = side * 12 * scale;
-
-            ctx.beginPath();
-            ctx.moveTo(0, 0);
-            ctx.lineTo(kneeX, kneeY);
-            ctx.lineTo(footX, footY);
-            ctx.stroke();
-
-            // Elbow spur
-            ctx.fillStyle = '#f59e0b';
-            ctx.beginPath();
-            ctx.moveTo(kneeX, kneeY);
-            ctx.lineTo(kneeX - 6 * scale, kneeY + side * 4 * scale);
-            ctx.lineTo(kneeX + 2 * scale, kneeY);
-            ctx.fill();
-
-            // 4 Sharp Curved Talons (กรงเล็บมังกร)
-            ctx.fillStyle = '#ffffff';
-            ctx.shadowColor = '#ffffff';
-            ctx.shadowBlur = 6;
-            for (let t = -1.5; t <= 1.5; t += 1.0) {
-                const talonAngle = t * 0.3;
-                const tx = footX + Math.cos(talonAngle) * (9 * scale);
-                const ty = footY + Math.sin(talonAngle) * (9 * scale);
-
-                ctx.beginPath();
-                ctx.moveTo(footX, footY);
-                ctx.quadraticCurveTo(footX + (tx - footX) * 0.5, footY + (ty - footY) * 0.3 - 2 * scale, tx, ty);
-                ctx.lineTo(footX + Math.cos(talonAngle + 0.15) * (4 * scale), footY + Math.sin(talonAngle + 0.15) * (4 * scale));
-                ctx.closePath();
-                ctx.fill();
-            }
-
-            // Electric spark on claw
-            if (Math.random() < 0.25) {
-                ctx.strokeStyle = '#38bdf8';
-                ctx.lineWidth = 1.2;
-                ctx.beginPath();
-                ctx.moveTo(footX, footY);
-                ctx.lineTo(footX + (Math.random() - 0.5) * 16 * scale, footY + (Math.random() - 0.5) * 16 * scale);
-                ctx.stroke();
-            }
-
-            ctx.restore();
-        }
-
-        drawTailFan(ctx, tailPt, prevPt, scale) {
-            ctx.save();
-            ctx.translate(tailPt.x, tailPt.y);
-            const tailAngle = Math.atan2(tailPt.y - prevPt.y, tailPt.x - prevPt.x);
-            ctx.rotate(tailAngle);
-
-            ctx.shadowColor = '#ef4444';
-            ctx.shadowBlur = 20;
-
-            const fanLen = 38 * scale;
-            const wave = Math.sin(this.time * 7);
-
+            const wave = Math.sin(this.whiskerWave * 1.5);
             const plumes = [
-                { angle: -0.35 + wave * 0.12, len: fanLen * 0.85, color: '#f59e0b' },
-                { angle: 0 + wave * 0.2, len: fanLen, color: '#ef4444' },
-                { angle: 0.35 - wave * 0.12, len: fanLen * 0.85, color: '#dc2626' },
-                { angle: wave * 0.15, len: fanLen * 1.15, color: '#38bdf8' }
+                { angle: -0.32 + wave * 0.1, len: 42, color: '#f59e0b' },
+                { angle: 0 + wave * 0.18, len: 48, color: '#ef4444' },
+                { angle: 0.32 - wave * 0.1, len: 42, color: '#dc2626' },
+                { angle: wave * 0.12, len: 54, color: '#38bdf8' }
             ];
 
             for (const p of plumes) {
@@ -2105,176 +2019,64 @@ function showToast(msg, type = 'ok') {
                 ctx.rotate(p.angle);
                 ctx.fillStyle = p.color;
                 ctx.shadowColor = p.color;
+                ctx.shadowBlur = 14;
                 ctx.beginPath();
                 ctx.moveTo(0, 0);
-                ctx.quadraticCurveTo(p.len * 0.4, -9 * scale, p.len, 0);
-                ctx.quadraticCurveTo(p.len * 0.4, 9 * scale, 0, 0);
+                ctx.quadraticCurveTo(p.len * 0.4, -6, p.len, 0);
+                ctx.quadraticCurveTo(p.len * 0.4, 6, 0, 0);
                 ctx.fill();
                 ctx.restore();
             }
             ctx.restore();
         }
 
-        drawMajesticHead(ctx, headPt, scale) {
+        drawClaw(ctx, seg, side, baseScale, type) {
+            if (!seg) return;
             ctx.save();
-            ctx.translate(headPt.x, headPt.y);
-            ctx.rotate(headPt.angle);
+            ctx.translate(seg.x, seg.y);
 
+            const legPhase = (type === 'front') ? 0 : Math.PI * 0.6;
+            const swimAngle = Math.sin(this.whiskerWave * 0.7 + legPhase) * 0.28;
+            const baseAngle = seg.a + (side > 0 ? Math.PI * 0.5 : -Math.PI * 0.5) + swimAngle;
+            ctx.rotate(baseAngle);
+
+            const scale = baseScale * 0.75;
             ctx.shadowColor = '#ef4444';
-            ctx.shadowBlur = 22;
+            ctx.shadowBlur = 8;
 
-            // 1. Dragon Beard & Jaw Mane (หนวดเครามังกรใต้คาง)
-            ctx.fillStyle = '#dc2626';
-            const beardWave = Math.sin(this.time * 6) * 4 * scale;
+            const thighLen = 13 * scale;
+            const shinLen = 11 * scale;
+
+            ctx.strokeStyle = '#dc2626';
+            ctx.lineWidth = 4 * scale;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            const kneeX = thighLen;
+            const kneeY = side * 4 * scale;
+            const footX = thighLen + shinLen * 0.8;
+            const footY = side * 10 * scale;
+
             ctx.beginPath();
-            ctx.moveTo(0, 4 * scale);
-            ctx.quadraticCurveTo(-14 * scale, 16 * scale + beardWave, -28 * scale, 12 * scale + beardWave);
-            ctx.quadraticCurveTo(-16 * scale, 6 * scale, -6 * scale, 2 * scale);
-            ctx.fill();
-
-            // 2. Head Silhouette (Upper & Lower Snout)
-            const headGrad = ctx.createLinearGradient(28 * scale, 0, -22 * scale, 0);
-            headGrad.addColorStop(0, '#fca5a5');
-            headGrad.addColorStop(0.4, '#ef4444');
-            headGrad.addColorStop(0.85, '#991b1b');
-            headGrad.addColorStop(1, '#450a0a');
-
-            ctx.fillStyle = headGrad;
-            ctx.beginPath();
-            ctx.moveTo(26 * scale, -2 * scale);
-            ctx.lineTo(20 * scale, -8 * scale);
-            ctx.lineTo(8 * scale, -12 * scale);
-            ctx.lineTo(-6 * scale, -15 * scale);
-            ctx.lineTo(-20 * scale, -13 * scale);
-            ctx.lineTo(-22 * scale, 0);
-            ctx.lineTo(-20 * scale, 13 * scale);
-            ctx.lineTo(-6 * scale, 14 * scale);
-            ctx.lineTo(8 * scale, 10 * scale);
-            ctx.lineTo(22 * scale, 5 * scale);
-            ctx.lineTo(26 * scale, 2 * scale);
-            ctx.closePath();
-            ctx.fill();
-
-            ctx.strokeStyle = 'rgba(254, 202, 202, 0.6)';
-            ctx.lineWidth = 1.5 * scale;
+            ctx.moveTo(0, 0);
+            ctx.lineTo(kneeX, kneeY);
+            ctx.lineTo(footX, footY);
             ctx.stroke();
 
-            // 3. Great Grand Antler Horns (เขามังกรสีทองประกายสายฟ้า 2 ข้าง มีกิ่งก้าน)
-            for (const side of [-1, 1]) {
-                ctx.save();
-                ctx.strokeStyle = '#fbbf24';
-                ctx.shadowColor = '#fbbf24';
-                ctx.shadowBlur = 12;
-                ctx.lineWidth = 3.2 * scale;
-                ctx.lineCap = 'round';
-
-                // Main horn beam sweeping back
-                ctx.beginPath();
-                ctx.moveTo(-8 * scale, side * 12 * scale);
-                ctx.quadraticCurveTo(-24 * scale, side * 28 * scale, -42 * scale, side * 24 * scale);
-                ctx.stroke();
-
-                // Branch tine 1
-                ctx.lineWidth = 2.2 * scale;
-                ctx.beginPath();
-                ctx.moveTo(-20 * scale, side * 21 * scale);
-                ctx.quadraticCurveTo(-26 * scale, side * 34 * scale, -32 * scale, side * 36 * scale);
-                ctx.stroke();
-
-                // Branch tine 2 (electric tip)
-                ctx.strokeStyle = '#38bdf8';
-                ctx.shadowColor = '#38bdf8';
-                ctx.lineWidth = 1.8 * scale;
-                ctx.beginPath();
-                ctx.moveTo(-32 * scale, side * 24 * scale);
-                ctx.lineTo(-44 * scale, side * 30 * scale);
-                ctx.stroke();
-
-                ctx.restore();
-            }
-
-            // 4. Piercing Draconic Eyes (ตาเพลิงสีทองสว่างทรงเฉี่ยวคม)
-            for (const side of [-1, 1]) {
-                const eyY = side * 8 * scale;
-                ctx.save();
-                ctx.fillStyle = '#fef08a';
-                ctx.shadowColor = '#fef08a';
-                ctx.shadowBlur = 14;
-
-                ctx.beginPath();
-                ctx.ellipse(6 * scale, eyY, 5.5 * scale, 2.8 * scale, side * 0.25, 0, Math.PI * 2);
-                ctx.fill();
-
-                // Slit Pupil (ม่านตาสัตว์เลื้อยคลานคมกริบ)
-                ctx.fillStyle = '#0f172a';
-                ctx.shadowBlur = 0;
-                ctx.beginPath();
-                ctx.ellipse(6.5 * scale, eyY, 1.4 * scale, 2.6 * scale, side * 0.25, 0, Math.PI * 2);
-                ctx.fill();
-
-                ctx.restore();
-            }
-
-            // 5. White Sharp Fangs & Jaws (เขี้ยวมังกรสีขาว)
+            // 4 Sharp Curved Talons (กรงเล็บมังกร)
             ctx.fillStyle = '#ffffff';
             ctx.shadowColor = '#ffffff';
             ctx.shadowBlur = 6;
-            for (const side of [-1, 1]) {
-                // Upper large fang
-                ctx.beginPath();
-                ctx.moveTo(18 * scale, side * 5 * scale);
-                ctx.lineTo(15 * scale, side * 11 * scale);
-                ctx.lineTo(12 * scale, side * 5 * scale);
-                ctx.fill();
-
-                // Lower fang
-                ctx.beginPath();
-                ctx.moveTo(10 * scale, side * 6 * scale);
-                ctx.lineTo(8 * scale, side * 10 * scale);
-                ctx.lineTo(6 * scale, side * 6 * scale);
-                ctx.fill();
-            }
-
-            // 6. Ethereal Dragon Whiskers (หนวดมังกรยาวสลวยพริ้วไหว)
-            for (const side of [-1, 1]) {
-                ctx.save();
-                ctx.strokeStyle = '#38bdf8';
-                ctx.shadowColor = '#38bdf8';
-                ctx.shadowBlur = 10;
-                ctx.lineWidth = 1.8 * scale;
-                ctx.lineCap = 'round';
-
-                const wWave1 = Math.sin(this.whiskerWave + side) * 8 * scale;
-                const wWave2 = Math.cos(this.whiskerWave * 0.8 + side) * 12 * scale;
-                const wWave3 = Math.sin(this.whiskerWave * 1.3 - side) * 14 * scale;
+            for (let t = -1.5; t <= 1.5; t += 1.0) {
+                const talonAngle = t * 0.3;
+                const tx = footX + Math.cos(talonAngle) * (8 * scale);
+                const ty = footY + Math.sin(talonAngle) * (8 * scale);
 
                 ctx.beginPath();
-                ctx.moveTo(22 * scale, side * 3 * scale);
-                ctx.bezierCurveTo(
-                    38 * scale, side * 16 * scale + wWave1,
-                    55 * scale, side * 8 * scale + wWave2,
-                    78 * scale, side * 18 * scale + wWave3
-                );
-                ctx.stroke();
-
-                // Whisker glowing orb tip
-                ctx.fillStyle = '#fef08a';
-                ctx.shadowColor = '#fef08a';
-                ctx.shadowBlur = 8;
-                ctx.beginPath();
-                ctx.arc(78 * scale, side * 18 * scale + wWave3, 2.2 * scale, 0, Math.PI * 2);
-                ctx.fill();
-
-                ctx.restore();
-            }
-
-            // 7. Dragon Nostril Sparks / Breath
-            if (Math.random() < 0.35) {
-                ctx.fillStyle = Math.random() < 0.5 ? '#fbbf24' : '#38bdf8';
-                ctx.shadowColor = ctx.fillStyle;
-                ctx.shadowBlur = 8;
-                ctx.beginPath();
-                ctx.arc(26 * scale + Math.random() * 8 * scale, (Math.random() - 0.5) * 8 * scale, 1.5 * scale, 0, Math.PI * 2);
+                ctx.moveTo(footX, footY);
+                ctx.quadraticCurveTo(footX + (tx - footX) * 0.5, footY + (ty - footY) * 0.3 - 2 * scale, tx, ty);
+                ctx.lineTo(footX + Math.cos(talonAngle + 0.15) * (3.5 * scale), footY + Math.sin(talonAngle + 0.15) * (3.5 * scale));
+                ctx.closePath();
                 ctx.fill();
             }
 
