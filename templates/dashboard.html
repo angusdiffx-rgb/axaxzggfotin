@@ -58,6 +58,10 @@ html, body {
 }
 
 /* Background Atmosphere */
+.clan-rain-canvas {
+    position: fixed; inset: 0; width: 100vw; height: 100vh;
+    pointer-events: none; z-index: 0;
+}
 .bg-scene {
     position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
 }
@@ -123,12 +127,16 @@ html, body {
     0%, 100% { transform: scale(1); opacity: 1; }
     50% { transform: scale(1.3); opacity: 0.5; }
 }
-.sound-toggle-btn {
+.sound-toggle-btn, .fx-toggle-btn {
     background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-card);
     width: 34px; height: 34px; border-radius: 9px; display: flex; align-items: center; justify-content: center;
     cursor: pointer; color: var(--text-secondary); font-size: 0.9em; transition: 0.2s;
 }
-.sound-toggle-btn:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
+.sound-toggle-btn:hover, .fx-toggle-btn:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
+.fx-toggle-btn.active {
+    background: rgba(239, 68, 68, 0.22); border-color: rgba(239, 68, 68, 0.55);
+    color: #fca5a5; box-shadow: 0 0 12px rgba(239, 68, 68, 0.35);
+}
 
 /* ════════════════════════════════════════════════════════════
    MAIN CONTAINER
@@ -712,6 +720,7 @@ html, body {
     <div class="glow-orb o3"></div>
 </div>
 <div class="grid-overlay"></div>
+<canvas id="clanRainCanvas" class="clan-rain-canvas"></canvas>
 
 <div class="app-wrapper">
 
@@ -729,6 +738,7 @@ html, body {
                 <span class="live-pulse"></span>
                 <span id="pingText">LIVE</span>
             </div>
+            <button class="fx-toggle-btn active" id="fxBtn" onclick="toggleRainFX()" title="เปิด/ปิดเอฟเฟกต์ฝนโลโก้ & สายฟ้าแดง">⚡</button>
             <button class="sound-toggle-btn" id="soundBtn" onclick="toggleSound()" title="เปิด/ปิดเสียง">🔊</button>
         </div>
     </nav>
@@ -1372,6 +1382,291 @@ function showToast(msg, type = 'ok') {
     toast.className = `toast-msg ${type} show`;
     setTimeout(() => toast.classList.remove('show'), 3000);
 }
+
+// ════════════════════════════════════════════════════════════
+//  ⚡ RED LIGHTNING & CLAN LOGO RAIN ENGINE (PRO FX)
+// ════════════════════════════════════════════════════════════
+(function initClanRainLightning() {
+    const canvas = document.getElementById('clanRainCanvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    let width = 0;
+    let height = 0;
+    let isFXActive = true;
+    let animId = null;
+
+    // Load and pre-render circular logo sprite with glowing red rim
+    const rawLogo = new Image();
+    rawLogo.src = '/static/logo.jpg';
+    let logoSprite = null;
+
+    rawLogo.onload = () => {
+        const spriteSize = 96;
+        const off = document.createElement('canvas');
+        off.width = spriteSize;
+        off.height = spriteSize;
+        const offCtx = off.getContext('2d');
+
+        // Circular clipping
+        offCtx.save();
+        offCtx.beginPath();
+        offCtx.arc(spriteSize / 2, spriteSize / 2, (spriteSize / 2) - 4, 0, Math.PI * 2);
+        offCtx.closePath();
+        offCtx.clip();
+        offCtx.drawImage(rawLogo, 0, 0, spriteSize, spriteSize);
+        offCtx.restore();
+
+        // Outer red crimson neon glow stroke
+        offCtx.beginPath();
+        offCtx.arc(spriteSize / 2, spriteSize / 2, (spriteSize / 2) - 4, 0, Math.PI * 2);
+        offCtx.strokeStyle = 'rgba(239, 68, 68, 0.85)';
+        offCtx.lineWidth = 3.5;
+        offCtx.shadowColor = '#ef4444';
+        offCtx.shadowBlur = 8;
+        offCtx.stroke();
+
+        logoSprite = off;
+    };
+
+    function resize() {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // Responsive particle count: not too cluttered, not too sparse
+    const isMobile = window.innerWidth < 768;
+    const LOGO_COUNT = isMobile ? 14 : 22;
+    const SPARK_COUNT = isMobile ? 18 : 28;
+
+    // Logo Raindrop Class
+    class LogoDrop {
+        constructor(isInit) {
+            this.reset(isInit);
+        }
+        reset(isInit) {
+            this.x = Math.random() * width;
+            this.y = isInit ? Math.random() * height : -50;
+            this.size = isMobile ? (16 + Math.random() * 18) : (20 + Math.random() * 22);
+            this.speedY = 1.1 + Math.random() * 1.8;
+            this.speedX = (Math.random() - 0.5) * 0.5;
+            this.opacity = 0.15 + Math.random() * 0.28;
+            this.rotation = Math.random() * Math.PI * 2;
+            this.rotSpeed = (Math.random() - 0.5) * 0.016;
+            this.swaySeed = Math.random() * 100;
+        }
+        update() {
+            this.y += this.speedY;
+            this.x += this.speedX + Math.sin((this.y + this.swaySeed) * 0.008) * 0.35;
+            this.rotation += this.rotSpeed;
+            if (this.y > height + 60 || this.x < -60 || this.x > width + 60) {
+                this.reset(false);
+            }
+        }
+        draw() {
+            if (!logoSprite) return;
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            ctx.rotate(this.rotation);
+            ctx.globalAlpha = this.opacity;
+            ctx.drawImage(logoSprite, -this.size / 2, -this.size / 2, this.size, this.size);
+            ctx.restore();
+        }
+    }
+
+    // Floating Red Sparks & Embers
+    class RedSpark {
+        constructor(isInit) {
+            this.reset(isInit);
+        }
+        reset(isInit) {
+            this.x = Math.random() * width;
+            this.y = isInit ? Math.random() * height : -20;
+            this.size = 1.2 + Math.random() * 2.2;
+            this.speedY = 0.7 + Math.random() * 1.6;
+            this.speedX = (Math.random() - 0.5) * 0.7;
+            this.alpha = 0.25 + Math.random() * 0.55;
+            this.decay = 0.002 + Math.random() * 0.004;
+        }
+        update() {
+            this.y += this.speedY;
+            this.x += this.speedX + Math.sin(this.y * 0.015) * 0.4;
+            this.alpha -= this.decay;
+            if (this.y > height + 20 || this.alpha <= 0) {
+                this.reset(false);
+            }
+        }
+        draw() {
+            ctx.save();
+            ctx.globalAlpha = Math.max(0, this.alpha);
+            ctx.shadowColor = '#ef4444';
+            ctx.shadowBlur = 6;
+            ctx.fillStyle = '#f87171';
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+    }
+
+    // Red Lightning System
+    let activeBolts = [];
+    let flashAlpha = 0;
+    let nextLightningTime = Date.now() + 2000 + Math.random() * 4000;
+
+    function generateLightningBranch(x1, y1, x2, y2, depth) {
+        const segments = [];
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const steps = Math.max(4, Math.floor(dist / 22));
+
+        let curX = x1;
+        let curY = y1;
+        segments.push({ x: curX, y: curY });
+
+        for (let i = 1; i < steps; i++) {
+            const progress = i / steps;
+            const targetX = x1 + dx * progress;
+            const targetY = y1 + dy * progress;
+            const offset = (Math.random() - 0.5) * (dist * 0.18) * (1 / (depth * 0.7 + 1));
+            curX = targetX + offset;
+            curY = targetY + (Math.random() - 0.5) * 6;
+            segments.push({ x: curX, y: curY });
+
+            if (depth < 2 && Math.random() < 0.28) {
+                const subEndX = curX + (Math.random() - 0.5) * 120;
+                const subEndY = curY + 40 + Math.random() * 90;
+                const subBranches = generateLightningBranch(curX, curY, subEndX, subEndY, depth + 1);
+                segments.push({ sub: subBranches });
+            }
+        }
+        segments.push({ x: x2, y: y2 });
+        return segments;
+    }
+
+    function triggerLightningStrike() {
+        const startX = width * 0.15 + Math.random() * (width * 0.7);
+        const startY = 0;
+        const endX = startX + (Math.random() - 0.5) * 220;
+        const endY = height * (0.35 + Math.random() * 0.45);
+
+        const tree = generateLightningBranch(startX, startY, endX, endY, 0);
+        activeBolts.push({
+            tree: tree,
+            life: 1.0,
+            decay: 0.05 + Math.random() * 0.04
+        });
+
+        // Subtle ambient red background flash
+        flashAlpha = 0.09 + Math.random() * 0.06;
+    }
+
+    function drawBranch(branch, alpha) {
+        ctx.beginPath();
+        for (let i = 0; i < branch.length; i++) {
+            const pt = branch[i];
+            if (pt.sub) {
+                drawBranch(pt.sub, alpha * 0.75);
+            } else if (i === 0) {
+                ctx.moveTo(pt.x, pt.y);
+            } else {
+                ctx.lineTo(pt.x, pt.y);
+            }
+        }
+        ctx.stroke();
+    }
+
+    const logoDrops = Array.from({ length: LOGO_COUNT }, () => new LogoDrop(true));
+    const redSparks = Array.from({ length: SPARK_COUNT }, () => new RedSpark(true));
+
+    function loop() {
+        if (!isFXActive) return;
+
+        ctx.clearRect(0, 0, width, height);
+
+        // 1. Draw lightning flash glow
+        if (flashAlpha > 0.005) {
+            ctx.fillStyle = `rgba(239, 68, 68, ${flashAlpha})`;
+            ctx.fillRect(0, 0, width, height);
+            flashAlpha *= 0.86;
+        }
+
+        // 2. Draw Lightning Bolts
+        const now = Date.now();
+        if (now > nextLightningTime) {
+            triggerLightningStrike();
+            nextLightningTime = now + 4000 + Math.random() * 5000;
+        }
+
+        if (activeBolts.length > 0) {
+            for (let i = activeBolts.length - 1; i >= 0; i--) {
+                const bolt = activeBolts[i];
+                bolt.life -= bolt.decay;
+                if (bolt.life <= 0) {
+                    activeBolts.splice(i, 1);
+                    continue;
+                }
+
+                // Outer red glow
+                ctx.save();
+                ctx.shadowColor = 'rgba(239, 68, 68, 0.9)';
+                ctx.shadowBlur = 14;
+                ctx.strokeStyle = `rgba(239, 68, 68, ${bolt.life * 0.85})`;
+                ctx.lineWidth = 2.4;
+                drawBranch(bolt.tree, bolt.life);
+
+                // Inner hot white-pink core
+                ctx.shadowBlur = 4;
+                ctx.strokeStyle = `rgba(255, 230, 235, ${bolt.life * 0.9})`;
+                ctx.lineWidth = 1.0;
+                drawBranch(bolt.tree, bolt.life);
+                ctx.restore();
+            }
+        }
+
+        // 3. Update & Draw Red Sparks
+        for (const spark of redSparks) {
+            spark.update();
+            spark.draw();
+        }
+
+        // 4. Update & Draw Clan Logo Raindrops
+        for (const drop of logoDrops) {
+            drop.update();
+            drop.draw();
+        }
+
+        animId = requestAnimationFrame(loop);
+    }
+
+    animId = requestAnimationFrame(loop);
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            if (animId) cancelAnimationFrame(animId);
+        } else if (isFXActive) {
+            animId = requestAnimationFrame(loop);
+        }
+    });
+
+    window.toggleRainFX = function() {
+        playChime(760);
+        isFXActive = !isFXActive;
+        const btn = document.getElementById('fxBtn');
+        if (btn) btn.classList.toggle('active', isFXActive);
+        if (isFXActive) {
+            animId = requestAnimationFrame(loop);
+            showToast('⚡ เปิดเอฟเฟกต์ฝนโลโก้ & สายฟ้าแดงแล้ว', 'ok');
+        } else {
+            if (animId) cancelAnimationFrame(animId);
+            ctx.clearRect(0, 0, width, height);
+            showToast('⚡ ปิดเอฟเฟกต์ฝนและสายฟ้าแล้ว', 'ok');
+        }
+    };
+})();
 </script>
 </body>
 </html>
