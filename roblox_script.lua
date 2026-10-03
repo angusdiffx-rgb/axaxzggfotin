@@ -2076,9 +2076,11 @@ local function buildAngusHubUI()
 end
 
 -- ════════════════════════════════════════════════════════════
---  🎯 HERMANOS HUB UI HOOK & REBRANDING ENGINE
---  ดักจับ UI ของ Hermanos Hub แล้วแปลงเป็นโลโก้และชื่อของ AngusHub x Hunter
---  รักษาฟังก์ชันการทำงานทุกอย่าง (PVP, Farm, Aimbot, Teleport) ไว้ 100% ครบถ้วน
+--  🎯 HERMANOS HUB UI HOOK & ANGUSHUB STYLING ENGINE
+--  1) ลบ UI ของ AngusHub เดิมออกตามคำขอ
+--  2) แปลงโลโก้ Hermanos ทั้งหมด (TopBar, Target HUD, ปุ่มลอย) เป็นโลโก้ AngusHub x Hunter
+--  3) แปลงชื่อ Title, Subtitle (Boblox-Script.com), VIP Badge, Discord
+--  4) ตกแต่ง UI สไตล์ AngusHub (ขอบไฟนีออนแดง-ทอง, แถบ Topbar พรีเมียม, ธีมมืดดุดัน)
 -- ════════════════════════════════════════════════════════════
 local function hookHermanosUI()
     local targetRoots = {}
@@ -2095,11 +2097,6 @@ local function hookHermanosUI()
     end)
 
     local ignoredGuiNames = {
-        ["AngusHubMainGui"] = true,
-        ["AngusHubToggleGui"] = true,
-        ["AngusHubBadge"] = true,
-        ["AngusHubNotifGui"] = true,
-        ["AngusHubESP"] = true,
         ["RobloxGui"] = true,
         ["TopBarApp"] = true,
         ["PurchasePrompt"] = true,
@@ -2109,50 +2106,18 @@ local function hookHermanosUI()
         ["BubbleChat"] = true,
         ["Chat"] = true,
         ["TouchGui"] = true,
-        ["PlayerList"] = true,
-        ["Main"] = true,
-        ["Mobile"] = true,
-        ["Combat"] = true,
-        ["Notifications"] = true,
-        ["Compass"] = true
+        ["PlayerList"] = true
     }
 
     local hookedElements = {}
-    local isHermanosCache = {}
-
-    -- ตรวจสอบว่า ScreenGui เป็นของ Hermanos Hub หรือไม่ (ป้องกันการดัดแปลง UI ของ Blox Fruits หรือ UI เกม)
-    local function isHermanosGui(sg)
-        if not sg or not sg:IsA("LayerCollector") then return false end
-        if ignoredGuiNames[sg.Name] then return false end
-        if isHermanosCache[sg] ~= nil then return isHermanosCache[sg] end
-
-        local n = sg.Name:lower()
-        if n:find("hermanos") or n:find("luarmor") then
-            isHermanosCache[sg] = true
-            return true
-        end
-
-        for _, d in ipairs(sg:GetDescendants()) do
-            if d:IsA("TextLabel") or d:IsA("TextButton") then
-                local txt = tostring(d.Text or "")
-                if txt:find("Hermanos") or txt:find("HERMANOS") or txt:find("hermanos")
-                   or txt:find("Roblox%-Script%.com") or txt:find("roblox%-script%.com")
-                   or txt:find("hermanos%-dev") or txt:find("AngusHub Dev") then
-                    isHermanosCache[sg] = true
-                    return true
-                end
-            end
-        end
-
-        return false
-    end
+    local styledWindows = {}
 
     -- ฟังก์ชันแปลงข้อความของ Hermanos ให้เป็น AngusHub VIP Edition อย่างแม่นยำ 100%
     local function sanitizeHermanosText(text)
         if type(text) ~= "string" or text == "" then return text end
         local t = text
 
-        -- 1) Title Bar: "Hermanos Dev | PVP" หรือ "AngusHub Dev | PVP" -> "🔥 AngusHub x Hunter | PVP"
+        -- 1) Title Bar & Headers: "Hermanos Dev | PVP" หรือ "AngusHub Dev | PVP" -> "🔥 AngusHub x Hunter | PVP"
         if (t:find("Hermanos") or t:find("AngusHub")) and (t:find("PVP") or t:find("pvp")) then
             return "🔥 AngusHub x Hunter | PVP"
         end
@@ -2160,7 +2125,8 @@ local function hookHermanosUI()
             return "🔥 AngusHub x Hunter"
         end
 
-        -- 2) Subtitle: "Blox Fruit | Roblox-Script.com" -> "[X] - Blox Fruits | Official Clan Edition"
+        -- 2) Subtitle: "Blox Fruit | Boblox-Script.com" หรือ "Roblox-Script.com" -> "[⚔️] - Blox Fruits | Official Clan Edition"
+        t = t:gsub("[Bb]oblox%-[Ss]cript%.[Cc]om", "Official Clan Edition")
         t = t:gsub("[Rr]oblox%-[Ss]cript%.[Cc]om", "Official Clan Edition")
         t = t:gsub("Blox Fruit%s*|", "Blox Fruits |")
 
@@ -2171,7 +2137,7 @@ local function hookHermanosUI()
         -- 4) Discord Link: "discord.gg/angushub-dev" / "discord.gg/hermanos-dev" -> "discord.gg/angushub"
         t = t:gsub("discord%.gg/[%w%-_./]+", "discord.gg/angushub")
 
-        -- 5) คำว่า Hermanos ทั่วไป
+        -- 5) คำว่า Hermanos ทั่วไป (เช่น ใน Target Hop HUD)
         t = t:gsub("Hermanos%s*Hub", "AngusHub x Hunter")
         t = t:gsub("HERMANOS%s*HUB", "ANGUSHUB x HUNTER")
         t = t:gsub("hermanos%s*hub", "angushub x hunter")
@@ -2183,22 +2149,171 @@ local function hookHermanosUI()
         return t
     end
 
+    -- ฟังก์ชันตรวจสอบว่าเป็น Logo ของ Hermanos หรือไม่ (ทั้ง Topbar, Target HUD, และปุ่มลอย)
+    local function isHermanosLogoElement(elem)
+        if not (elem:IsA("ImageLabel") or elem:IsA("ImageButton")) then
+            return false
+        end
+
+        -- กฎเหล็ก: ห้ามแตะต้อง Element ใน ScrollingFrame เด็ดขาด (ป้องกันการโดน Toggle, Checkbox, Slider, Keybind)
+        if elem:FindFirstAncestorOfClass("ScrollingFrame") then
+            return false
+        end
+
+        local n = elem.Name:lower()
+        local p = elem.Parent
+        if not p then return false end
+        local parentName = p.Name:lower()
+
+        -- กฎเหล็ก: ห้ามแตะต้องแท็บเมนูด้านข้าง (Navigation/Sidebar icons)
+        if n:find("tab") or parentName:find("tab") or parentName:find("side") or parentName:find("nav") then
+            return false
+        end
+
+        -- กรณีที่ 1: TopBar Window Logo ใน WindUI (Topbar -> Left -> Icon)
+        if p.Name == "Left" and p.Parent and p.Parent.Name:lower():find("topbar") then
+            return true
+        end
+
+        local topbar = elem:FindFirstAncestor("Topbar") or elem:FindFirstAncestor("TopBar")
+        if topbar then
+            if parentName:find("left") or parentName:find("title") or parentName:find("icon") or parentName:find("logo") then
+                return true
+            end
+            if p:FindFirstChild("Title") or p:FindFirstChild("Author") then
+                return true
+            end
+            if p.Parent and (p.Parent:FindFirstChild("Title") or p.Parent:FindFirstChild("Author")) then
+                return true
+            end
+        end
+
+        -- กรณีที่ 2: Target / Hop HUD Logo (media_1791028468820.png)
+        local hudFrame = elem:FindFirstAncestorOfClass("Frame")
+        if hudFrame and hudFrame.AbsoluteSize.X < 360 and hudFrame.AbsoluteSize.Y < 200 then
+            local isTargetHud = false
+            for _, d in ipairs(hudFrame:GetDescendants()) do
+                if d:IsA("TextLabel") or d:IsA("TextButton") then
+                    local txt = tostring(d.Text or "")
+                    if txt:find("target") or txt:find("Target") or txt:find("hop") or txt:find("Hop")
+                       or txt:find("Hermanos") or txt:find("AngusHub") or txt:find("PVP") then
+                        isTargetHud = true
+                        break
+                    end
+                end
+            end
+            if isTargetHud then
+                local w = elem.AbsoluteSize.X > 0 and elem.AbsoluteSize.X or elem.Size.X.Offset
+                local h = elem.AbsoluteSize.Y > 0 and elem.AbsoluteSize.Y or elem.Size.Y.Offset
+                if (w >= 16 and w <= 90) or (h >= 16 and h <= 90) then
+                    return true
+                end
+            end
+        end
+
+        -- กรณีที่ 3: ปุ่มเปิด-ปิดลอย (Floating Toggle Button / OpenButton)
+        local screenGui = elem:FindFirstAncestorOfClass("ScreenGui")
+        if screenGui and screenGui.Name:find("WindUI") then
+            local mainWin = screenGui:FindFirstChild("Window") or screenGui:FindFirstChild("Main")
+            if not (mainWin and elem:IsDescendantOf(mainWin)) then
+                if elem:IsA("ImageButton") or n:find("open") or n:find("toggle") or n:find("button") or n:find("logo")
+                   or parentName:find("open") or parentName:find("toggle") then
+                    return true
+                end
+            end
+        end
+
+        -- ปุ่มลอยทั่วไปที่ไม่ได้อยู่ใน Main Window
+        if not hudFrame or (hudFrame.AbsoluteSize.X < 80 and hudFrame.AbsoluteSize.Y < 80) then
+            if n:find("open") or n:find("toggle") or n:find("float") or parentName:find("open") or parentName:find("toggle") then
+                return true
+            end
+        end
+
+        return false
+    end
+
+    -- ฟังก์ชันปรับแต่งความสวยงามของหน้าต่างหลัก WindUI ให้เป็นสไตล์ AngusHub VIP
+    local function applyAngusHubTheme(elem)
+        pcall(function()
+            -- ค้นหา Main Window Frame ของ WindUI
+            local topbar = elem:FindFirstAncestor("Topbar") or elem:FindFirstAncestor("TopBar")
+            if topbar and topbar.Parent then
+                local mainFrame = topbar.Parent
+                if not styledWindows[mainFrame] and mainFrame:IsA("GuiObject") then
+                    styledWindows[mainFrame] = true
+
+                    -- 1) เพิ่มขอบไฟนีออนสไตล์ AngusHub (Glowing Crimson Stroke)
+                    local stroke = mainFrame:FindFirstChild("AngusHubGlowStroke")
+                    if not stroke then
+                        stroke = Instance.new("UIStroke")
+                        stroke.Name = "AngusHubGlowStroke"
+                        stroke.Color = Color3.fromRGB(239, 68, 68)
+                        stroke.Thickness = 1.8
+                        stroke.Transparency = 0.15
+                        stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+                        stroke.Parent = mainFrame
+                    end
+
+                    -- แอนิเมชันแสงไฟนีออนหายใจ (Red to Amber Glow Animation)
+                    task.spawn(function()
+                        while mainFrame and mainFrame.Parent do
+                            TweenService:Create(stroke, TweenInfo.new(1.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
+                                Color = Color3.fromRGB(245, 158, 11),
+                                Thickness = 2.4,
+                                Transparency = 0.05
+                            }):Play()
+                            task.wait(1.5)
+                            if not mainFrame or not mainFrame.Parent then break end
+                            TweenService:Create(stroke, TweenInfo.new(1.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
+                                Color = Color3.fromRGB(239, 68, 68),
+                                Thickness = 1.8,
+                                Transparency = 0.15
+                            }):Play()
+                            task.wait(1.5)
+                        end
+                    end)
+
+                    -- 2) เส้นคั่นใต้ TopBar ไล่ระดับสีเปลวเพลิง AngusHub
+                    local line = topbar:FindFirstChild("AngusHubFlameLine")
+                    if not line then
+                        line = Instance.new("Frame")
+                        line.Name = "AngusHubFlameLine"
+                        line.Size = UDim2.new(1, 0, 0, 2)
+                        line.Position = UDim2.new(0, 0, 1, -2)
+                        line.BorderSizePixel = 0
+                        line.BackgroundColor3 = Color3.fromRGB(239, 68, 68)
+                        line.Parent = topbar
+
+                        local grad = Instance.new("UIGradient")
+                        grad.Color = ColorSequence.new({
+                            ColorSequenceKeypoint.new(0, Color3.fromRGB(239, 68, 68)),
+                            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(245, 158, 11)),
+                            ColorSequenceKeypoint.new(1, Color3.fromRGB(239, 68, 68))
+                        })
+                        grad.Parent = line
+                    end
+                end
+            end
+        end)
+    end
+
     local function patchElement(elem)
         if not elem or not elem.Parent then return end
         if hookedElements[elem] then return end
 
         local screenGui = elem:FindFirstAncestorOfClass("ScreenGui")
-        if not screenGui or ignoredGuiNames[screenGui.Name] then return end
+        if screenGui and ignoredGuiNames[screenGui.Name] then return end
 
         -- ════════════════════════════════════════════════════════════
-        -- 1) ดักจับและเปลี่ยนข้อความ (Title, Subtitle, Version, Discord)
+        -- 1) ดักจับและเปลี่ยนข้อความ (Title, Subtitle, Boblox-Script, Target HUD)
         -- ════════════════════════════════════════════════════════════
         if elem:IsA("TextLabel") or elem:IsA("TextButton") or elem:IsA("TextBox") then
             local currentText = tostring(elem.Text or "")
             local needsPatch = (
                 currentText:find("Hermanos") or currentText:find("hermanos") or currentText:find("HERMANOS") or
                 currentText:find("AngusHub Dev") or
-                currentText:find("Roblox-Script.com") or currentText:find("roblox-script.com") or
+                currentText:find("[Bb]oblox") or currentText:find("[Rr]oblox") or
                 currentText:find("FREE") or currentText:find("Free") or
                 currentText:find("discord.gg")
             )
@@ -2218,123 +2333,55 @@ local function hookHermanosUI()
                 end
                 applyText()
                 elem:GetPropertyChangedSignal("Text"):Connect(applyText)
+
+                -- หากเป็น Title ให้ตกแต่งหน้าต่างหลักทันที
+                if elem.Text and elem.Text:find("AngusHub x Hunter") then
+                    applyAngusHubTheme(elem)
+                end
                 return
             end
         end
 
         -- ════════════════════════════════════════════════════════════
-        -- 2) ดักจับโลโก้ (เปลี่ยนเฉพาะ Header Logo และ Floating Toggle Button เท่านั้น!)
-        --    ไม่เปลี่ยน Checkbox, Keybind, Sliders, Tab Icons หรือ UI เกมใดๆ ทั้งสิ้น
+        -- 2) ดักจับโลโก้ (Topbar Logo, Target HUD Logo, และปุ่มเปิด-ปิดลอย)
         -- ════════════════════════════════════════════════════════════
-        if elem:IsA("ImageLabel") or elem:IsA("ImageButton") then
-            -- กฎเหล็ก 1: ห้ามแตะต้อง Element ที่อยู่ใน ScrollingFrame เด็ดขาด! (Options, Keybinds, Toggles ทั้งหมดอยู่ในนี้)
-            if elem:FindFirstAncestorOfClass("ScrollingFrame") then
-                return
-            end
-
-            local n = elem.Name:lower()
-            local p = elem.Parent
-            local parentName = p and p.Name:lower() or ""
-
-            -- กฎเหล็ก 2: ห้ามแตะต้อง Tab Buttons หรือ Navigation Sidebar (ไอคอนดาบ, รูปคน, รูปเป้า)
-            if n:find("tab") or parentName:find("tab") or parentName:find("side") or parentName:find("nav") then
-                return
-            end
-
-            -- กฎเหล็ก 3: ห้ามแตะต้อง List / Grid Layout ที่มีหลายไอคอน (เช่น Buff Icons แถบซ้าย)
-            if p and (p:FindFirstChildOfClass("UIListLayout") or p:FindFirstChildOfClass("UIGridLayout")) then
-                return
-            end
-            if p and p.Parent and (p.Parent:FindFirstChildOfClass("UIListLayout") or p.Parent:FindFirstChildOfClass("UIGridLayout")) then
-                local siblings = 0
-                for _, ch in ipairs(p.Parent:GetChildren()) do
-                    if ch:IsA("GuiObject") then siblings = siblings + 1 end
-                end
-                if siblings > 2 then
-                    return
+        if isHermanosLogoElement(elem) then
+            hookedElements[elem] = true
+            local updatingImg = false
+            local function applyLogo()
+                if updatingImg then return end
+                if elem.Image ~= clanLogoAsset then
+                    updatingImg = true
+                    elem.Image = clanLogoAsset
+                    elem.ImageColor3 = Color3.fromRGB(255, 255, 255)
+                    updatingImg = false
                 end
             end
+            applyLogo()
+            elem:GetPropertyChangedSignal("Image"):Connect(applyLogo)
 
-            -- ขนาดของปุ่มหรือโลโก้ต้องสมเหตุสมผล
-            local w = elem.AbsoluteSize.X > 0 and elem.AbsoluteSize.X or elem.Size.X.Offset
-            local h = elem.AbsoluteSize.Y > 0 and elem.AbsoluteSize.Y or elem.Size.Y.Offset
-            if w < 16 or w > 120 or h < 16 or h > 120 then
-                return
-            end
+            -- หากเป็น TopBar logo ให้กระตุ้นการตกแต่งหน้าต่างสไตล์ AngusHub
+            applyAngusHubTheme(elem)
 
-            local isHermanos = isHermanosGui(screenGui)
-            local topFrame = elem:FindFirstAncestorOfClass("Frame")
+            -- หากเป็น Target HUD frame ให้ตกแต่งกรอบให้สวยงาม
+            pcall(function()
+                local hudFrame = elem:FindFirstAncestorOfClass("Frame")
+                if hudFrame and hudFrame.AbsoluteSize.X < 360 and hudFrame.AbsoluteSize.Y < 200 then
+                    if not hudFrame:FindFirstChild("AngusHubHudStroke") then
+                        hudFrame.BackgroundColor3 = Color3.fromRGB(13, 15, 23)
+                        local hs = Instance.new("UIStroke")
+                        hs.Name = "AngusHubHudStroke"
+                        hs.Color = Color3.fromRGB(239, 68, 68)
+                        hs.Thickness = 1.4
+                        hs.Parent = hudFrame
 
-            -- A) Floating Toggle Button (ปุ่มเปิด-ปิดลอยของ Hermanos)
-            local isFloatingButton = false
-            if not topFrame or (topFrame.AbsoluteSize.X < 120 and topFrame.AbsoluteSize.Y < 120) then
-                if n:find("toggle") or n:find("float") or n:find("open") or n:find("logo") or n:find("hub")
-                   or parentName:find("toggle") or parentName:find("float") or parentName:find("open") or parentName:find("hub")
-                   or elem:IsA("ImageButton") or (p and p:IsA("ImageButton")) or (p and p:IsA("TextButton")) then
-                    isFloatingButton = true
-                end
-            end
-
-            if isFloatingButton then
-                hookedElements[elem] = true
-                -- ปิด AngusHubToggleGui ทันทีเพื่อไม่ให้มีปุ่มลอยซ้อนทับกันบนจอ
-                pcall(function()
-                    local pGui = (gethui and gethui()) or game:GetService("CoreGui") or LP:FindFirstChild("PlayerGui")
-                    if pGui then
-                        local tg = pGui:FindFirstChild("AngusHubToggleGui")
-                        if tg then tg.Enabled = false end
-                    end
-                end)
-
-                local updatingImg = false
-                local function applyLogo()
-                    if updatingImg then return end
-                    if elem.Image ~= clanLogoAsset then
-                        updatingImg = true
-                        elem.Image = clanLogoAsset
-                        elem.ImageColor3 = Color3.fromRGB(255, 255, 255)
-                        updatingImg = false
+                        local hc = hudFrame:FindFirstChildOfClass("UICorner") or Instance.new("UICorner")
+                        hc.CornerRadius = UDim.new(0, 8)
+                        hc.Parent = hudFrame
                     end
                 end
-                applyLogo()
-                elem:GetPropertyChangedSignal("Image"):Connect(applyLogo)
-                return
-            end
-
-            -- B) TopBar Header Logo (โลโก้บนแถบหัวของหน้าต่าง Hermanos Hub)
-            if isHermanos then
-                local isHeader = parentName:find("top") or parentName:find("head") or parentName:find("title") or parentName:find("bar")
-                if not isHeader and p and p.Parent then
-                    local gpName = p.Parent.Name:lower()
-                    if gpName:find("top") or gpName:find("head") or gpName:find("title") or gpName:find("bar") then
-                        isHeader = true
-                    end
-                end
-
-                if not isHeader and topFrame then
-                    local relY = elem.AbsolutePosition.Y - topFrame.AbsolutePosition.Y
-                    if relY >= 0 and relY < 65 then
-                        isHeader = true
-                    end
-                end
-
-                if isHeader then
-                    hookedElements[elem] = true
-                    local updatingImg = false
-                    local function applyLogo()
-                        if updatingImg then return end
-                        if elem.Image ~= clanLogoAsset then
-                            updatingImg = true
-                            elem.Image = clanLogoAsset
-                            elem.ImageColor3 = Color3.fromRGB(255, 255, 255)
-                            updatingImg = false
-                        end
-                    end
-                    applyLogo()
-                    elem:GetPropertyChangedSignal("Image"):Connect(applyLogo)
-                    return
-                end
-            end
+            end)
+            return
         end
     end
 
@@ -2351,7 +2398,7 @@ local function hookHermanosUI()
         end)
     end
 
-    -- สแกนเฉพาะ ScreenGui ใหม่ที่ถูกสร้างขึ้น (ประหยัด CPU 100% ไม่แลค ไม่กระตุก)
+    -- สแกนทุก Root ที่สร้าง UI
     for _, root in ipairs(targetRoots) do
         pcall(function()
             for _, child in ipairs(root:GetChildren()) do
@@ -2367,11 +2414,10 @@ end
 -- ════════════════════════════════════════════════════════════
 --  🚀 STARTUP EXECUTION & INITIALIZATION
 -- ════════════════════════════════════════════════════════════
--- 1) แสดง Watermark โลโก้ค่าย
-createWatermarkBadge()
-
--- 2) สร้าง AngusHub In-Game UI และปุ่มโลโก้ลอย
-pcall(buildAngusHubUI)
+-- ลบ UI ของ AngusHub เดิมออกตามคำขอของผู้ใช้ (คลีนหน้าจอ 100%)
+if getgenv().ANGUSHUB_CLEANUP then
+    pcall(getgenv().ANGUSHUB_CLEANUP)
+end
 
 -- 3) ซิงค์ข้อมูลครั้งแรก (แจ้งเตือนเพียง 1 ครั้งเมื่อเชื่อมต่อสำเร็จ ป้องกันการสแปมแจ้งเตือน)
 local ok, res, bVal, bSrc = syncData()
