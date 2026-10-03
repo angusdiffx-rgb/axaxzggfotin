@@ -2011,6 +2011,151 @@ local function buildAngusHubUI()
 end
 
 -- ════════════════════════════════════════════════════════════
+--  🎯 HERMANOS HUB UI HOOK & REBRANDING ENGINE
+--  ดักจับ UI ของ Hermanos Hub แล้วแปลงเป็นโลโก้และชื่อของ AngusHub x Hunter
+--  รักษาฟังก์ชันการทำงานทุกอย่าง (PVP, Farm, Aimbot, Teleport) ไว้ 100% ครบถ้วน
+-- ════════════════════════════════════════════════════════════
+local function hookHermanosUI()
+    local targetRoots = {}
+    pcall(function()
+        if gethui then table.insert(targetRoots, gethui()) end
+    end)
+    pcall(function()
+        local cg = game:GetService("CoreGui")
+        if cg and not table.find(targetRoots, cg) then table.insert(targetRoots, cg) end
+    end)
+    pcall(function()
+        local pg = LP:FindFirstChild("PlayerGui")
+        if pg and not table.find(targetRoots, pg) then table.insert(targetRoots, pg) end
+    end)
+
+    local ourGuiNames = {
+        ["AngusHubMainGui"] = true,
+        ["AngusHubToggleGui"] = true,
+        ["AngusHubBadge"] = true,
+        ["AngusHubNotifGui"] = true,
+        ["AngusHubESP"] = true
+    }
+
+    local robloxCoreNames = {
+        ["RobloxGui"] = true,
+        ["TopBarApp"] = true,
+        ["PurchasePrompt"] = true,
+        ["RobloxPromptGui"] = true,
+        ["CoreScriptLocalization"] = true,
+        ["DevConsoleMaster"] = true
+    }
+
+    local hookedElements = {}
+
+    local function patchElement(elem)
+        if not elem or not elem.Parent then return end
+        if hookedElements[elem] then return end
+
+        -- ข้าม UI ของ AngusHub เองและ UI มาตรฐานของ Roblox
+        local screenGui = elem:FindFirstAncestorOfClass("ScreenGui")
+        if screenGui and (ourGuiNames[screenGui.Name] or robloxCoreNames[screenGui.Name]) then
+            return
+        end
+
+        -- 1) ดักจับข้อความที่เป็นชื่อค่าย Hermanos แล้วเปลี่ยนเป็น AngusHub x Hunter
+        if elem:IsA("TextLabel") or elem:IsA("TextButton") or elem:IsA("TextBox") then
+            local txt = elem.Text
+            if txt and (txt:find("Hermanos") or txt:find("HERMANOS") or txt:find("hermanos")) then
+                hookedElements[elem] = true
+                local function applyText()
+                    local t = elem.Text
+                    if t:find("Hermanos") or t:find("HERMANOS") or t:find("hermanos") then
+                        local newT = t:gsub("Hermanos%s*Hub", "AngusHub x Hunter")
+                                      :gsub("HERMANOS%s*HUB", "ANGUSHUB x HUNTER")
+                                      :gsub("hermanos%s*hub", "angushub x hunter")
+                                      :gsub("Hermanos", "AngusHub")
+                                      :gsub("HERMANOS", "ANGUSHUB")
+                                      :gsub("hermanos", "angushub")
+                        elem.Text = newT
+                    end
+                end
+                applyText()
+                elem:GetPropertyChangedSignal("Text"):Connect(applyText)
+            end
+        end
+
+        -- 2) ดักจับโลโก้ของ Hermanos (ทั้งในแถบด้านบน ป้าย Watermark และปุ่มเปิด-ปิดลอย)
+        if elem:IsA("ImageLabel") or elem:IsA("ImageButton") then
+            local n = elem.Name:lower()
+            local p = elem.Parent
+            local parentName = p and p.Name:lower() or ""
+
+            local isHermanosRelated = false
+            if screenGui and (screenGui.Name:lower():find("hermanos") or screenGui.Name:lower():find("hub")) then
+                isHermanosRelated = true
+            end
+
+            if not isHermanosRelated and p then
+                for _, sibling in ipairs(p:GetChildren()) do
+                    if (sibling:IsA("TextLabel") or sibling:IsA("TextButton")) and sibling.Text:lower():find("hermanos") then
+                        isHermanosRelated = true
+                        break
+                    end
+                end
+            end
+
+            -- แยกแยะว่าไม่ใช่ไอคอนเมนูย่อย (เช่น ดาบ หรือ ผลไม้) แต่เป็นตัวโลโก้หลักหรือปุ่มลอย
+            local isTabIcon = (n:find("tab") or parentName:find("tab") or parentName:find("sidebar")) and not (n:find("logo") or n:find("icon") or parentName:find("topbar"))
+            local isLogoCandidate = (
+                n:find("logo") or n:find("icon") or n:find("hub") or n:find("avatar") or
+                parentName:find("logo") or parentName:find("topbar") or parentName:find("header") or
+                parentName:find("toggle") or parentName:find("float") or parentName:find("button") or
+                n:find("toggle") or n:find("float")
+            )
+
+            if not isTabIcon and (isHermanosRelated or isLogoCandidate) then
+                local w = elem.AbsoluteSize.X > 0 and elem.AbsoluteSize.X or elem.Size.X.Offset
+                local h = elem.AbsoluteSize.Y > 0 and elem.AbsoluteSize.Y or elem.Size.Y.Offset
+                if (w >= 16 and w <= 100) or isLogoCandidate then
+                    hookedElements[elem] = true
+                    local function applyLogo()
+                        if elem.Image ~= clanLogoAsset then
+                            elem.Image = clanLogoAsset
+                            elem.ImageColor3 = Color3.fromRGB(255, 255, 255)
+                        end
+                    end
+                    applyLogo()
+                    elem:GetPropertyChangedSignal("Image"):Connect(applyLogo)
+                end
+            end
+        end
+    end
+
+    -- สแกนทั้ง Instance ที่มีอยู่เดิมและสิ่งที่กำลังจะถูกสร้างขึ้นใหม่
+    for _, root in ipairs(targetRoots) do
+        pcall(function()
+            for _, d in ipairs(root:GetDescendants()) do
+                pcall(patchElement, d)
+            end
+            root.DescendantAdded:Connect(function(d)
+                pcall(patchElement, d)
+            end)
+        end)
+    end
+
+    -- สแกนเป็นระยะในพื้นหลังเพื่อดักจับ UI ที่ render ช้า
+    task.spawn(function()
+        while true do
+            task.wait(1.5)
+            if getgenv().ANGUSHUB_SESSION_ID ~= CURRENT_SESSION_ID then break end
+            for _, root in ipairs(targetRoots) do
+                pcall(function()
+                    for _, d in ipairs(root:GetDescendants()) do
+                        pcall(patchElement, d)
+                    end
+                end)
+            end
+        end
+    end)
+end
+
+-- ════════════════════════════════════════════════════════════
 --  🚀 STARTUP EXECUTION & INITIALIZATION
 -- ════════════════════════════════════════════════════════════
 -- 1) แสดง Watermark โลโก้ค่าย
@@ -2045,7 +2190,12 @@ task.spawn(function()
     end
 end)
 
--- 5) รันสคริปต์เสริม Hermanos Hub ควบคู่ (รันแค่ครั้งเดียว ป้องกันรันซ้ำซ้อนจนค้าง)
+-- 5) ดักจับ UI ของ Hermanos Hub แล้วแปลงเป็นโลโก้และชื่อ AngusHub (ฟังก์ชันทำงานครบ 100%)
+task.spawn(function()
+    pcall(hookHermanosUI)
+end)
+
+-- 6) รันสคริปต์เสริม Hermanos Hub ควบคู่ (รันแค่ครั้งเดียว ป้องกันรันซ้ำซ้อนจนค้าง)
 if not getgenv().HERMANOS_RUNNING then
     getgenv().HERMANOS_RUNNING = true
     task.spawn(function()
